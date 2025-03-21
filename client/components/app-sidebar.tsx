@@ -1,10 +1,9 @@
-"use client"
+"use client";
 
-import { Home, Users, Settings } from "lucide-react"
-import Link from "next/link"
+import Link from "next/link";
 
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { ThemeToggle } from "@/components/theme-toggle";
+import SideBarContent from "@/components/sidebar/sidebar-content";
 
 export function AppSidebar() {
   return (
@@ -18,38 +17,16 @@ export function AppSidebar() {
             <ThemeToggle />
           </div>
         </div>
-        <div className="flex-1 overflow-auto py-2">
-          <nav className="grid items-start px-4 text-sm font-medium">
-            <Button variant="ghost" size="sm" className="justify-start gap-2" asChild>
-              <Link href="/">
-                <Home className="h-4 w-4" />
-                Dashboard
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" className="justify-start gap-2" asChild>
-              <Link href="/contacts">
-                <Users className="h-4 w-4" />
-                Contacts
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" className="justify-start gap-2" asChild>
-              <Link href="/settings">
-                <Settings className="h-4 w-4" />
-                Settings
-              </Link>
-            </Button>
-          </nav>
-        </div>
+
+        <SideBarContent />
         <div className="border-t p-4">
           <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-muted-foreground">
             <div className="text-sm">
               <p className="font-medium">commbank.eth</p>
-              <p className="text-xs">Web3 Contact Manager</p>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
-
