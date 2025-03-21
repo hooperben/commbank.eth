@@ -4,6 +4,9 @@
     "build": "./scripts/bash/build-and-export-circuits.sh"
   },
   "devDependencies": {
+    "@aztec/bb.js": "^0.81.0",
+    "@noir-lang/noir_js": "1.0.0-beta.2",
+    "@noir-lang/types": "^1.0.0-beta.2",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/contracts": "^5.2.0",
     "@typechain/ethers-v6": "^0.5.1",

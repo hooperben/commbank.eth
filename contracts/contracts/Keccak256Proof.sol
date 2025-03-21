@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "./contract.sol";
+import "./verifiers/contract.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -20,6 +20,58 @@ contract Keccak256Proof {
     }
 
     error NumTooBig();
+
+    address proofRan;
+
+    function testProof(
+        bytes calldata _proof,
+        bytes32[] calldata _publicInputs
+    ) public {
+        // bool validProof = verifier.verify(_proof, _publicInputs);
+
+        // require(validProof, "Proof Failed");
+
+        proofRan = address(1);
+
+        uint8[32] memory array = [
+            41,
+            13,
+            236,
+            217,
+            84,
+            139,
+            98,
+            168,
+            214,
+            3,
+            69,
+            169,
+            136,
+            56,
+            111,
+            200,
+            75,
+            166,
+            188,
+            149,
+            72,
+            64,
+            8,
+            246,
+            54,
+            47,
+            147,
+            22,
+            14,
+            243,
+            229,
+            99
+        ];
+
+        bytes32 willItWork = combinePublicInputs(_publicInputs);
+
+        console.logBytes32(willItWork);
+    }
 
     function deposit(
         address _erc20,
@@ -96,5 +148,26 @@ contract Keccak256Proof {
 
         bytes32 test = keccak256(abi.encode(bytes32(0)));
         return test;
+    }
+
+    function combinePublicInputs(
+        bytes32[] calldata _publicInputs
+    ) public pure returns (bytes32) {
+        require(
+            _publicInputs.length == 32,
+            "Input must have exactly 32 elements"
+        );
+
+        bytes32 result;
+
+        for (uint256 i = 0; i < 32; i++) {
+            // Extract the least significant byte from each bytes32 element
+            uint8 lsb = uint8(uint256(_publicInputs[i]) & 0xff);
+
+            // Shift it to its correct position in the final result and combine with OR
+            result = result | bytes32(uint256(lsb) << (8 * (31 - i)));
+        }
+
+        return result;
     }
 }

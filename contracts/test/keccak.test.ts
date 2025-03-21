@@ -1,10 +1,8 @@
-import {
-  time,
-  loadFixture,
-} from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
-import { expect } from "chai";
+import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import hre from "hardhat";
+import { getTestingAPI } from "../helpers/testing-api";
+import { InputMap, Noir } from "@noir-lang/noir_js";
+import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
 
 describe("Lock", function () {
   async function deployKeccak256() {
@@ -18,9 +16,18 @@ describe("Lock", function () {
     return { keccak256Proof, owner, otherAccount };
   }
 
+  let backend: BarretenbergBackend;
+  let noir: Noir;
+  let circuit: Noir;
+
+  before(async () => {
+    ({ circuit, noir, backend } = await getTestingAPI());
+    console.log("noir stuff loaded");
+  });
+
   describe("Deployment", function () {
-    it("Should set the right unlockTime", async function () {
-      const { keccak256Proof, owner } = await loadFixture(deployKeccak256);
+    it("should run", async function () {
+      const { keccak256Proof } = await loadFixture(deployKeccak256);
 
       const test = await keccak256Proof.keccakTest();
 
@@ -35,6 +42,88 @@ describe("Lock", function () {
       }
 
       console.log("Uint8 Array:", uint8Array);
+
+      console.log("generating proof");
+
+      const input = {
+        pre_image: [
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+        ],
+        output: [
+          "0x29",
+          "0xd",
+          "0xec",
+          "0xd9",
+          "0x54",
+          "0x8b",
+          "0x62",
+          "0xa8",
+          "0xd6",
+          "0x3",
+          "0x45",
+          "0xa9",
+          "0x88",
+          "0x38",
+          "0x6f",
+          "0xc8",
+          "0x4b",
+          "0xa6",
+          "0xbc",
+          "0x95",
+          "0x48",
+          "0x40",
+          "0x8",
+          "0xf6",
+          "0x36",
+          "0x2f",
+          "0x93",
+          "0x16",
+          "0xe",
+          "0xf3",
+          "0xe5",
+          "0x63",
+        ],
+      };
+
+      const { witness } = await noir.execute(input as unknown as InputMap);
+
+      const { proof, publicInputs } = await backend.generateProof(witness);
+
+      // console.log(proof);
+      console.log(publicInputs);
+
+      await keccak256Proof.testProof(proof, publicInputs);
     });
   });
 });
