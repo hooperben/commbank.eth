@@ -2,7 +2,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import hre from "hardhat";
 import { getTestingAPI } from "../helpers/testing-api";
 import { InputMap, Noir } from "@noir-lang/noir_js";
-import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
+import { UltraHonkBackend } from "@aztec/bb.js";
 
 describe("Lock", function () {
   async function deployKeccak256() {
@@ -16,7 +16,7 @@ describe("Lock", function () {
     return { keccak256Proof, owner, otherAccount };
   }
 
-  let backend: BarretenbergBackend;
+  let backend: UltraHonkBackend;
   let noir: Noir;
   let circuit: Noir;
 
@@ -31,8 +31,6 @@ describe("Lock", function () {
 
       const test = await keccak256Proof.keccakTest();
 
-      console.log(test);
-
       const hexWithoutPrefix = test.slice(2); // Remove '0x' prefix
       const uint8Array = [];
 
@@ -40,10 +38,6 @@ describe("Lock", function () {
         const byte = parseInt(hexWithoutPrefix.substr(i, 2), 16);
         uint8Array.push(byte);
       }
-
-      console.log("Uint8 Array:", uint8Array);
-
-      console.log("generating proof");
 
       const input = {
         pre_image: [
@@ -116,14 +110,20 @@ describe("Lock", function () {
         ],
       };
 
-      const { witness } = await noir.execute(input as unknown as InputMap);
+      const { witness } = await noir.execute(input);
 
-      const { proof, publicInputs } = await backend.generateProof(witness);
+      const { proof, publicInputs } = await backend.generateProof(witness, {
+        keccak: true,
+      });
 
       // console.log(proof);
-      console.log(publicInputs);
+      // console.log(publicInputs);
 
-      await keccak256Proof.testProof(proof, publicInputs);
+      const isValid = await backend.verifyProof({ proof, publicInputs });
+
+      console.log("isValid", isValid);
+
+      await keccak256Proof.testProof(proof.slice(4), publicInputs);
     });
   });
 });

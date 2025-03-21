@@ -27,48 +27,13 @@ contract Keccak256Proof {
         bytes calldata _proof,
         bytes32[] calldata _publicInputs
     ) public {
-        // bool validProof = verifier.verify(_proof, _publicInputs);
+        bytes32 willItWork = combinePublicInputs(_publicInputs);
 
-        // require(validProof, "Proof Failed");
+        bool validProof = verifier.verify(_proof, _publicInputs);
+
+        require(validProof, "Proof Failed");
 
         proofRan = address(1);
-
-        uint8[32] memory array = [
-            41,
-            13,
-            236,
-            217,
-            84,
-            139,
-            98,
-            168,
-            214,
-            3,
-            69,
-            169,
-            136,
-            56,
-            111,
-            200,
-            75,
-            166,
-            188,
-            149,
-            72,
-            64,
-            8,
-            246,
-            54,
-            47,
-            147,
-            22,
-            14,
-            243,
-            229,
-            99
-        ];
-
-        bytes32 willItWork = combinePublicInputs(_publicInputs);
 
         console.logBytes32(willItWork);
     }
@@ -94,8 +59,6 @@ contract Keccak256Proof {
     ) public view returns (bytes32) {
         bytes32 result;
 
-        console.log(type(uint64).max);
-
         for (uint256 i = 0; i < 32; i++) {
             // Shift each byte to its correct position and OR it with the result
             result = result | bytes32(uint256(_array[i]) << (8 * (31 - i)));
@@ -105,47 +68,6 @@ contract Keccak256Proof {
     }
 
     function keccakTest() public view returns (bytes32) {
-        uint8[32] memory array = [
-            41,
-            13,
-            236,
-            217,
-            84,
-            139,
-            98,
-            168,
-            214,
-            3,
-            69,
-            169,
-            136,
-            56,
-            111,
-            200,
-            75,
-            166,
-            188,
-            149,
-            72,
-            64,
-            8,
-            246,
-            54,
-            47,
-            147,
-            22,
-            14,
-            243,
-            229,
-            99
-        ];
-
-        bytes32 recon = convertToBytes32(array);
-
-        console.logBytes32(recon);
-
-        uint256 amount = 69_420 * 10 ** 18;
-
         bytes32 test = keccak256(abi.encode(bytes32(0)));
         return test;
     }

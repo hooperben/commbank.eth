@@ -4,7 +4,7 @@
     "build": "./scripts/bash/build-and-export-circuits.sh"
   },
   "devDependencies": {
-    "@aztec/bb.js": "^0.81.0",
+    "@aztec/bb.js": "0.72.1",
     "@noir-lang/noir_js": "1.0.0-beta.2",
     "@noir-lang/types": "^1.0.0-beta.2",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
@@ -19,5 +19,7 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "clear": "^0.1.0"
+  }
 }
