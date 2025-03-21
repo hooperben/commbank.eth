@@ -18,9 +18,9 @@ const navItems: NavItem[] = [
     label: "Dashboard",
   },
   {
-    href: "/secrets",
+    href: "/accounts",
     icon: Users,
-    label: "Secrets",
+    label: "My Account",
   },
   {
     href: "/settings",
