@@ -3,20 +3,46 @@ pragma solidity ^0.8.28;
 
 import "./contract.sol";
 
-// Uncomment this line to use console.log
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+import "./TestToken.sol";
+
 import "hardhat/console.sol";
 
 contract Keccak256Proof {
     HonkVerifier verifier;
+    TestToken testToken;
 
     constructor() {
         verifier = new HonkVerifier();
+        testToken = new TestToken();
     }
 
-    function convertToByte32(
+    error NumTooBig();
+
+    function deposit(
+        address _erc20,
+        uint64 _depositAmount,
+        bytes32 _leaf
+    ) public {
+        if (_depositAmount == type(uint64).max) {
+            revert NumTooBig();
+        }
+
+        ERC20 token = ERC20(_erc20);
+
+        uint256 erc20Amount = _depositAmount * 10 ** token.decimals();
+
+        token.transferFrom(msg.sender, address(this), erc20Amount);
+    }
+
+    function convertToBytes32(
         uint8[32] memory _array
     ) public view returns (bytes32) {
         bytes32 result;
+
+        console.log(type(uint64).max);
 
         for (uint256 i = 0; i < 32; i++) {
             // Shift each byte to its correct position and OR it with the result
@@ -62,9 +88,11 @@ contract Keccak256Proof {
             99
         ];
 
-        bytes32 recon = convertToByte32(array);
+        bytes32 recon = convertToBytes32(array);
 
         console.logBytes32(recon);
+
+        uint256 amount = 69_420 * 10 ** 18;
 
         bytes32 test = keccak256(abi.encode(bytes32(0)));
         return test;
