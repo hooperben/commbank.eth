@@ -1,5 +1,6 @@
 use noir_bignum_paramgen::{compute_barrett_reduction_parameter, split_into_120_bit_limbs};
 use num_bigint::BigUint;
+use rand::{rngs::StdRng, SeedableRng};
 use rsa::pkcs1v15::Signature;
 use rsa::signature::{SignatureEncoding, Signer};
 use rsa::traits::PublicKeyParts;
@@ -43,6 +44,117 @@ impl SignatureResult {
     pub fn signature_limbs(&self) -> String {
         self.signature_limbs.clone()
     }
+}
+
+#[wasm_bindgen]
+pub struct KeyPair {
+    private_key: Vec<u8>,
+    public_key: Vec<u8>,
+}
+
+#[wasm_bindgen]
+impl KeyPair {
+    #[wasm_bindgen(getter)]
+    pub fn private_key(&self) -> Vec<u8> {
+        self.private_key.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn public_key(&self) -> Vec<u8> {
+        self.public_key.clone()
+    }
+}
+
+#[wasm_bindgen]
+pub fn create_key_pair(secret: &str, bits: u32, exponent: u32) -> Result<KeyPair, JsError> {
+    if bits != 1024 && bits != 2048 {
+        return Err(JsError::new("Bits must be either 1024 or 2048"));
+    }
+
+    // Create a deterministic RNG from the secret
+    let mut hasher = Sha256::new();
+    hasher.update(secret.as_bytes());
+    let hash_result = hasher.finalize();
+    let mut seed = [0u8; 32];
+    seed.copy_from_slice(&hash_result);
+    let mut rng = StdRng::from_seed(seed);
+
+    // Generate the key pair
+    let bits_usize = bits as usize;
+    let priv_key = RsaPrivateKey::new_with_exp(&mut rng, bits_usize, &BigUint::from(exponent))
+        .map_err(|e| JsError::new(&format!("Failed to generate key: {}", e)))?;
+
+    let pub_key: RsaPublicKey = (&priv_key).into();
+
+    // Serialize the keys - fixed to handle SecretDocument correctly
+    let private_key = rsa::pkcs8::EncodePrivateKey::to_pkcs8_der(&priv_key)
+        .map_err(|e| JsError::new(&format!("Failed to serialize private key: {}", e)))?
+        .as_bytes()
+        .to_vec();
+
+    let public_key = rsa::pkcs8::EncodePublicKey::to_public_key_der(&pub_key)
+        .map_err(|e| JsError::new(&format!("Failed to serialize public key: {}", e)))?
+        .as_bytes()
+        .to_vec();
+
+    Ok(KeyPair {
+        private_key,
+        public_key,
+    })
+}
+
+#[wasm_bindgen]
+pub fn generate_signature_from_key(
+    msg: &str,
+    private_key: &[u8],
+) -> Result<SignatureResult, JsError> {
+    let mut hasher = Sha256::new();
+    hasher.update(msg.as_bytes());
+    let hashed_message = hasher.finalize();
+
+    let hashed_as_bytes = hashed_message
+        .iter()
+        .map(|&b| b.to_string())
+        .collect::<Vec<String>>()
+        .join(", ");
+
+    // Parse the private key with explicit type annotation
+    let priv_key: RsaPrivateKey = rsa::pkcs8::DecodePrivateKey::from_pkcs8_der(private_key)
+        .map_err(|e| JsError::new(&format!("Failed to parse private key: {}", e)))?;
+
+    let pub_key: RsaPublicKey = (&priv_key).into();
+
+    let signing_key = rsa::pkcs1v15::SigningKey::<Sha256>::new(priv_key);
+    let sig: Vec<u8> = signing_key.sign(msg.as_bytes()).to_vec();
+
+    let sig_bytes = &Signature::try_from(sig.as_slice())
+        .map_err(|e| JsError::new(&format!("Failed to create signature: {}", e)))?
+        .to_bytes();
+
+    let sig_uint: BigUint = BigUint::from_bytes_be(sig_bytes);
+
+    let bits_usize = match pub_key.n().bits() {
+        bits if bits <= 1024 => 1024,
+        _ => 2048,
+    };
+
+    let modulus_limbs: Vec<BigUint> = split_into_120_bit_limbs(&pub_key.n().clone(), bits_usize);
+    let redc_limbs = split_into_120_bit_limbs(
+        &compute_barrett_reduction_parameter(&pub_key.n().clone()),
+        bits_usize,
+    );
+    let sig_limbs = split_into_120_bit_limbs(&sig_uint.clone(), bits_usize);
+
+    let modulus_str = format_limbs_as_hex(&modulus_limbs);
+    let redc_str = format_limbs_as_hex(&redc_limbs);
+    let sig_str = format_limbs_as_hex(&sig_limbs);
+
+    Ok(SignatureResult {
+        hash: hashed_as_bytes,
+        modulus_limbs: modulus_str,
+        redc_limbs: redc_str,
+        signature_limbs: sig_str,
+    })
 }
 
 #[wasm_bindgen]
@@ -165,4 +277,45 @@ fn main() {
 #[cfg(not(feature = "cli"))]
 fn main() {
     // Empty main function - we're compiling a library for WASM
+}
+
+// Adding these missing functions
+fn generate_1024_bit_signature_parameters(msg: &str, as_toml: bool, e: u32) {
+    // For now, just call the existing generate_signature function
+    match generate_signature(msg, 1024, e) {
+        Ok(result) => {
+            if as_toml {
+                println!("hash = [{}]", result.hash);
+                println!("modulus = [{}]", result.modulus_limbs);
+                println!("redc = [{}]", result.redc_limbs);
+                println!("signature = [{}]", result.signature_limbs);
+            } else {
+                println!("Hash: {}", result.hash);
+                println!("Modulus: {}", result.modulus_limbs);
+                println!("REDC parameter: {}", result.redc_limbs);
+                println!("Signature: {}", result.signature_limbs);
+            }
+        }
+        Err(e) => eprintln!("Error: {:?}", e),
+    }
+}
+
+fn generate_2048_bit_signature_parameters(msg: &str, as_toml: bool, e: u32) {
+    // For now, just call the existing generate_signature function
+    match generate_signature(msg, 2048, e) {
+        Ok(result) => {
+            if as_toml {
+                println!("hash = [{}]", result.hash);
+                println!("modulus = [{}]", result.modulus_limbs);
+                println!("redc = [{}]", result.redc_limbs);
+                println!("signature = [{}]", result.signature_limbs);
+            } else {
+                println!("Hash: {}", result.hash);
+                println!("Modulus: {}", result.modulus_limbs);
+                println!("REDC parameter: {}", result.redc_limbs);
+                println!("Signature: {}", result.signature_limbs);
+            }
+        }
+        Err(e) => eprintln!("Error: {:?}", e),
+    }
 }

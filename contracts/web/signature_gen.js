@@ -41,6 +41,11 @@ function isLikeNone(x) {
     return x === undefined || x === null;
 }
 
+function getArrayU8FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
+}
+
 let WASM_VECTOR_LEN = 0;
 
 let cachedTextEncoder = new TextEncoder('utf-8');
@@ -103,6 +108,45 @@ function takeFromExternrefTable0(idx) {
     return value;
 }
 /**
+ * @param {string} secret
+ * @param {number} bits
+ * @param {number} exponent
+ * @returns {KeyPair}
+ */
+module.exports.create_key_pair = function(secret, bits, exponent) {
+    const ptr0 = passStringToWasm0(secret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.create_key_pair(ptr0, len0, bits, exponent);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return KeyPair.__wrap(ret[0]);
+};
+
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1, 1) >>> 0;
+    getUint8ArrayMemory0().set(arg, ptr / 1);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+/**
+ * @param {string} msg
+ * @param {Uint8Array} private_key
+ * @returns {SignatureResult}
+ */
+module.exports.generate_signature_from_key = function(msg, private_key) {
+    const ptr0 = passStringToWasm0(msg, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passArray8ToWasm0(private_key, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.generate_signature_from_key(ptr0, len0, ptr1, len1);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return SignatureResult.__wrap(ret[0]);
+};
+
+/**
  * @param {string} msg
  * @param {number} bits
  * @param {number} exponent
@@ -117,6 +161,52 @@ module.exports.generate_signature = function(msg, bits, exponent) {
     }
     return SignatureResult.__wrap(ret[0]);
 };
+
+const KeyPairFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_keypair_free(ptr >>> 0, 1));
+
+class KeyPair {
+
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(KeyPair.prototype);
+        obj.__wbg_ptr = ptr;
+        KeyPairFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        KeyPairFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_keypair_free(ptr, 0);
+    }
+    /**
+     * @returns {Uint8Array}
+     */
+    get private_key() {
+        const ret = wasm.keypair_private_key(this.__wbg_ptr);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    /**
+     * @returns {Uint8Array}
+     */
+    get public_key() {
+        const ret = wasm.keypair_public_key(this.__wbg_ptr);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+}
+module.exports.KeyPair = KeyPair;
 
 const SignatureResultFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }

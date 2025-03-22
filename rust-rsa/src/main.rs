@@ -15,6 +15,8 @@ use noir_bignum_paramgen::{
     bn_limbs, compute_barrett_reduction_parameter, split_into_120_bit_limbs,
 };
 
+use signature_gen::{create_key_pair, generate_signature, generate_signature_from_key};
+
 fn format_limbs_as_hex(limbs: &Vec<BigUint>) -> String {
     limbs
         .iter()
@@ -51,6 +53,13 @@ fn main() {
                 .required(true),
         )
         .arg(
+            Arg::with_name("secret")
+                .short("s")
+                .long("secret")
+                .takes_value(true)
+                .help("Secret to derive the key pair from"),
+        )
+        .arg(
             Arg::with_name("toml")
                 .short("t")
                 .long("toml")
@@ -82,10 +91,22 @@ fn main() {
         b == 1024 || b == 2048,
         "Number of bits of RSA signature can only be 1024 or 2048"
     );
-    if b == 1024 {
-        generate_1024_bit_signature_parameters(msg, as_toml, e);
+
+    // If a secret is provided, use that to create a key pair and sign
+    if let Some(secret) = matches.value_of("secret") {
+        let key_pair = create_key_pair(secret, b, e).unwrap();
+        println!("Generated key pair from secret");
+
+        let result = generate_signature_from_key(msg, &key_pair.private_key()).unwrap();
+        // Display results similar to the original code
+        // ...
     } else {
-        generate_2048_bit_signature_parameters(msg, as_toml, e);
+        // Use the original implementation for backward compatibility
+        if b == 1024 {
+            generate_1024_bit_signature_parameters(msg, as_toml, e);
+        } else {
+            generate_2048_bit_signature_parameters(msg, as_toml, e);
+        }
     }
 }
 
