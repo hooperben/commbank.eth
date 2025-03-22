@@ -24,12 +24,6 @@ describe("Note creation and flow testing", () => {
   });
 
   it.only("should let me create a key pair", async () => {
-    // Convert public key to hex string
-    const publicKeyBytes = Array.from(Object.values(aliceRSA.public_key));
-    const publicKeyHex =
-      "0x" +
-      publicKeyBytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
-
     const note = {
       secret:
         "0xc0160463fbe2d99a4f7f9ffd93a0789132980899da181cc42021488404fa7c31",
@@ -41,7 +35,6 @@ describe("Note creation and flow testing", () => {
       `${note.secret}${note.asset}${note.amount}`,
       aliceRSA.public_key,
     );
-    console.log(encryptedMessage);
 
     const decryptedMessage = rsa.decrypt(
       encryptedMessage,

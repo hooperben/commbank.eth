@@ -18,15 +18,16 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
     const parsedJson = JSON.parse(
       fs.readFileSync(`${RSA_ACCOUNT_PATH}${item}.json`).toString(),
     );
-    const aliceRSAFormed = {
+    const RSAFormed = {
       private_key: new Uint8Array(parsedJson.private_key.map(Number)),
       public_key: new Uint8Array(parsedJson.public_key.map(Number)),
     };
 
     const restoredKeyPair = new rsa.KeyPair(
-      aliceRSAFormed.private_key,
-      aliceRSAFormed.public_key,
+      RSAFormed.private_key,
+      RSAFormed.public_key,
     );
+
     return restoredKeyPair;
   });
 
