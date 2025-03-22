@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Monitor, Sun, Moon } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 
 const ThemeToggle = () => {
@@ -26,7 +26,7 @@ const ThemeToggle = () => {
           }`}
           aria-label="Use system theme"
         >
-          <Monitor className="h-4 w-4 text-gray-200" />
+          <Monitor className="h-2 w-2 text-gray-200" />
         </Button>
         <Button
           onClick={() => setTheme("light")}
@@ -35,7 +35,7 @@ const ThemeToggle = () => {
           }`}
           aria-label="Use light theme"
         >
-          <Sun className="h-4 w-4 dark:text-gray-200 text-black" />
+          <Sun className="h-2 w-2 dark:text-gray-200 text-black" />
         </Button>
         <Button
           onClick={() => setTheme("dark")}
@@ -43,8 +43,9 @@ const ThemeToggle = () => {
             theme === "dark" ? "bg-primary/70" : "hover:bg-primary/80"
           }`}
           aria-label="Use dark theme"
+          size="icon"
         >
-          <Moon className="h-4 w-4 text-gray-200" />
+          <Moon className="h-2 w-2 text-gray-200" />
         </Button>
       </div>
     </div>
