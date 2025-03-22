@@ -45,7 +45,9 @@ async function main() {
     console.log(
       `let signature: RuntimeBigNum<18, 2048> = RuntimeBigNum { \n\tparams,\n\tlimbs: [${result.signature_limbs}], };`,
     );
-    console.log(`assert(verify_sha256_pkcs1v15(hash, signature, 65537));`);
+    console.log(
+      `assert(noir_rsa::rsa::verify_sha256_pkcs1v15(hash, signature, 65537));`,
+    );
   } catch (error) {
     console.error("Error:", error);
   }

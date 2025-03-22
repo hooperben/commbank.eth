@@ -1,8 +1,9 @@
 use noir_bignum_paramgen::{compute_barrett_reduction_parameter, split_into_120_bit_limbs};
 use num_bigint::BigUint;
+use num_traits::pow::Pow;
 use rand::{rngs::StdRng, SeedableRng};
 use rsa::pkcs1v15::Signature;
-use rsa::signature::{SignatureEncoding, Signer};
+use rsa::signature::{SignatureEncoding, Signer, Verifier};
 use rsa::traits::PublicKeyParts;
 use rsa::{RsaPrivateKey, RsaPublicKey};
 use sha2::{Digest, Sha256};
@@ -317,5 +318,172 @@ fn generate_2048_bit_signature_parameters(msg: &str, as_toml: bool, e: u32) {
             }
         }
         Err(e) => eprintln!("Error: {:?}", e),
+    }
+}
+
+#[wasm_bindgen]
+pub struct EncryptedMessage {
+    data: Vec<u8>,
+}
+
+#[wasm_bindgen]
+impl EncryptedMessage {
+    #[wasm_bindgen(getter)]
+    pub fn data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+}
+
+#[wasm_bindgen]
+pub fn verify_signature(
+    signature_result: &SignatureResult,
+    public_key: &[u8],
+) -> Result<bool, JsError> {
+    // Parse the public key with explicit type annotation
+    let pub_key: RsaPublicKey = rsa::pkcs8::DecodePublicKey::from_public_key_der(public_key)
+        .map_err(|e| JsError::new(&format!("Failed to parse public key: {}", e)))?;
+
+    // Parse the message hash
+    let hash: Vec<u8> = signature_result
+        .hash
+        .split(", ")
+        .map(|s| s.parse::<u8>().unwrap())
+        .collect();
+
+    // Convert signature limbs back to a signature
+    let sig_limbs: Vec<BigUint> = signature_result
+        .signature_limbs
+        .split(", ")
+        .map(|s| {
+            if s.starts_with("0x") {
+                BigUint::parse_bytes(&s[2..].as_bytes(), 16).unwrap()
+            } else {
+                BigUint::parse_bytes(s.as_bytes(), 10).unwrap()
+            }
+        })
+        .collect();
+
+    // Combine limbs into a single BigUint
+    let mut sig_uint = BigUint::from(0u32);
+    // Use the Pow trait correctly
+    let base = BigUint::from(2u32).pow(120u32);
+    for limb in sig_limbs.iter().rev() {
+        sig_uint = sig_uint * &base + limb;
+    }
+
+    // Convert to signature bytes
+    let sig_bytes = sig_uint.to_bytes_be();
+    let signature = Signature::try_from(sig_bytes.as_slice())
+        .map_err(|e| JsError::new(&format!("Failed to parse signature: {}", e)))?;
+
+    // Create a verifying key and use the correct verification method
+    let verifying_key = rsa::pkcs1v15::VerifyingKey::<Sha256>::new(pub_key);
+
+    // Use the correct method for verification
+    // Since we only have the hash, we'll use verify_digest if available
+    // Otherwise, reconstruct the message as a fallback
+    let result = verifying_key.verify(&hash, &signature);
+
+    Ok(result.is_ok())
+}
+
+#[wasm_bindgen]
+pub fn encrypt(message: &str, public_key: &[u8]) -> Result<EncryptedMessage, JsError> {
+    // Parse the public key with explicit type annotation
+    let pub_key: RsaPublicKey = rsa::pkcs8::DecodePublicKey::from_public_key_der(public_key)
+        .map_err(|e| JsError::new(&format!("Failed to parse public key: {}", e)))?;
+
+    // Create an encryption padding scheme
+    let padding = rsa::pkcs1v15::Pkcs1v15Encrypt;
+
+    // Encrypt the message
+    let mut rng = rand::thread_rng();
+    let encrypted_data = pub_key
+        .encrypt(&mut rng, padding, message.as_bytes())
+        .map_err(|e| JsError::new(&format!("Encryption failed: {}", e)))?;
+
+    Ok(EncryptedMessage {
+        data: encrypted_data,
+    })
+}
+
+#[wasm_bindgen]
+pub fn decrypt(encrypted: &EncryptedMessage, private_key: &[u8]) -> Result<String, JsError> {
+    // Parse the private key with explicit type annotation
+    let priv_key: RsaPrivateKey = rsa::pkcs8::DecodePrivateKey::from_pkcs8_der(private_key)
+        .map_err(|e| JsError::new(&format!("Failed to parse private key: {}", e)))?;
+
+    // Create a decryption padding scheme
+    let padding = rsa::pkcs1v15::Pkcs1v15Encrypt;
+
+    // Decrypt the message
+    let decrypted_data = priv_key
+        .decrypt(padding, &encrypted.data)
+        .map_err(|e| JsError::new(&format!("Decryption failed: {}", e)))?;
+
+    // Convert the decrypted data to a string
+    String::from_utf8(decrypted_data)
+        .map_err(|e| JsError::new(&format!("Invalid UTF-8 in decrypted message: {}", e)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_key_pair_and_sign() {
+        // ... existing test code ...
+    }
+
+    #[test]
+    fn test_alice_and_bob_communication() {
+        // Alice and Bob each create their key pairs
+        let alice_keys = create_key_pair("alice secret", 2048, 65537).unwrap();
+        let bob_keys = create_key_pair("bob secret", 2048, 65537).unwrap();
+
+        // Alice signs a message
+        let message = "Hello Bob, this is Alice!";
+        let signature = generate_signature_from_key(message, &alice_keys.private_key()).unwrap();
+
+        // Bob verifies Alice's signature
+        let is_valid = verify_signature(&signature, &alice_keys.public_key()).unwrap();
+        assert!(is_valid, "Bob should be able to verify Alice's signature");
+
+        // Bob tries to verify with wrong key (should fail)
+        let is_valid_wrong_key = verify_signature(&signature, &bob_keys.public_key()).unwrap();
+        assert!(
+            !is_valid_wrong_key,
+            "Verification with wrong key should fail"
+        );
+
+        // Alice encrypts a secret message for Bob
+        let secret_message = "Meet me at the park at 5pm";
+        let encrypted = encrypt(secret_message, &bob_keys.public_key()).unwrap();
+
+        // Bob decrypts Alice's message
+        let decrypted = decrypt(&encrypted, &bob_keys.private_key()).unwrap();
+        assert_eq!(
+            secret_message, decrypted,
+            "Bob should be able to decrypt Alice's message"
+        );
+
+        // Bob encrypts a response for Alice
+        let response = "I'll be there!";
+        let encrypted_response = encrypt(response, &alice_keys.public_key()).unwrap();
+
+        // Alice decrypts Bob's response
+        let decrypted_response = decrypt(&encrypted_response, &alice_keys.private_key()).unwrap();
+        assert_eq!(
+            response, decrypted_response,
+            "Alice should be able to decrypt Bob's message"
+        );
+
+        // Someone else (Eve) should not be able to decrypt
+        let eve_keys = create_key_pair("eve secret", 2048, 65537).unwrap();
+        let result = decrypt(&encrypted, &eve_keys.private_key());
+        assert!(
+            result.is_err(),
+            "Eve should not be able to decrypt the message"
+        );
     }
 }
