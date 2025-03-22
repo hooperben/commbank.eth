@@ -7,8 +7,10 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "moduleResolution": "node",
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": ["./scripts", "./test", "./typechain-types", "./helpers"],
+  "include": ["./scripts", "./test", "./typechain-types", "./helpers", "./web"],
   "files": ["./hardhat.config.ts"]
 }
