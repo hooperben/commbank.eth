@@ -1,85 +1,16 @@
 use bignum::{params::BigNumParams, RuntimeBigNum};
 use noir_rsa;
 
-fn compare_signature_sha256<let N: u32>(padded_sha256_hash: [u8; N], msg_hash: [u8; 32]) -> bool {
-    // Get length of sig (e.g. 1048 = 128 bytes, 2048 = 256 bytes)
-    // NOTE: Assume MAX_BYTES < 2^32 bit number. MAX_BYTES of 259 > 2^8 bits so need to cast it to u32
-    for i in 0..32 {
-        // Padded hash is reversed
-        assert(padded_sha256_hash[31 - i] == msg_hash[i]);
-    }
-
-    let hash_prefix: [u8; 19] =
-        [32, 4, 0, 5, 1, 2, 4, 3, 101, 1, 72, 134, 96, 9, 6, 13, 48, 49, 48];
-
-    for i in 32..51 {
-        assert(hash_prefix[i - 32] == padded_sha256_hash[i]);
-    }
-
-    assert(padded_sha256_hash[51] == 0);
-
-    // Sub 32 bytes for hash, 19 bytes for prefix, 1 byte for 0, 1 byte for 1, 1 byte for 0
-    let ps_len = N - 54;
-    for i in 52..N {
-        if i < 52 + ps_len {
-            // PS padding which depends on RSA modulus / sig length. 1024 bits = 128 bytes = 128 - 54 = 74 bytes of 0xFF padding
-            assert(padded_sha256_hash[i] == 255);
-        } else if i == 52 + ps_len {
-            // Pad 0x01
-            assert(padded_sha256_hash[i] == 1);
-        } else if i == 53 + ps_len {
-            // 0x00
-            assert(padded_sha256_hash[i] == 0);
-        } else {
-            // Padded with 0 until MAX_BYTES
-            assert(padded_sha256_hash[i] == 0);
-        }
-    }
-
-    true
-}
-
-pub fn verify_sha256_pkcs1v15<let NumLimbs: u32, let ModBits: u32>(
-    msg_hash: [u8; 32],
-    sig: RuntimeBigNum<NumLimbs, ModBits>,
-    exponent: u32,
-) -> bool {
-    assert((exponent == 3) | (exponent == 65537), "Exponent must be 65537 or 3");
-    let mut exponentiated = sig * sig; // sig^2
-    if exponent == 65537 {
-        // e = 65537 = 1 0000 0000 0000 0001
-        exponentiated = exponentiated * exponentiated; // sig^4
-        exponentiated = exponentiated * exponentiated; // sig^8
-        exponentiated = exponentiated * exponentiated; // sig^16
-        exponentiated = exponentiated * exponentiated; // sig^32
-        exponentiated = exponentiated * exponentiated; // sig^64
-        exponentiated = exponentiated * exponentiated; // sig^128
-        exponentiated = exponentiated * exponentiated; // sig^256
-        exponentiated = exponentiated * exponentiated; // sig^512
-        exponentiated = exponentiated * exponentiated; // sig^1024
-        exponentiated = exponentiated * exponentiated; // sig^2048
-        exponentiated = exponentiated * exponentiated; // sig^4096
-        exponentiated = exponentiated * exponentiated; // sig^8192
-        exponentiated = exponentiated * exponentiated; // sig^16384
-        exponentiated = exponentiated * exponentiated; // sig^32768
-        exponentiated = exponentiated * exponentiated; // sig^65536
-    }
-    // otherwise, e = 3 = 11
-    exponentiated = exponentiated * sig; // either sig^2 * sig = sig^3 or sig^65536 * sig = sig^65537
-    let mut padded_sha256_hash_bytes: [u8; (ModBits + 7) / 8] = exponentiated.to_le_bytes();
-    compare_signature_sha256(padded_sha256_hash_bytes, msg_hash)
-}
-
 fn main(x: Field, y: pub Field) {
     assert(x != y);
 }
 
 #[test]
 fn test_verify_sha256_pkcs1v15_2048() {
-    // Output of `cargo run -- --msg "Hello World! This is Noir-RSA"` in the `signature_gen` directory
-    let sha256_hash: [u8; 32] = [
-        91, 207, 46, 60, 22, 153, 217, 144, 2, 127, 224, 143, 181, 45, 32, 120, 122, 131, 166,
-        79, 166, 183, 43, 158, 116, 105, 73, 207, 196, 77, 33, 5,
+    // copied from noir_rsa test repo
+    let hash: [u8; 32] = [
+        91, 207, 46, 60, 22, 153, 217, 144, 2, 127, 224, 143, 181, 45, 32, 120, 122, 131, 166, 79,
+        166, 183, 43, 158, 116, 105, 73, 207, 196, 77, 33, 5,
     ];
 
     let params: BigNumParams<18, 2048> = BigNumParams::new(
@@ -149,6 +80,6 @@ fn test_verify_sha256_pkcs1v15_2048() {
             0xab,
         ],
     };
-    assert(verify_sha256_pkcs1v15(sha256_hash, signature, 65537));
-}
 
+    assert(noir_rsa::rsa::verify_sha256_pkcs1v15(hash, signature, 65537));
+}
