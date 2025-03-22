@@ -210,13 +210,20 @@ mod tests {
     use rsa::signature::{Signer, Verifier};
     use rsa::{pkcs1v15::VerifyingKey, RsaPrivateKey, RsaPublicKey};
     use sha2::Sha256;
+    use std::fs;
 
     #[test]
     fn test_signature_generation() {
         let mut rng = thread_rng();
         let bits = 2048;
         let priv_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
+
         let pub_key: RsaPublicKey = priv_key.clone().into();
+
+        // Print the private and public keys
+        println!("Private Key: {:?}", priv_key);
+        println!("Public Key: {:?}", pub_key);
+
         let text: &str = "hello world";
         let signing_key = rsa::pkcs1v15::SigningKey::<Sha256>::new(priv_key);
         let sig: Vec<u8> = signing_key.sign(text.as_bytes()).to_vec();
