@@ -62,20 +62,6 @@ const generateTransactions = (walletAddress: string) => {
     const date = new Date(
       now.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000,
     );
-
-    transactions.push({
-      id: `tx-receive-${i}`,
-      type: "receive",
-      from: randomAddress,
-      to: walletAddress,
-      amount,
-      token: "ETH",
-      date,
-      hash: `0x${Math.random().toString(16).slice(2, 10)}${Math.random()
-        .toString(16)
-        .slice(2, 10)}...`,
-      status: "confirmed",
-    });
   }
 
   // Generate some sending transactions
@@ -87,20 +73,6 @@ const generateTransactions = (walletAddress: string) => {
     const date = new Date(
       now.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000,
     );
-
-    transactions.push({
-      id: `tx-send-${i}`,
-      type: "send",
-      from: walletAddress,
-      to: randomAddress,
-      amount,
-      token: "ETH",
-      date,
-      hash: `0x${Math.random().toString(16).slice(2, 10)}${Math.random()
-        .toString(16)
-        .slice(2, 10)}...`,
-      status: Math.random() > 0.9 ? "pending" : "confirmed",
-    });
   }
 
   // Sort by date (newest first)

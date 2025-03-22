@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AppSidebar } from "@/components/app-sidebar";
 import {
   initDB,
   generateSecret,
@@ -283,21 +282,9 @@ export default function SecretsPage() {
 
   return (
     <div className="flex min-h-screen">
-      <AppSidebar />
       <main className="flex-1 p-6">
         <div className="flex flex-col gap-6">
           <h1 className="text-3xl font-bold">Encrypted Secrets</h1>
-
-          {!passkeySupported && (
-            <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-              <CardContent className="pt-6">
-                <p className="text-amber-800 dark:text-amber-300">
-                  Your browser doesn't support passkeys. You can still use
-                  password-based encryption.
-                </p>
-              </CardContent>
-            </Card>
-          )}
 
           {passkeySupported && !passkeyRegistered && (
             <Card>

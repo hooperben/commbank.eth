@@ -1,5 +1,7 @@
 "use client";
 
+import { generateJWT, generateRSAPair, storePublicKey } from "./db";
+
 // Passkey (WebAuthn) authentication and key derivation
 
 // Function to register a new passkey
@@ -47,6 +49,9 @@ export async function registerPasskey(username: string): Promise<boolean> {
     // Store the credential ID in localStorage for later use
     const credentialId = credential.id;
     localStorage.setItem("passkeyCredentialId", credentialId);
+
+    // Store the username in localStorage
+    localStorage.setItem("passkeyUsername", username);
 
     return true;
   } catch (error) {
@@ -151,4 +156,67 @@ export function isPasskeySupported(): boolean {
 // Check if a passkey is already registered
 export function isPasskeyRegistered(): boolean {
   return localStorage.getItem("passkeyCredentialId") !== null;
+}
+
+// Get the registered username if available
+export function getRegisteredUsername(): string | null {
+  return localStorage.getItem("passkeyUsername");
+}
+
+// Check if a username is already registered with a passkey
+export function isUsernameRegistered(): boolean {
+  return localStorage.getItem("passkeyUsername") !== null;
+}
+
+// Process post-registration steps (generate keys and JWT)
+export async function handleSuccessfulRegistration(
+  username: string,
+  authData: ArrayBuffer,
+): Promise<string> {
+  try {
+    // Derive key from passkey authentication data
+    const key = await deriveKeyFromPasskey(authData);
+
+    // Generate a secret from the authentication data
+    const secret = Array.from(new Uint8Array(authData))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    // Generate RSA key pair
+    const rsaKeyPair = await generateRSAPair(secret, username);
+
+    // Extract public key
+    const publicKey = await crypto.subtle.importKey(
+      "jwk",
+      rsaKeyPair.publicKey,
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: "SHA-256",
+      },
+      true,
+      ["verify"],
+    );
+
+    // Store public key
+    await storePublicKey(username, rsaKeyPair.publicKey);
+
+    // Generate JWT
+    const privateKey = await crypto.subtle.importKey(
+      "jwk",
+      rsaKeyPair.privateKey,
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: "SHA-256",
+      },
+      true,
+      ["sign"],
+    );
+
+    const jwt = await generateJWT({ username, sub: username }, privateKey);
+
+    return jwt;
+  } catch (error) {
+    console.error("Error in post-registration process:", error);
+    throw error;
+  }
 }

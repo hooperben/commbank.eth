@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { ThemeToggle } from "@/components/theme-toggle";
+import ThemeToggle from "@/components/theme-toggle";
 import SideBarContent from "@/components/sidebar/sidebar-content";
 
 export function AppSidebar() {
@@ -13,15 +13,17 @@ export function AppSidebar() {
           <Link href="/" className="flex items-center gap-2">
             commbank.eth
           </Link>
-          <div className="ml-auto">
-            <ThemeToggle />
-          </div>
         </div>
 
         <SideBarContent />
+
         <div className="border-t p-4">
           <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-muted-foreground">
-            <div className="text-sm"></div>
+            <div className="text-sm">
+              <div>
+                <ThemeToggle />
+              </div>
+            </div>
           </div>
         </div>
       </div>

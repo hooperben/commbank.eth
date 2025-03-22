@@ -41,6 +41,16 @@ export const initDB = (): Promise<void> => {
       if (!database.objectStoreNames.contains("secrets")) {
         database.createObjectStore("secrets", { keyPath: "id" });
       }
+
+      // Create an object store for RSA keys if it doesn't exist
+      if (!database.objectStoreNames.contains("rsa_keys")) {
+        database.createObjectStore("rsa_keys", { autoIncrement: true });
+      }
+
+      // Create an object store for public keys if it doesn't exist
+      if (!database.objectStoreNames.contains("public_keys")) {
+        database.createObjectStore("public_keys", { keyPath: "username" });
+      }
     };
   });
 };
@@ -139,6 +149,7 @@ const deriveKeyFromPassword = async (
 
 // Encrypt a secret with a password
 export const encryptSecret = async (
+  id: string,
   secret: string,
   password: string | ArrayBuffer,
   usePasskey = false,
@@ -172,7 +183,7 @@ export const encryptSecret = async (
   );
 
   return {
-    id: "secret-" + Date.now(), // Generate a unique ID
+    id,
     encryptedData,
     iv,
     salt,
@@ -241,7 +252,6 @@ export const storeEncryptedSecret = (
     };
   });
 };
-
 // Get all encrypted secrets from IndexedDB
 export const getAllEncryptedSecrets = (): Promise<EncryptedSecret[]> => {
   return new Promise((resolve, reject) => {
@@ -306,6 +316,216 @@ export const deleteEncryptedSecret = (id: string): Promise<void> => {
 
     request.onerror = () => {
       reject(new Error("Failed to delete encrypted secret"));
+    };
+  });
+};
+
+// Generate and store RSA key pair using a seed derived from the passkey
+export const generateRSAPair = async (
+  secret: string,
+  username: string,
+): Promise<object> => {
+  // Create a seed from the secret and username
+  const encoder = new TextEncoder();
+  const seedData = encoder.encode(secret + username);
+
+  // Generate RSA key pair
+  const keyPair = await crypto.subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), // 65537
+      hash: "SHA-256",
+    },
+    true, // extractable
+    ["encrypt", "decrypt"],
+  );
+
+  // Export keys to JWK format for storage
+  const publicKey = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+  const privateKey = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+
+  // Create key pair object
+  const rsaKeyPair = {
+    username,
+    publicKey,
+    privateKey,
+    createdAt: Date.now(),
+  };
+
+  // Store the key pair
+  await storeRSAKeyPair(rsaKeyPair);
+
+  return rsaKeyPair;
+};
+
+// Store RSA key pair in IndexedDB
+export const storeRSAKeyPair = (keyPair: object): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    const transaction = db.transaction(["rsa_keys"], "readwrite");
+    const store = transaction.objectStore("rsa_keys");
+    const request = store.add(keyPair);
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = () => {
+      reject(new Error("Failed to store RSA key pair"));
+    };
+  });
+};
+
+// Store public key in IndexedDB
+export const storePublicKey = (
+  username: string,
+  publicKey: any,
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    const transaction = db.transaction(["public_keys"], "readwrite");
+    const store = transaction.objectStore("public_keys");
+    const request = store.put({ username, publicKey });
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = () => {
+      reject(new Error("Failed to store public key"));
+    };
+  });
+};
+
+// Generate JWT token signed with the private key
+export const generateJWT = async (
+  payload: object,
+  privateKey: CryptoKey,
+): Promise<string> => {
+  // Create JWT header
+  const header = {
+    alg: "RS256",
+    typ: "JWT",
+  };
+
+  // Add expiration to payload
+  const finalPayload = {
+    ...payload,
+    exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour expiration
+  };
+
+  // Encode header and payload
+  const encoder = new TextEncoder();
+  const headerString = JSON.stringify(header);
+  const payloadString = JSON.stringify(finalPayload);
+
+  const encodedHeader = btoa(headerString).replace(/=+$/, "");
+  const encodedPayload = btoa(payloadString).replace(/=+$/, "");
+
+  // Create signature base
+  const signatureBase = `${encodedHeader}.${encodedPayload}`;
+
+  // Sign the JWT
+  const signature = await crypto.subtle.sign(
+    { name: "RSASSA-PKCS1-v1_5" },
+    privateKey,
+    encoder.encode(signatureBase),
+  );
+
+  // Convert signature to base64
+  const encodedSignature = btoa(
+    String.fromCharCode(...new Uint8Array(signature)),
+  )
+    .replace(/=+$/, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+
+  // Return complete JWT
+  return `${signatureBase}.${encodedSignature}`;
+};
+
+// Verify JWT token
+export const verifyJWT = async (
+  token: string,
+  publicKey: CryptoKey,
+): Promise<boolean> => {
+  try {
+    const [headerB64, payloadB64, signatureB64] = token.split(".");
+
+    // Decode payload to check expiration
+    const decoder = new TextDecoder();
+    const payloadJson = atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(payloadJson);
+
+    // Check if token is expired
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      return false;
+    }
+
+    // Verify signature
+    const signatureBase = `${headerB64}.${payloadB64}`;
+    const signature = new Uint8Array(
+      atob(signatureB64.replace(/-/g, "+").replace(/_/g, "/"))
+        .split("")
+        .map((c) => c.charCodeAt(0)),
+    );
+
+    const isValid = await crypto.subtle.verify(
+      { name: "RSASSA-PKCS1-v1_5" },
+      publicKey,
+      signature,
+      new TextEncoder().encode(signatureBase),
+    );
+
+    return isValid;
+  } catch (error) {
+    console.error("JWT verification failed:", error);
+    return false;
+  }
+};
+
+// Get RSA keys with JWT verification
+export const getRSAKeys = async (
+  jwt: string,
+  publicKey: CryptoKey,
+): Promise<object | null> => {
+  // Verify the JWT first
+  const isValid = await verifyJWT(jwt, publicKey);
+
+  if (!isValid) {
+    throw new Error("Invalid or expired JWT");
+  }
+
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    const transaction = db.transaction(["rsa_keys"], "readonly");
+    const store = transaction.objectStore("rsa_keys");
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      if (request.result && request.result.length > 0) {
+        resolve(request.result[request.result.length - 1]); // Get most recent key pair
+      } else {
+        resolve(null);
+      }
+    };
+
+    request.onerror = () => {
+      reject(new Error("Failed to get RSA keys"));
     };
   });
 };
