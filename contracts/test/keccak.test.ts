@@ -3,6 +3,7 @@ import hre from "hardhat";
 import { getTestingAPI } from "../helpers/testing-api";
 import { InputMap, Noir } from "@noir-lang/noir_js";
 import { UltraHonkBackend } from "@aztec/bb.js";
+import { Wallet, keccak256 } from "ethers";
 
 describe("Lock", function () {
   async function deployKeccak256() {
@@ -19,9 +20,10 @@ describe("Lock", function () {
   let backend: UltraHonkBackend;
   let noir: Noir;
   let circuit: Noir;
+  let alice: Wallet;
 
   before(async () => {
-    ({ circuit, noir, backend } = await getTestingAPI());
+    ({ circuit, noir, backend, alice } = await getTestingAPI());
     console.log("noir stuff loaded");
   });
 
@@ -122,6 +124,71 @@ describe("Lock", function () {
       const isValid = await backend.verifyProof({ proof, publicInputs });
 
       console.log("isValid", isValid);
+
+      await keccak256Proof.testProof(proof.slice(4), publicInputs);
+    });
+
+    const convertFromHexToArray = (rawInput: string): Uint8Array => {
+      const formattedInput = rawInput.startsWith("0x")
+        ? rawInput.slice(2)
+        : rawInput;
+
+      const evenFormattedInput =
+        formattedInput.length % 2 === 0 ? formattedInput : "0" + formattedInput;
+
+      return Uint8Array.from(Buffer.from(evenFormattedInput, "hex"));
+    };
+
+    it.only("should construct a leaf hash", async () => {
+      const { keccak256Proof } = await loadFixture(deployKeccak256);
+
+      const alicePubKey = keccak256(alice.privateKey);
+      const depositAmount = 69_420n;
+
+      // Create a proper big-endian byte array from the number
+      const amount = new Uint8Array(32);
+      // Convert to big-endian representation (most significant byte first)
+      let tempAmount = depositAmount;
+      for (let i = 31; i >= 0; i--) {
+        amount[i] = Number(tempAmount & 0xffn);
+        tempAmount = tempAmount >> 8n;
+      }
+
+      const depositAddress = "0x0000000000000000000000000000000000000000";
+      const assetId = convertFromHexToArray(depositAddress);
+
+      const noteHash = keccak256(
+        Uint8Array.from([
+          ...convertFromHexToArray(alicePubKey),
+          ...amount,
+          ...assetId,
+        ]),
+      );
+
+      console.log("note hash: ", noteHash);
+      console.log("user pub key: ", alicePubKey);
+
+      const input = {
+        hash: Array.from(convertFromHexToArray(noteHash)).map((item) =>
+          item.toString(),
+        ),
+        amount: depositAmount.toString(), // Convert bigint to number for Noir
+        amount_array: Array.from(amount).map((item) => item.toString()),
+        pub_key: Array.from(convertFromHexToArray(alicePubKey)).map((item) =>
+          item.toString(),
+        ),
+        asset_id: Array.from(assetId).map((item) => item.toString()),
+      };
+
+      // console.log(input);
+
+      const { witness } = await noir.execute(input as unknown as InputMap);
+
+      const { proof, publicInputs } = await backend.generateProof(witness, {
+        keccak: true,
+      });
+
+      console.log(publicInputs.length);
 
       await keccak256Proof.testProof(proof.slice(4), publicInputs);
     });

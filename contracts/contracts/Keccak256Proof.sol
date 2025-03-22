@@ -27,15 +27,34 @@ contract Keccak256Proof {
         bytes calldata _proof,
         bytes32[] calldata _publicInputs
     ) public {
-        bytes32 willItWork = combinePublicInputs(_publicInputs);
+        bytes32 noteHash = reconstructBytes32FromArray(_publicInputs[0:32]);
+        console.logBytes32(noteHash);
+
+        bytes32 value = reconstructBytes32FromArray(_publicInputs[33:65]);
+
+        uint256 converted = uint256(value);
+
+        console.logBytes32(value);
+        console.log(converted);
+
+        bytes32 userPubKey = reconstructBytes32FromArray(_publicInputs[65:97]);
+
+        console.logBytes32(userPubKey);
+
+        console.log(_publicInputs.length);
+
+        address depositAddress = reconstructAddressFromArray(
+            _publicInputs[97:117]
+        );
+        console.log(depositAddress);
 
         bool validProof = verifier.verify(_proof, _publicInputs);
 
         require(validProof, "Proof Failed");
 
-        proofRan = address(1);
+        // proofRan = address(1);
 
-        console.logBytes32(willItWork);
+        // console.logBytes32(willItWork);
     }
 
     function deposit(
@@ -54,37 +73,39 @@ contract Keccak256Proof {
         token.transferFrom(msg.sender, address(this), erc20Amount);
     }
 
-    function convertToBytes32(
-        uint8[32] memory _array
-    ) public view returns (bytes32) {
-        bytes32 result;
-
-        for (uint256 i = 0; i < 32; i++) {
-            // Shift each byte to its correct position and OR it with the result
-            result = result | bytes32(uint256(_array[i]) << (8 * (31 - i)));
-        }
-
-        return result;
-    }
-
     function keccakTest() public view returns (bytes32) {
         bytes32 test = keccak256(abi.encode(bytes32(0)));
         return test;
     }
 
-    function combinePublicInputs(
-        bytes32[] calldata _publicInputs
+    function reconstructAddressFromArray(
+        bytes32[] calldata _inputs
+    ) public pure returns (address) {
+        require(_inputs.length == 20, "Invalid length");
+
+        bytes32 result;
+
+        for (uint256 i = 0; i < 20; i++) {
+            // Extract the least significant byte from each bytes32 element
+            uint8 lsb = uint8(uint256(_inputs[i]) & 0xff);
+
+            // Shift it to its correct position in the final result and combine with OR
+            result = result | bytes32(uint256(lsb) << (8 * (31 - i)));
+        }
+
+        return address(uint160(uint256(result)));
+    }
+
+    function reconstructBytes32FromArray(
+        bytes32[] calldata _inputs
     ) public pure returns (bytes32) {
-        require(
-            _publicInputs.length == 32,
-            "Input must have exactly 32 elements"
-        );
+        require(_inputs.length == 32, "Input must have exactly 32 elements");
 
         bytes32 result;
 
         for (uint256 i = 0; i < 32; i++) {
             // Extract the least significant byte from each bytes32 element
-            uint8 lsb = uint8(uint256(_publicInputs[i]) & 0xff);
+            uint8 lsb = uint8(uint256(_inputs[i]) & 0xff);
 
             // Shift it to its correct position in the final result and combine with OR
             result = result | bytes32(uint256(lsb) << (8 * (31 - i)));
