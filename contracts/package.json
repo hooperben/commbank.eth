@@ -1,7 +1,8 @@
 {
   "name": "contracts",
   "scripts": {
-    "build": "./scripts/bash/build-and-export-circuits.sh"
+    "build": "./scripts/bash/build-and-export-circuits.sh",
+    "wasm": "cd ../rust-rsa && cargo build --target wasm32-unknown-unknown --features wasm --no-default-features && wasm-bindgen --target nodejs target/wasm32-unknown-unknown/debug/signature_gen.wasm --out-dir ../contracts/web"
   },
   "devDependencies": {
     "@aztec/bb.js": "0.72.1",
