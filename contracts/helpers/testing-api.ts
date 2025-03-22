@@ -3,10 +3,33 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import { UltraHonkBackend } from "@aztec/bb.js";
 import hre, { ethers } from "hardhat";
+import fs from "fs";
+import RSA from "./rsa";
+
+const RSA_ACCOUNTS = ["alice", "bob"];
+const RSA_ACCOUNT_PATH = "./const/";
 
 export const getTestingAPI = async <T = UltraHonkBackend>(
   backendClass?: new (bytecode: string) => T,
 ) => {
+  const rsa = RSA();
+
+  const [aliceRSA, bobRSA] = RSA_ACCOUNTS.map((item) => {
+    const parsedJson = JSON.parse(
+      fs.readFileSync(`${RSA_ACCOUNT_PATH}${item}.json`).toString(),
+    );
+    const aliceRSAFormed = {
+      private_key: new Uint8Array(parsedJson.private_key.map(Number)),
+      public_key: new Uint8Array(parsedJson.public_key.map(Number)),
+    };
+
+    const restoredKeyPair = new rsa.KeyPair(
+      aliceRSAFormed.private_key,
+      aliceRSAFormed.public_key,
+    );
+    return restoredKeyPair;
+  });
+
   const keccakFile = readFileSync(
     resolve("../circuits/target/circuits.json"),
     "utf-8",
@@ -50,5 +73,5 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
     value: ethers.parseEther("1000.0"),
   });
 
-  return { circuit, noir, backend, alice, bob };
+  return { circuit, noir, backend, alice, bob, aliceRSA, bobRSA };
 };

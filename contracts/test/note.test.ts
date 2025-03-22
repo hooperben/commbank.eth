@@ -1,68 +1,51 @@
 import RSA, { SignatureGenModule } from "../helpers/rsa";
 import { KeyPair } from "../web/signature_gen";
 
-import fs from "fs";
+import { getTestingAPI } from "../helpers/testing-api";
+import { InputMap, Noir } from "@noir-lang/noir_js";
+import { UltraHonkBackend } from "@aztec/bb.js";
+import { Wallet, keccak256 } from "ethers";
 
 describe("Note creation and flow testing", () => {
   let rsa: typeof SignatureGenModule;
 
-  before(() => {
+  let backend: UltraHonkBackend;
+  let noir: Noir;
+  let circuit: Noir;
+  let alice: Wallet;
+  let bob: Wallet;
+  let aliceRSA: KeyPair;
+  let bobRSA: KeyPair;
+
+  before(async () => {
     rsa = RSA();
+    ({ circuit, noir, backend, alice, bob, aliceRSA, bobRSA } =
+      await getTestingAPI());
   });
 
   it.only("should let me create a key pair", async () => {
-    // const aliceRSA = rsa.create_key_pair("alice", 2048, 65537);
+    // Convert public key to hex string
+    const publicKeyBytes = Array.from(Object.values(aliceRSA.public_key));
+    const publicKeyHex =
+      "0x" +
+      publicKeyBytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
 
-    // // Convert to JSON string
-    // const jsonKeyPair = JSON.stringify({
-    //   private_key: Array.from(aliceRSA.private_key).map((item) =>
-    //     item.toString(),
-    //   ),
-    //   public_key: Array.from(aliceRSA.public_key).map((item) =>
-    //     item.toString(),
-    //   ),
-    // });
-
-    // fs.writeFileSync("./alice.json", jsonKeyPair);
-    const content = await fs.readFileSync("./alice.json");
-
-    // Parse the JSON content
-    const parsedJson = JSON.parse(content.toString());
-
-    // Convert string arrays back to Uint8Array
-    const aliceRSAFormed = {
-      private_key: new Uint8Array(parsedJson.private_key.map(Number)),
-      public_key: new Uint8Array(parsedJson.public_key.map(Number)),
+    const note = {
+      secret:
+        "0xc0160463fbe2d99a4f7f9ffd93a0789132980899da181cc42021488404fa7c31",
+      asset: "0xF0bAfD58E23726785A1681e1DEa0da15cB038C61",
+      amount: "18446744073709551615", // Maximum value for u64 in Rust (2^64 - 1)
     };
 
-    console.log(aliceRSAFormed);
-
-    // const aliceRSA = new rsa.KeyPair(
-
-    // )
-
-    // console.log("Serialized key pair:", jsonKeyPair);
-
-    const restoredKeyPair = new rsa.KeyPair(
-      aliceRSAFormed.private_key,
-      aliceRSAFormed.public_key,
-    );
-
-    console.log(restoredKeyPair);
-
-    const messageToEncrypt = "hello! this is super secret";
-
-    // You can then use the restored key pair for signatures
     const encryptedMessage = rsa.encrypt(
-      messageToEncrypt,
-      restoredKeyPair.public_key,
+      `${note.secret}${note.asset}${note.amount}`,
+      aliceRSA.public_key,
     );
-
     console.log(encryptedMessage);
 
     const decryptedMessage = rsa.decrypt(
       encryptedMessage,
-      restoredKeyPair.private_key,
+      aliceRSA.private_key,
     );
 
     console.log(decryptedMessage);
