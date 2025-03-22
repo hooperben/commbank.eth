@@ -50,5 +50,5 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
     value: ethers.parseEther("1000.0"),
   });
 
-  return { circuit, noir, backend, alice };
+  return { circuit, noir, backend, alice, bob };
 };

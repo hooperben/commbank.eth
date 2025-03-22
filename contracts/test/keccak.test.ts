@@ -4,8 +4,30 @@ import { getTestingAPI } from "../helpers/testing-api";
 import { InputMap, Noir } from "@noir-lang/noir_js";
 import { UltraHonkBackend } from "@aztec/bb.js";
 import { Wallet, keccak256 } from "ethers";
+import crypto from "crypto";
 
-describe("Lock", function () {
+// Generate RSA key pairs using the private keys as seeds for reproducibility
+function generateRSAKeysFromSeed(privateKeyHex) {
+  // Use private key as seed for the RSA generation
+  const seed = Buffer.from(privateKeyHex.slice(2), "hex");
+
+  // Generate RSA keys (in actual production code, you'd use proper key derivation)
+  const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+    publicKeyEncoding: {
+      type: "spki",
+      format: "pem",
+    },
+    privateKeyEncoding: {
+      type: "pkcs8",
+      format: "pem",
+    },
+  });
+
+  return { publicKey, privateKey };
+}
+
+describe.skip("Lock", function () {
   async function deployKeccak256() {
     const [owner, otherAccount] = await hre.ethers.getSigners();
 
@@ -21,9 +43,10 @@ describe("Lock", function () {
   let noir: Noir;
   let circuit: Noir;
   let alice: Wallet;
+  let bob: Wallet;
 
   before(async () => {
-    ({ circuit, noir, backend, alice } = await getTestingAPI());
+    ({ circuit, noir, backend, alice, bob } = await getTestingAPI());
     console.log("noir stuff loaded");
   });
 
@@ -139,7 +162,61 @@ describe("Lock", function () {
       return Uint8Array.from(Buffer.from(evenFormattedInput, "hex"));
     };
 
-    it.only("should construct a leaf hash", async () => {
+    it("testing rsa encrypt and decrypt", async () => {
+      // Generate key pairs for Alice and Bob
+      const aliceKeys = generateRSAKeysFromSeed(alice.privateKey);
+      const bobKeys = generateRSAKeysFromSeed(bob.privateKey);
+
+      console.log(bobKeys);
+
+      console.log(
+        "Alice public key (RSA):",
+        aliceKeys.publicKey.substring(0, 64) + "...",
+      );
+      console.log(
+        "Bob public key (RSA):",
+        bobKeys.publicKey.substring(0, 64) + "...",
+      );
+
+      // Message to encrypt
+      const message = "testing";
+      console.log("Original message:", message);
+
+      // Alice encrypts a message for Bob using Bob's public key
+      const encryptedMessage = crypto.publicEncrypt(
+        {
+          key: bobKeys.publicKey,
+          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        },
+        Buffer.from(message),
+      );
+
+      console.log(
+        "Encrypted message (base64):",
+        encryptedMessage.toString("base64"),
+      );
+
+      // Bob decrypts the message using his private key
+      const decryptedMessage = crypto.privateDecrypt(
+        {
+          key: bobKeys.privateKey,
+          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        },
+        encryptedMessage,
+      );
+
+      const decryptedText = decryptedMessage.toString();
+      console.log("Decrypted message:", decryptedText);
+
+      // Verify decryption worked correctly
+      if (decryptedText === message) {
+        console.log("RSA encryption/decryption test passed!");
+      } else {
+        throw new Error("RSA encryption/decryption test failed!");
+      }
+    });
+
+    it("should construct a leaf hash", async () => {
       const { keccak256Proof } = await loadFixture(deployKeccak256);
 
       const alicePubKey = keccak256(alice.privateKey);

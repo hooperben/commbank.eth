@@ -1,2 +1,8 @@
 # TODO this can go into source control later probably
 target/
+
+/target
+./.DS_Store
+
+private_key.pem
+public_key.pem
