@@ -10,5 +10,5 @@ cargo build --target wasm32-unknown-unknown --features wasm --no-default-feature
 wasm-bindgen --target nodejs target/wasm32-unknown-unknown/debug/signature_gen.wasm --out-dir ../contracts/web
 
 # OR for web browsers (original)
-# wasm-bindgen --target web target/wasm32-unknown-unknown/debug/signature_gen.wasm --out-dir ../contracts/web
+# wasm-bindgen --target web target/wasm32-unknown-unknown/debug/signature_gen.wasm --out-dir ../client/wasm
 ```
