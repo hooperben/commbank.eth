@@ -64,6 +64,22 @@ impl KeyPair {
     pub fn public_key(&self) -> Vec<u8> {
         self.public_key.clone()
     }
+
+    #[wasm_bindgen(constructor)]
+    pub fn new(private_key: Vec<u8>, public_key: Vec<u8>) -> Result<KeyPair, JsError> {
+        // Validate the private key format by trying to parse it
+        let _: RsaPrivateKey = rsa::pkcs8::DecodePrivateKey::from_pkcs8_der(&private_key)
+            .map_err(|e| JsError::new(&format!("Invalid private key format: {}", e)))?;
+
+        // Validate the public key format by trying to parse it
+        let _: RsaPublicKey = rsa::pkcs8::DecodePublicKey::from_public_key_der(&public_key)
+            .map_err(|e| JsError::new(&format!("Invalid public key format: {}", e)))?;
+
+        Ok(KeyPair {
+            private_key,
+            public_key,
+        })
+    }
 }
 
 #[wasm_bindgen]

@@ -27,7 +27,7 @@ function generateRSAKeysFromSeed(privateKeyHex) {
   return { publicKey, privateKey };
 }
 
-describe.skip("Lock", function () {
+describe("Lock", function () {
   async function deployKeccak256() {
     const [owner, otherAccount] = await hre.ethers.getSigners();
 

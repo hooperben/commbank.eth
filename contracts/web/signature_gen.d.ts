@@ -12,8 +12,8 @@ export class EncryptedMessage {
   readonly data: Uint8Array;
 }
 export class KeyPair {
-  private constructor();
   free(): void;
+  constructor(private_key: Uint8Array, public_key: Uint8Array);
   readonly private_key: Uint8Array;
   readonly public_key: Uint8Array;
 }
