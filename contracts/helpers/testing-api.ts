@@ -74,5 +74,18 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
     value: ethers.parseEther("1000.0"),
   });
 
-  return { circuit, noir, backend, alice, bob, aliceRSA, bobRSA };
+  // CONTRACTS
+  const Keccak256Proof = await hre.ethers.getContractFactory("Keccak256Proof");
+  const keccak256Proof = await Keccak256Proof.deploy();
+
+  return {
+    circuit,
+    noir,
+    backend,
+    alice,
+    bob,
+    aliceRSA,
+    bobRSA,
+    keccak256Proof,
+  };
 };

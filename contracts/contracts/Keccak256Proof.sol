@@ -6,17 +6,13 @@ import "./verifiers/contract.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "./TestToken.sol";
-
 import "hardhat/console.sol";
 
 contract Keccak256Proof {
     HonkVerifier verifier;
-    TestToken testToken;
 
     constructor() {
         verifier = new HonkVerifier();
-        testToken = new TestToken();
     }
 
     error NumTooBig();

@@ -23,7 +23,7 @@ describe("Note creation and flow testing", () => {
       await getTestingAPI());
   });
 
-  it.only("should let me create a key pair", async () => {
+  it("should let me create a key pair", async () => {
     const note = {
       secret:
         "0xc0160463fbe2d99a4f7f9ffd93a0789132980899da181cc42021488404fa7c31",
