@@ -2,7 +2,8 @@
 pragma solidity ^0.8.28;
 
 import "./MerkleTree.sol";
-import "./verifiers/NoteVerifier.sol";
+import {NoteVerifier} from "./verifiers/NoteVerifier.sol";
+import {TransactVerifier} from "./verifiers/TransactVerifier.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -11,9 +12,11 @@ import "hardhat/console.sol";
 
 contract CommBankDotEth is MerkleTree {
     NoteVerifier noteVerifier;
+    TransactVerifier transactVerifier;
 
-    constructor() MerkleTree() {
-        noteVerifier = new NoteVerifier();
+    constructor(address _noteVerifier, address _transactVerifier) MerkleTree() {
+        noteVerifier = NoteVerifier(_noteVerifier);
+        transactVerifier = TransactVerifier(_transactVerifier);
     }
 
     function reconstructAddressFromArray(
@@ -98,4 +101,6 @@ contract CommBankDotEth is MerkleTree {
         emit LeafAdded(index - 1, noteHash);
         emit EncryptedSecret(index - 1, _payload);
     }
+
+    function transfer() public {}
 }

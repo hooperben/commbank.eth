@@ -27,7 +27,9 @@ describe("Note creation and flow testing", () => {
 
   let backend: UltraHonkBackend;
   let noir: Noir;
-  let circuit: Noir;
+  let transactBackend: UltraHonkBackend;
+  let transactNoir: Noir;
+
   let alice: Wallet;
   let bob: Wallet;
   let aliceRSA: KeyPair;
@@ -39,9 +41,10 @@ describe("Note creation and flow testing", () => {
   before(async () => {
     rsa = RSA();
     ({
-      circuit,
       noir,
       backend,
+      transactNoir,
+      transactBackend,
       alice,
       bob,
       aliceRSA,
@@ -159,18 +162,23 @@ describe("Note creation and flow testing", () => {
     });
 
     const paths = merklePath.map((x) => x.path);
-    const values = merklePath.map((x) => [x.value]);
+    const values = merklePath.map((x) => x.value);
+
+    const formatUint8Array = (inputArray: Uint8Array) =>
+      Array.from(inputArray.map((item) => Number(item)));
 
     const inputNote = {
-      owner: alicePubKey,
-      owner_secret: convertFromHexToArray(keccak256(aliceRSA.private_key)),
-      note_secret: noteSecret,
-      asset_id: assetId,
-      amount_array: amount,
+      owner: formatUint8Array(alicePubKey),
+      owner_secret: formatUint8Array(
+        convertFromHexToArray(keccak256(aliceRSA.private_key)),
+      ),
+      note_secret: formatUint8Array(noteSecret),
+      asset_id: formatUint8Array(assetId),
+      amount_array: formatUint8Array(amount),
       amount: depositAmount.toString(),
-      leaf_index: numberToUint8Array(leafDetails.leafIndex),
+      leaf_index: formatUint8Array(numberToUint8Array(leafDetails.leafIndex)),
       path: paths,
-      path_data: values,
+      path_data: values.map((item) => formatUint8Array(item)),
     };
 
     const inputNoteNullifier = keccak256(
@@ -184,21 +192,23 @@ describe("Note creation and flow testing", () => {
 
     // we are sending bob 420 tokens. Alice should have 69000 left over
     const aliceOutputNote = {
-      owner: alicePubKey,
-      secret: generateRandomSecret(),
-      asset_id: assetId,
-      amount_array: numberToUint8Array(69000n),
+      owner: formatUint8Array(alicePubKey),
+      note_secret: formatUint8Array(generateRandomSecret()),
+      asset_id: formatUint8Array(assetId),
+      amount_array: formatUint8Array(numberToUint8Array(69000n)),
       amount: 69000,
     };
 
-    const aliceOutputNoteHash = convertFromHexToArray(
-      keccak256(
-        Uint8Array.from([
-          ...alicePubKey,
-          ...aliceOutputNote.amount_array,
-          ...assetId,
-          ...aliceOutputNote.secret,
-        ]),
+    const aliceOutputNoteHash = formatUint8Array(
+      convertFromHexToArray(
+        keccak256(
+          Uint8Array.from([
+            ...alicePubKey,
+            ...aliceOutputNote.amount_array,
+            ...assetId,
+            ...aliceOutputNote.note_secret,
+          ]),
+        ),
       ),
     );
 
@@ -207,88 +217,69 @@ describe("Note creation and flow testing", () => {
     );
 
     const bobOutputNote = {
-      owner: Array.from(bobPubKey),
-      secret: generateRandomSecret(),
-      asset_id: assetId,
-      amount_array: numberToUint8Array(420n),
+      owner: formatUint8Array(bobPubKey),
+      note_secret: formatUint8Array(generateRandomSecret()),
+      asset_id: formatUint8Array(assetId),
+      amount_array: formatUint8Array(numberToUint8Array(420n)),
       amount: 420,
     };
 
-    const bobOutputNoteHash = convertFromHexToArray(
-      keccak256(
-        Uint8Array.from([
-          ...bobPubKey,
-          ...bobOutputNote.amount_array,
-          ...assetId,
-          ...bobOutputNote.secret,
-        ]),
+    const bobOutputNoteHash = formatUint8Array(
+      convertFromHexToArray(
+        keccak256(
+          Uint8Array.from([
+            ...bobPubKey,
+            ...bobOutputNote.amount_array,
+            ...assetId,
+            ...bobOutputNote.note_secret,
+          ]),
+        ),
       ),
     );
 
+    const emptyNullifier = formatUint8Array(numberToUint8Array(0n));
+    const emptyNote = {
+      owner: formatUint8Array(new Uint8Array(32)),
+      owner_secret: formatUint8Array(new Uint8Array(32)),
+      note_secret: formatUint8Array(new Uint8Array(32)),
+      asset_id: formatUint8Array(new Uint8Array(20)),
+      amount_array: formatUint8Array(new Uint8Array(32)),
+      amount: 0,
+      leaf_index: formatUint8Array(numberToUint8Array(0n)),
+      path: paths,
+      path_data: values.map((value) => formatUint8Array(value)),
+    };
+
     const transactInput = {
-      root: convertFromHexToArray("0x" + tree.getRoot().toString("hex")),
-      input_notes: [inputNote],
+      root: formatUint8Array(
+        convertFromHexToArray("0x" + tree.getRoot().toString("hex")),
+      ),
+      input_notes: [inputNote, emptyNote],
       output_notes: [aliceOutputNote, bobOutputNote],
-      nullifiers: [convertFromHexToArray(inputNoteNullifier)],
+      nullifiers: [
+        formatUint8Array(convertFromHexToArray(inputNoteNullifier)),
+        emptyNullifier,
+      ],
       output_hashes: [aliceOutputNoteHash, bobOutputNoteHash],
     };
 
-    console.log(
-      `let root = [${transactInput.root.map((item) => Number(item))}];`,
-    );
-    console.log(
-      `let alice_input_note: InputNote = InputNote {
-        owner: [${Array.from(inputNote.owner).map((n) => n)}],
-        owner_secret: [${Array.from(inputNote.owner_secret).map((n) => n)}],
-        note_secret: [${Array.from(inputNote.note_secret).map((n) => n)}],
-        asset_id: [${Array.from(inputNote.asset_id).map((n) => n)}],
-        amount_array: [${Array.from(inputNote.amount_array).map((n) => n)}],
-        amount: ${inputNote.amount},
-        leaf_index: [${Array.from(inputNote.leaf_index).map((n) => n)}],
-        path: [${inputNote.path.join(", ")}],
-        path_data: [[${inputNote.path_data
-          .map((array) => array.join(", "))
-          .join("], [")}]],
-      };`,
+    console.log(transactInput.input_notes[0].path_data);
+    console.log(transactInput.input_notes[1].path_data);
+
+    console.log("root:", transactInput.root);
+    console.log("input_notes:", transactInput.input_notes);
+    console.log("output_notes:", transactInput.output_notes);
+
+    const { witness: transactWitness } = await transactNoir.execute(
+      transactInput as unknown as InputMap,
     );
 
-    console.log(
-      `let alice_output_note: OutputNote = OutputNote {
-        owner: [${Array.from(aliceOutputNote.owner).map((n) => n)}],
-        note_secret: [${Array.from(aliceOutputNote.secret).map((n) => n)}],
-        asset_id: [${Array.from(aliceOutputNote.asset_id).map((n) => n)}],
-        amount_array: [${Array.from(aliceOutputNote.amount_array).map(
-          (n) => n,
-        )}],
-        amount: ${aliceOutputNote.amount},
-      };`,
-    );
+    const { proof: transactProof, publicInputs: transactPublicInputs } =
+      await transactBackend.generateProof(transactWitness, {
+        keccak: true,
+      });
 
-    console.log(
-      `let bob_output_note: OutputNote = OutputNote {
-        owner: [${bobOutputNote.owner.join(", ")}],
-        note_secret: [${Array.from(bobOutputNote.secret).map((n) => n)}],
-        asset_id: [${Array.from(bobOutputNote.asset_id).map((n) => n)}],
-        amount_array: [${Array.from(bobOutputNote.amount_array).map((n) => n)}],
-        amount: ${bobOutputNote.amount},
-      };`,
-    );
-
-    console.log(
-      `let alice_nullifier = [${transactInput.nullifiers[0].map((item) =>
-        Number(item),
-      )}];`,
-    );
-    console.log(
-      `let alice_output_hash = [${transactInput.output_hashes[0].map((item) =>
-        Number(item),
-      )}];`,
-    );
-    console.log(
-      `let bob_output_hash = [${transactInput.output_hashes[1].map((item) =>
-        Number(item),
-      )}];`,
-    );
+    console.log(transactPublicInputs);
   });
 
   it.skip("should output sol code for zeros() in merkle tree", async () => {

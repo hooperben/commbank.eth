@@ -19,6 +19,9 @@ const config: HardhatUserConfig = {
     enabled: true,
     excludeContracts: [],
   },
+  mocha: {
+    timeout: 100000000,
+  },
 };
 
 export default config;

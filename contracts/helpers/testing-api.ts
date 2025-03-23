@@ -6,6 +6,7 @@ import hre, { ethers } from "hardhat";
 import fs from "fs";
 import RSA from "./rsa";
 import { getEmptyTree } from "./merkle-tree";
+import { getNoir } from "./get-noir";
 
 const RSA_ACCOUNTS = ["alice", "bob"];
 const RSA_ACCOUNT_PATH = "./const/";
@@ -44,20 +45,15 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
     return restoredKeyPair;
   });
 
-  const keccakFile = readFileSync(
-    resolve("../circuits/deposit/target/circuits.json"),
-    "utf-8",
+  const { noir, backend } = await getNoir(
+    "../circuits/deposit/target/circuits.json",
+    backendClass,
   );
-  const keccakNoteCircuit = JSON.parse(keccakFile);
-  const circuit = new Noir(keccakNoteCircuit);
 
-  backendClass ||= await (async () => {
-    const { UltraHonkBackend } = await import("@aztec/bb.js");
-    return UltraHonkBackend as unknown as NonNullable<typeof backendClass>;
-  })();
-
-  const noir = new Noir(keccakNoteCircuit);
-  const backend = new backendClass(keccakNoteCircuit.bytecode);
+  const { noir: transactNoir, backend: transactBackend } = await getNoir(
+    "../circuits/transact/target/transact.json",
+    backendClass,
+  );
 
   const [funder] = await hre.ethers.getSigners();
 
@@ -94,15 +90,27 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
   const USDCMock = await hre.ethers.getContractFactory("USDC");
   const usdc = await USDCMock.deploy();
 
+  const NoteVerifier = await hre.ethers.getContractFactory("NoteVerifier");
+  const noteVerifier = await NoteVerifier.deploy();
+
+  const TransactVerifier = await hre.ethers.getContractFactory(
+    "TransactVerifier",
+  );
+  const transactVerifier = await TransactVerifier.deploy();
+
   const CommBank = await hre.ethers.getContractFactory("CommBankDotEth");
-  const commbank = await CommBank.deploy();
+  const commbank = await CommBank.deploy(
+    await noteVerifier.getAddress(),
+    await transactVerifier.getAddress(),
+  );
 
   const tree = getEmptyTree();
 
   return {
-    circuit,
     noir,
     backend,
+    transactNoir,
+    transactBackend,
     alice,
     bob,
     aliceRSA,

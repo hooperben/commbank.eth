@@ -11,13 +11,11 @@ describe("Testing keccak hash utility in noir => sol", function () {
   let keccak256Proof: Keccak256Proof;
   let backend: UltraHonkBackend;
   let noir: Noir;
-  let circuit: Noir;
   let alice: Wallet;
   let bob: Wallet;
 
   before(async () => {
-    ({ keccak256Proof, circuit, noir, backend, alice, bob } =
-      await getTestingAPI());
+    ({ keccak256Proof, noir, backend, alice, bob } = await getTestingAPI());
   });
 
   describe("Deployment", function () {
