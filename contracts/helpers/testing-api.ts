@@ -98,10 +98,16 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
   );
   const transactVerifier = await TransactVerifier.deploy();
 
+  const WithdrawVerifier = await hre.ethers.getContractFactory(
+    "WithdrawVerifier",
+  );
+  const withdrawVerifier = await WithdrawVerifier.deploy();
+
   const CommBank = await hre.ethers.getContractFactory("CommBankDotEth");
   const commbank = await CommBank.deploy(
     await noteVerifier.getAddress(),
     await transactVerifier.getAddress(),
+    await withdrawVerifier.getAddress(),
   );
 
   const tree = getEmptyTree();
