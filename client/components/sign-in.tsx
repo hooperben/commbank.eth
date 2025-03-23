@@ -5,6 +5,10 @@ import { authenticateWithPasskey } from "@/lib/passkey";
 import { Fingerprint } from "lucide-react";
 import { Button } from "./ui/button";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import {
+  generateAndStoreEVMAccount,
+  generateAndStoreRSAAccount,
+} from "@/lib/wallet";
 
 const SignIn = () => {
   const { signIn } = useAuth();
@@ -29,6 +33,7 @@ const SignIn = () => {
       }
 
       const decryptedSecret = await decryptSecret(commbankSecret, authData);
+
       signIn(decryptedSecret);
     } catch (err) {
       console.log(err);

@@ -51,6 +51,10 @@ export const initDB = (): Promise<void> => {
       if (!database.objectStoreNames.contains("public_keys")) {
         database.createObjectStore("public_keys", { keyPath: "username" });
       }
+
+      if (!database.objectStoreNames.contains("evm-accounts")) {
+        database.createObjectStore("evm-accounts", { keyPath: "address" });
+      }
     };
   });
 };

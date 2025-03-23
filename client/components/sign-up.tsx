@@ -25,6 +25,10 @@ import {
 } from "@/lib/passkey";
 import { encryptSecret, initDB, storeEncryptedSecret } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
+import {
+  generateAndStoreEVMAccount,
+  generateAndStoreRSAAccount,
+} from "@/lib/wallet";
 
 // Mock API call to check if username is available
 const checkUsernameAvailability = async (
@@ -172,6 +176,10 @@ const SignUp = () => {
       );
 
       await storeEncryptedSecret(encryptedSecret);
+
+      // generate EVM and RSA keys
+      generateAndStoreEVMAccount(secret, username);
+      await generateAndStoreRSAAccount(secret, username);
 
       signIn(secret);
 

@@ -25,13 +25,11 @@ export default function Home() {
     if (isPasskeyRegistered()) {
       setHasRegistered(true);
     }
-  }, [setHasRegistered, hasRegistered]);
-
-  // Fetch RSA keys when user is authenticated
+  }, [setHasRegistered, hasRegistered, token]);
 
   return (
     <div className="flex flex-col w-full">
-      <main className="flex-1 flex-col flex items-center justify-center p-6 w-full">
+      <main className="flex-1 flex-col flex justify-center p-6 w-full">
         {!isLoading && token ? (
           <AccountHome />
         ) : (

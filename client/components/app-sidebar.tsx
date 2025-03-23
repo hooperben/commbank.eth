@@ -1,4 +1,5 @@
-import { Calendar, Home, Inbox, Search, Settings, Users } from "lucide-react";
+import { Home, Users } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 import {
   Sidebar,
@@ -6,7 +7,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -33,6 +33,7 @@ const items = [
 
 export function AppSidebar() {
   const { token, signOut } = useAuth();
+  const pathname = usePathname();
 
   return (
     <Sidebar>
@@ -45,15 +46,23 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton
+                    asChild
+                    className={pathname === item.href ? "text-primary" : ""}
+                  >
                     <a href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
+                      <item.icon
+                        className={pathname === item.href ? "text-primary" : ""}
+                      />
+                      <span
+                        className={pathname === item.href ? "text-primary" : ""}
+                      >
+                        {item.label}
+                      </span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
