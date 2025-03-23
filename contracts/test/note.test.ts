@@ -9,6 +9,7 @@ import { generateZerosFunction } from "../helpers/merkle-tree";
 import { CommBankDotEth, USDC } from "../typechain-types";
 import { getLeafAddedDetails, getPayloadDetails } from "../helpers/logs";
 import { generateRandomSecret } from "../helpers/random";
+import MerkleTree from "merkletreejs";
 
 const convertFromHexToArray = (rawInput: string): Uint8Array => {
   const formattedInput = rawInput.startsWith("0x")
@@ -33,11 +34,22 @@ describe("Note creation and flow testing", () => {
   let bobRSA: KeyPair;
   let usdc: USDC;
   let commbank: CommBankDotEth;
+  let tree: MerkleTree;
 
   before(async () => {
     rsa = RSA();
-    ({ circuit, noir, backend, alice, bob, aliceRSA, bobRSA, usdc, commbank } =
-      await getTestingAPI());
+    ({
+      circuit,
+      noir,
+      backend,
+      alice,
+      bob,
+      aliceRSA,
+      bobRSA,
+      usdc,
+      commbank,
+      tree,
+    } = await getTestingAPI());
 
     await usdc.connect(alice).mint(alice.address, parseUnits("1000000", 6));
   });
@@ -64,7 +76,6 @@ describe("Note creation and flow testing", () => {
   });
 
   it.only("should let me deposit to the contract", async () => {
-    console.log(await usdc.balanceOf(alice.address));
     // approve commbank.eth to move USDC for the user
     await usdc
       .connect(alice)
@@ -82,29 +93,14 @@ describe("Note creation and flow testing", () => {
     }
 
     const assetId = convertFromHexToArray(await usdc.getAddress());
-
-    const aliceRSASecret = `0x${Array.from(aliceRSA.public_key).join("")}`;
-
-    const aliceOwnerPubKey = rsa.generate_signature_from_key(
-      aliceRSASecret,
-      aliceRSA.private_key,
-    );
-
-    const aliceSignatureCommitment = JSON.parse(
-      `[${aliceOwnerPubKey.hash}]`,
-    ) as number[];
-
     const noteSecret = generateRandomSecret();
 
-    console.log(noteSecret);
+    const alicePubKey = convertFromHexToArray(
+      keccak256(keccak256(aliceRSA.private_key)),
+    );
 
     const noteHash = keccak256(
-      Uint8Array.from([
-        ...aliceSignatureCommitment,
-        ...amount,
-        ...assetId,
-        ...noteSecret,
-      ]),
+      Uint8Array.from([...alicePubKey, ...amount, ...assetId, ...noteSecret]),
     );
 
     const input = {
@@ -114,10 +110,8 @@ describe("Note creation and flow testing", () => {
       ),
       amount: depositAmount.toString(), // Convert bigint to number for Noir
       amount_array: Array.from(amount).map((item) => item.toString()),
-      // pub key is RSA.sign(public_key)
-      pub_key: Array.from(aliceSignatureCommitment).map((item) =>
-        item.toString(),
-      ),
+      // pub key is keccak(keccak(rsa.private_key))
+      pub_key: Array.from(alicePubKey).map((item) => item.toString()),
       asset_id: Array.from(assetId).map((item) => item.toString()),
     };
 
@@ -152,12 +146,7 @@ describe("Note creation and flow testing", () => {
     const receipt = await tx.wait();
 
     const leafDetails = getLeafAddedDetails(commbank, receipt!.logs);
-
-    console.log(leafDetails);
-
     const encryptedBytes = getPayloadDetails(commbank, receipt!.logs);
-
-    console.log(encryptedBytes);
 
     const uint8ArrayEncryptedBytes = convertFromHexToArray(
       encryptedBytes.payload,
@@ -169,6 +158,9 @@ describe("Note creation and flow testing", () => {
 
     console.log("decryptedMessage: ", decryptedMessage);
     console.log("payload: ", payload);
+
+    // update our tree with the inserted note
+    tree.updateLeaf(leafDetails.leafIndex, leafDetails.noteHash);
 
     // Extract the LeafAdded event
   });

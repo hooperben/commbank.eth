@@ -12,8 +12,8 @@ upon success, this hash is inserted into the MerkleTree.
 
 contains the circuit that allows for private transfers. In order to complete a transfer, the sender needs to know:
 
-- the receivers RSA signature commitment
-  - this is given by `sig_commitment = rsa.sign(receiver.public_key, receiver.private_key)` (the users signed public key, signed by themselves). This was chosen as the only `noir-rsa` library I could find was for signature verification, not explicit private key => public key proving.
+- the receivers commbank.eth address
+  - this is given by `pub_key = keccak(keccak(rsa.secret_key))`. This can be improved, but was chosen as it made proving ownership of the rsa much easier than using or modifying noir rsa.
 - the receivers RSA public key
   - they need this as they encrypt the secret value of the note, and the receiver decrypts this with their RSA private key (all done by the web app).
 

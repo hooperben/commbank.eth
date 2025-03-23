@@ -95,7 +95,7 @@ contract CommBankDotEth is MerkleTree {
 
         uint256 index = _insert(noteHash);
 
-        emit LeafAdded(index, noteHash);
-        emit EncryptedSecret(index, _payload);
+        emit LeafAdded(index - 1, noteHash);
+        emit EncryptedSecret(index - 1, _payload);
     }
 }
