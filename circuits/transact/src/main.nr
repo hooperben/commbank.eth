@@ -98,7 +98,7 @@ struct InputNote {
 struct OutputNote {
     owner: [u8; 32],
     secret: [u8; 32],
-    asset: [u8; 20],
+    asset_id: [u8; 20],
     amount_array: [u8; 32],
     amount: u64,
 }
@@ -117,31 +117,66 @@ fn main(
         HashMap::default();
 
     for i in 0..2 {
-        let sender_pub_key = std::hash::keccak256(input_notes[i].owner_secret, 32);
+        if input_notes[i].amount != 0 {
+            let sender_pub_key = std::hash::keccak256(input_notes[i].owner_secret, 32);
 
-        assert(sender_pub_key == input_notes[i].owner_secret, "invalid owner");
+            assert(sender_pub_key == input_notes[i].owner_secret, "invalid owner");
 
-        let reconstructed_nullifier = calculate_nullifier(
-            input_notes[i].leaf_index,
-            input_notes[i].note_secret,
-            input_notes[i].amount_array,
-            input_notes[i].asset_id,
-        );
+            let reconstructed_nullifier = calculate_nullifier(
+                input_notes[i].leaf_index,
+                input_notes[i].note_secret,
+                input_notes[i].amount_array,
+                input_notes[i].asset_id,
+            );
 
-        assert(reconstructed_nullifier == nullifiers[i]);
+            assert(reconstructed_nullifier == nullifiers[i]);
 
-        let note_leaf = calculate_leaf(
-            input_notes[i].owner,
-            input_notes[i].amount_array,
-            input_notes[i].asset_id,
-            input_notes[i].note_secret,
-        );
+            let note_leaf = calculate_leaf(
+                input_notes[i].owner,
+                input_notes[i].amount_array,
+                input_notes[i].asset_id,
+                input_notes[i].note_secret,
+            );
 
-        let merkle_root =
-            compute_keccak_merkle_hash(note_leaf, input_notes[i].path, input_notes[i].path_data);
+            let merkle_root = compute_keccak_merkle_hash(
+                note_leaf,
+                input_notes[i].path,
+                input_notes[i].path_data,
+            );
 
-        assert(root == merkle_root, "Invalid merkle proof");
+            assert(root == merkle_root, "Invalid merkle proof");
 
-        inputs_map.insert(input_notes[i].asset_id, input_notes[i].amount);
+            inputs_map.insert(input_notes[i].asset_id, input_notes[i].amount);
+        }
+    }
+
+    for i in 0..2 {
+        if output_notes[i].amount != 0 {
+            let output_leaf_note = calculate_leaf(
+                input_notes[i].owner,
+                input_notes[i].amount_array,
+                input_notes[i].asset_id,
+                input_notes[i].note_secret,
+            );
+
+            assert(output_leaf_note == output_hashes[i], "invalid hash");
+
+            outputs_map.insert(
+                output_notes[i].asset_id,
+                outputs_map.get(output_notes[i].asset_id).unwrap_unchecked()
+                    + output_notes[i].amount,
+            );
+        }
+    }
+
+    assert(inputs_map.len() == outputs_map.len());
+
+    for i in 0..2 {
+        if (inputs_map.get(input_notes[i].asset_id).unwrap_unchecked() != 0) {
+            assert(
+                inputs_map.get(input_notes[i].asset_id).unwrap_unchecked()
+                    == outputs_map.get(output_notes[i].asset_id).unwrap_unchecked(),
+            );
+        }
     }
 }
