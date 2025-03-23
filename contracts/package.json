@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "clear": "^0.1.0",
+    "hardhat-gas-reporter": "^2.2.2",
     "merkletreejs": "^0.5.1"
   }
 }
