@@ -121,7 +121,31 @@ describe("Note creation and flow testing", () => {
       .connect(alice)
       .deposit(await usdc.getAddress(), 69420n, proof.slice(4), publicInputs);
 
-    console.log(tx);
+    // Wait for transaction to be mined and get receipt
+    const receipt = await tx.wait();
+
+    // Extract the LeafAdded event
+    const leafAddedEvent = receipt.logs
+      .filter((log) => {
+        // Find the event by topic (event signature hash)
+        return (
+          log.topics[0] === commbank.interface.getEvent("LeafAdded").topicHash
+        );
+      })
+      .map((log) => {
+        // Parse the event data
+        return commbank.interface.parseLog({
+          topics: log.topics,
+          data: log.data,
+        });
+      })[0];
+
+    if (leafAddedEvent) {
+      console.log("Leaf Index:", leafAddedEvent.args.leafIndex);
+      console.log("Note Hash:", leafAddedEvent.args.leaf);
+    } else {
+      console.log("LeafAdded event not found");
+    }
   });
 
   it.skip("should output sol code for zeros() in merkle tree", async () => {

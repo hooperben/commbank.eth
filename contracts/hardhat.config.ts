@@ -15,6 +15,10 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  gasReporter: {
+    enabled: true,
+    excludeContracts: [],
+  },
 };
 
 export default config;

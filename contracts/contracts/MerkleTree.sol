@@ -198,15 +198,6 @@ contract MerkleTree {
         bytes32 _left,
         bytes32 _right
     ) public pure returns (bytes32) {
-        require(
-            uint256(_left) < FIELD_SIZE,
-            "_left should be inside the field"
-        );
-        require(
-            uint256(_right) < FIELD_SIZE,
-            "_right should be inside the field"
-        );
-
         return keccak256(abi.encodePacked([uint256(_left), uint256(_right)]));
     }
 

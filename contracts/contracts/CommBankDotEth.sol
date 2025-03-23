@@ -53,6 +53,8 @@ contract CommBankDotEth is MerkleTree {
         return result;
     }
 
+    event LeafAdded(uint256 indexed leafIndex, bytes32 indexed leaf);
+
     function deposit(
         address _erc20,
         uint256 _amount, // !dev no exponent here
@@ -88,5 +90,9 @@ contract CommBankDotEth is MerkleTree {
         bool validProof = noteVerifier.verify(_proof, _publicInputs);
 
         require(validProof, "Proof Failed");
+
+        uint256 index = _insert(noteHash);
+
+        emit LeafAdded(index, noteHash);
     }
 }
