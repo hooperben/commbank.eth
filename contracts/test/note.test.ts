@@ -1,15 +1,15 @@
 import RSA, { getPayload, SignatureGenModule } from "../helpers/rsa";
 import { EncryptedMessage, KeyPair } from "../web/signature_gen";
 
-import { getTestingAPI } from "../helpers/testing-api";
-import { InputMap, Noir } from "@noir-lang/noir_js";
 import { UltraHonkBackend } from "@aztec/bb.js";
-import { Wallet, parseUnits, keccak256 } from "ethers";
-import { generateZerosFunction } from "../helpers/merkle-tree";
-import { CommBankDotEth, USDC } from "../typechain-types";
-import { getLeafAddedDetails, getPayloadDetails } from "../helpers/logs";
-import { generateRandomSecret } from "../helpers/random";
+import { InputMap, Noir } from "@noir-lang/noir_js";
+import { keccak256, parseUnits, Wallet } from "ethers";
 import MerkleTree from "merkletreejs";
+import { getLeafAddedDetails, getPayloadDetails } from "../helpers/logs";
+import { generateZerosFunction } from "../helpers/merkle-tree";
+import { generateRandomSecret } from "../helpers/random";
+import { getTestingAPI, numberToUint8Array } from "../helpers/testing-api";
+import { CommBankDotEth, USDC } from "../typechain-types";
 
 const convertFromHexToArray = (rawInput: string): Uint8Array => {
   const formattedInput = rawInput.startsWith("0x")
@@ -84,13 +84,7 @@ describe("Note creation and flow testing", () => {
     const depositAmount = 69_420n;
 
     // Create a proper big-endian byte array from the number
-    const amount = new Uint8Array(32);
-    // Convert to big-endian representation (most significant byte first)
-    let tempAmount = depositAmount;
-    for (let i = 31; i >= 0; i--) {
-      amount[i] = Number(tempAmount & 0xffn);
-      tempAmount = tempAmount >> 8n;
-    }
+    const amount = numberToUint8Array(depositAmount); // new Uint8Array(32);
 
     const assetId = convertFromHexToArray(await usdc.getAddress());
     const noteSecret = generateRandomSecret();
@@ -125,12 +119,7 @@ describe("Note creation and flow testing", () => {
     });
 
     const payload = getPayload(noteSecret, assetId, amount);
-
-    console.log(payload);
-
     const encryptedMessage = rsa.encrypt(payload, aliceRSA.public_key);
-
-    console.log("looking for:", encryptedMessage.data);
 
     const tx = await commbank
       .connect(alice)
@@ -162,7 +151,144 @@ describe("Note creation and flow testing", () => {
     // update our tree with the inserted note
     tree.updateLeaf(leafDetails.leafIndex, leafDetails.noteHash);
 
-    // Extract the LeafAdded event
+    const merklePath = tree.getProof(noteHash).map((step) => {
+      return {
+        path: step.position === "right" ? 1 : 0,
+        value: convertFromHexToArray(step.data.toString("hex")),
+      };
+    });
+
+    const paths = merklePath.map((x) => x.path);
+    const values = merklePath.map((x) => [x.value]);
+
+    const inputNote = {
+      owner: alicePubKey,
+      owner_secret: convertFromHexToArray(keccak256(aliceRSA.private_key)),
+      note_secret: noteSecret,
+      asset_id: assetId,
+      amount_array: amount,
+      amount: depositAmount.toString(),
+      leaf_index: numberToUint8Array(leafDetails.leafIndex),
+      path: paths,
+      path_data: values,
+    };
+
+    const inputNoteNullifier = keccak256(
+      Uint8Array.from([
+        ...inputNote.leaf_index,
+        ...inputNote.note_secret,
+        ...inputNote.amount_array,
+        ...inputNote.asset_id,
+      ]),
+    );
+
+    // we are sending bob 420 tokens. Alice should have 69000 left over
+    const aliceOutputNote = {
+      owner: alicePubKey,
+      secret: generateRandomSecret(),
+      asset_id: assetId,
+      amount_array: numberToUint8Array(69000n),
+      amount: 69000,
+    };
+
+    const aliceOutputNoteHash = convertFromHexToArray(
+      keccak256(
+        Uint8Array.from([
+          ...alicePubKey,
+          ...aliceOutputNote.amount_array,
+          ...assetId,
+          ...aliceOutputNote.secret,
+        ]),
+      ),
+    );
+
+    const bobPubKey = convertFromHexToArray(
+      keccak256(keccak256(aliceRSA.private_key)),
+    );
+
+    const bobOutputNote = {
+      owner: Array.from(bobPubKey),
+      secret: generateRandomSecret(),
+      asset_id: assetId,
+      amount_array: numberToUint8Array(420n),
+      amount: 420,
+    };
+
+    const bobOutputNoteHash = convertFromHexToArray(
+      keccak256(
+        Uint8Array.from([
+          ...bobPubKey,
+          ...bobOutputNote.amount_array,
+          ...assetId,
+          ...bobOutputNote.secret,
+        ]),
+      ),
+    );
+
+    const transactInput = {
+      root: convertFromHexToArray("0x" + tree.getRoot().toString("hex")),
+      input_notes: [inputNote],
+      output_notes: [aliceOutputNote, bobOutputNote],
+      nullifiers: [convertFromHexToArray(inputNoteNullifier)],
+      output_hashes: [aliceOutputNoteHash, bobOutputNoteHash],
+    };
+
+    console.log(
+      `let root = [${transactInput.root.map((item) => Number(item))}];`,
+    );
+    console.log(
+      `let alice_input_note: InputNote = InputNote {
+        owner: [${Array.from(inputNote.owner).map((n) => n)}],
+        owner_secret: [${Array.from(inputNote.owner_secret).map((n) => n)}],
+        note_secret: [${Array.from(inputNote.note_secret).map((n) => n)}],
+        asset_id: [${Array.from(inputNote.asset_id).map((n) => n)}],
+        amount_array: [${Array.from(inputNote.amount_array).map((n) => n)}],
+        amount: ${inputNote.amount},
+        leaf_index: [${Array.from(inputNote.leaf_index).map((n) => n)}],
+        path: [${inputNote.path.join(", ")}],
+        path_data: [[${inputNote.path_data
+          .map((array) => array.join(", "))
+          .join("], [")}]],
+      };`,
+    );
+
+    console.log(
+      `let alice_output_note: OutputNote = OutputNote {
+        owner: [${Array.from(aliceOutputNote.owner).map((n) => n)}],
+        note_secret: [${Array.from(aliceOutputNote.secret).map((n) => n)}],
+        asset_id: [${Array.from(aliceOutputNote.asset_id).map((n) => n)}],
+        amount_array: [${Array.from(aliceOutputNote.amount_array).map(
+          (n) => n,
+        )}],
+        amount: ${aliceOutputNote.amount},
+      };`,
+    );
+
+    console.log(
+      `let bob_output_note: OutputNote = OutputNote {
+        owner: [${bobOutputNote.owner.join(", ")}],
+        note_secret: [${Array.from(bobOutputNote.secret).map((n) => n)}],
+        asset_id: [${Array.from(bobOutputNote.asset_id).map((n) => n)}],
+        amount_array: [${Array.from(bobOutputNote.amount_array).map((n) => n)}],
+        amount: ${bobOutputNote.amount},
+      };`,
+    );
+
+    console.log(
+      `let alice_nullifier = [${transactInput.nullifiers[0].map((item) =>
+        Number(item),
+      )}];`,
+    );
+    console.log(
+      `let alice_output_hash = [${transactInput.output_hashes[0].map((item) =>
+        Number(item),
+      )}];`,
+    );
+    console.log(
+      `let bob_output_hash = [${transactInput.output_hashes[1].map((item) =>
+        Number(item),
+      )}];`,
+    );
   });
 
   it.skip("should output sol code for zeros() in merkle tree", async () => {

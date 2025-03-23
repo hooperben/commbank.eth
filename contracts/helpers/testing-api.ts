@@ -10,6 +10,18 @@ import { getEmptyTree } from "./merkle-tree";
 const RSA_ACCOUNTS = ["alice", "bob"];
 const RSA_ACCOUNT_PATH = "./const/";
 
+export const numberToUint8Array = (num: bigint) => {
+  const amount = new Uint8Array(32);
+  // Convert to big-endian representation (most significant byte first)
+  let tempAmount = num;
+  for (let i = 31; i >= 0; i--) {
+    amount[i] = Number(tempAmount & 0xffn);
+    tempAmount = tempAmount >> 8n;
+  }
+
+  return amount;
+};
+
 export const getTestingAPI = async <T = UltraHonkBackend>(
   backendClass?: new (bytecode: string) => T,
 ) => {
