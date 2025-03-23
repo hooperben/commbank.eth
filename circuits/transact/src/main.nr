@@ -89,7 +89,6 @@ struct InputNote {
     asset_id: [u8; 20],
     amount_array: [u8; 32],
     amount: u64,
-
     leaf_index: [u8; 32],
     path: [Field; 20],
     path_data: [[u8; 32]; 20],
