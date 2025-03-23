@@ -22,6 +22,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "clear": "^0.1.0"
+    "clear": "^0.1.0",
+    "merkletreejs": "^0.5.1"
   }
 }
