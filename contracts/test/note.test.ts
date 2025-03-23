@@ -1,4 +1,4 @@
-import RSA, { SignatureGenModule } from "../helpers/rsa";
+import RSA, { getPayload, SignatureGenModule } from "../helpers/rsa";
 import { KeyPair } from "../web/signature_gen";
 
 import { getTestingAPI } from "../helpers/testing-api";
@@ -7,6 +7,8 @@ import { UltraHonkBackend } from "@aztec/bb.js";
 import { Wallet, parseUnits, keccak256 } from "ethers";
 import { generateZerosFunction } from "../helpers/merkle-tree";
 import { CommBankDotEth, USDC } from "../typechain-types";
+import { getLeafAddedDetails, getPayloadDetails } from "../helpers/logs";
+import { generateRandomSecret } from "../helpers/random";
 
 const convertFromHexToArray = (rawInput: string): Uint8Array => {
   const formattedInput = rawInput.startsWith("0x")
@@ -81,25 +83,46 @@ describe("Note creation and flow testing", () => {
 
     const assetId = convertFromHexToArray(await usdc.getAddress());
 
+    const aliceRSASecret = `0x${Array.from(aliceRSA.public_key).join("")}`;
+
+    const aliceOwnerPubKey = rsa.generate_signature_from_key(
+      aliceRSASecret,
+      aliceRSA.private_key,
+    );
+
+    const aliceSignatureCommitment = JSON.parse(
+      `[${aliceOwnerPubKey.hash}]`,
+    ) as number[];
+
+    const noteSecret = generateRandomSecret();
+
+    console.log(noteSecret);
+
     const noteHash = keccak256(
       Uint8Array.from([
-        ...Array.from(aliceRSA.public_key),
+        ...aliceSignatureCommitment,
         ...amount,
         ...assetId,
+        ...noteSecret,
       ]),
     );
 
-    console.log(noteHash);
-
     const input = {
+      note_secret: Array.from(noteSecret).map((item) => item.toString()),
       hash: Array.from(convertFromHexToArray(noteHash)).map((item) =>
         item.toString(),
       ),
       amount: depositAmount.toString(), // Convert bigint to number for Noir
       amount_array: Array.from(amount).map((item) => item.toString()),
-      pub_key: Array.from(aliceRSA.public_key).map((item) => item.toString()),
+      // pub key is RSA.sign(public_key)
+      pub_key: Array.from(aliceSignatureCommitment).map((item) =>
+        item.toString(),
+      ),
       asset_id: Array.from(assetId).map((item) => item.toString()),
     };
+
+    // console.log(`let note_hash = [${convertFromHexToArray(noteHash)}];`);
+    // console.log(`let note_secret = [${input.note_secret}];`);
 
     const { witness } = await noir.execute(input as unknown as InputMap);
 
@@ -107,45 +130,36 @@ describe("Note creation and flow testing", () => {
       keccak: true,
     });
 
-    const isValid = await backend.verifyProof({
-      proof,
-      publicInputs,
-    });
-    console.log("isValid: ", isValid);
+    const payload = getPayload(noteSecret, assetId, amount);
 
-    console.log("proof generated!");
+    console.log(payload);
 
-    console.log(await usdc.getAddress());
+    const encryptedMessage = rsa.encrypt(payload, aliceRSA.public_key);
+
+    console.log("looking for:", encryptedMessage.data);
 
     const tx = await commbank
       .connect(alice)
-      .deposit(await usdc.getAddress(), 69420n, proof.slice(4), publicInputs);
+      .deposit(
+        await usdc.getAddress(),
+        69420n,
+        proof.slice(4),
+        publicInputs,
+        encryptedMessage.data,
+      );
 
     // Wait for transaction to be mined and get receipt
     const receipt = await tx.wait();
 
-    // Extract the LeafAdded event
-    const leafAddedEvent = receipt.logs
-      .filter((log) => {
-        // Find the event by topic (event signature hash)
-        return (
-          log.topics[0] === commbank.interface.getEvent("LeafAdded").topicHash
-        );
-      })
-      .map((log) => {
-        // Parse the event data
-        return commbank.interface.parseLog({
-          topics: log.topics,
-          data: log.data,
-        });
-      })[0];
+    const leafDetails = getLeafAddedDetails(commbank, receipt!.logs);
 
-    if (leafAddedEvent) {
-      console.log("Leaf Index:", leafAddedEvent.args.leafIndex);
-      console.log("Note Hash:", leafAddedEvent.args.leaf);
-    } else {
-      console.log("LeafAdded event not found");
-    }
+    console.log(leafDetails);
+
+    const encryptedBytes = getPayloadDetails(commbank, receipt!.logs);
+
+    console.log(encryptedBytes);
+
+    // Extract the LeafAdded event
   });
 
   it.skip("should output sol code for zeros() in merkle tree", async () => {

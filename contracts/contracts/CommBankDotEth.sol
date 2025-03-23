@@ -54,12 +54,14 @@ contract CommBankDotEth is MerkleTree {
     }
 
     event LeafAdded(uint256 indexed leafIndex, bytes32 indexed leaf);
+    event EncryptedSecret(uint256 indexed leafIndex, bytes payload);
 
     function deposit(
         address _erc20,
         uint256 _amount, // !dev no exponent here
         bytes calldata _proof,
-        bytes32[] calldata _publicInputs
+        bytes32[] calldata _publicInputs,
+        bytes calldata _payload
     ) public {
         uint8 decimals = ERC20(_erc20).decimals();
 
@@ -94,5 +96,6 @@ contract CommBankDotEth is MerkleTree {
         uint256 index = _insert(noteHash);
 
         emit LeafAdded(index, noteHash);
+        emit EncryptedSecret(index, _payload);
     }
 }
