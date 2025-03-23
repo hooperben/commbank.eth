@@ -7,8 +7,9 @@ export function verify_signature(signature_result: SignatureResult, public_key: 
 export function encrypt(message: string, public_key: Uint8Array): EncryptedMessage;
 export function decrypt(encrypted: EncryptedMessage, private_key: Uint8Array): string;
 export class EncryptedMessage {
-  private constructor();
   free(): void;
+  constructor(data: Uint8Array);
+  static from_string(text: string): EncryptedMessage;
   readonly data: Uint8Array;
 }
 export class KeyPair {

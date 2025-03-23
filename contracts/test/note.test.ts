@@ -1,5 +1,5 @@
 import RSA, { getPayload, SignatureGenModule } from "../helpers/rsa";
-import { KeyPair } from "../web/signature_gen";
+import { EncryptedMessage, KeyPair } from "../web/signature_gen";
 
 import { getTestingAPI } from "../helpers/testing-api";
 import { InputMap, Noir } from "@noir-lang/noir_js";
@@ -158,6 +158,17 @@ describe("Note creation and flow testing", () => {
     const encryptedBytes = getPayloadDetails(commbank, receipt!.logs);
 
     console.log(encryptedBytes);
+
+    const uint8ArrayEncryptedBytes = convertFromHexToArray(
+      encryptedBytes.payload,
+    );
+
+    const parsedEncrypted = new EncryptedMessage(uint8ArrayEncryptedBytes);
+
+    const decryptedMessage = rsa.decrypt(parsedEncrypted, aliceRSA.private_key);
+
+    console.log("decryptedMessage: ", decryptedMessage);
+    console.log("payload: ", payload);
 
     // Extract the LeafAdded event
   });

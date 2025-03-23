@@ -15,6 +15,8 @@ export const generate_signature_from_key: (a: number, b: number, c: number, d: n
 export const generate_signature: (a: number, b: number, c: number, d: number) => [number, number, number];
 export const __wbg_encryptedmessage_free: (a: number, b: number) => void;
 export const encryptedmessage_data: (a: number) => [number, number];
+export const encryptedmessage_new: (a: number, b: number) => number;
+export const encryptedmessage_from_string: (a: number, b: number) => number;
 export const verify_signature: (a: number, b: number, c: number) => [number, number, number];
 export const encrypt: (a: number, b: number, c: number, d: number) => [number, number, number];
 export const decrypt: (a: number, b: number, c: number) => [number, number, number, number];

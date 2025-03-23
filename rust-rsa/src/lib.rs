@@ -348,6 +348,19 @@ impl EncryptedMessage {
     pub fn data(&self) -> Vec<u8> {
         self.data.clone()
     }
+
+    #[wasm_bindgen(constructor)]
+    pub fn new(data: Vec<u8>) -> EncryptedMessage {
+        EncryptedMessage { data }
+    }
+
+    // Create from string for convenience when working with TypeScript
+    #[wasm_bindgen]
+    pub fn from_string(text: &str) -> EncryptedMessage {
+        EncryptedMessage {
+            data: text.as_bytes().to_vec(),
+        }
+    }
 }
 
 #[wasm_bindgen]

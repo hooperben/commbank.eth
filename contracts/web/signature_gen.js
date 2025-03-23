@@ -262,6 +262,27 @@ class EncryptedMessage {
         wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
         return v1;
     }
+    /**
+     * @param {Uint8Array} data
+     */
+    constructor(data) {
+        const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.encryptedmessage_new(ptr0, len0);
+        this.__wbg_ptr = ret >>> 0;
+        EncryptedMessageFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * @param {string} text
+     * @returns {EncryptedMessage}
+     */
+    static from_string(text) {
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.encryptedmessage_from_string(ptr0, len0);
+        return EncryptedMessage.__wrap(ret);
+    }
 }
 module.exports.EncryptedMessage = EncryptedMessage;
 
