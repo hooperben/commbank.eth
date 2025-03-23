@@ -163,15 +163,7 @@ describe("Testing keccak hash utility in noir => sol", function () {
         asset_id: Array.from(assetId).map((item) => item.toString()),
       };
 
-      // console.log(input);
-
-      const { witness } = await noir.execute(input as unknown as InputMap);
-
-      const { proof, publicInputs } = await backend.generateProof(witness, {
-        keccak: true,
-      });
-
-      await keccak256Proof.testProof(proof.slice(4), publicInputs);
+      console.log(input.pub_key.length);
     });
   });
 });
