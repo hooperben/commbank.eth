@@ -10,7 +10,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Wallet } from "lucide-react";
+import { Badge } from "./ui/badge";
+import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
+import { Separator } from "./ui/separator";
 
 const AccountHome = () => {
   const getAccountsDetails = async () => {
@@ -76,80 +79,145 @@ const AccountHome = () => {
         <div className="flex flex-col gap-6">
           <h1 className="text-3xl font-bold">My Account</h1>
 
-          {accountsData && accountsData.evm && getRegisteredUsername() && (
-            <div className="flex flex-row w-full gap-2">
-              <Avatar className="flex justify-center h-16 w-16 border-2 border-primary/20">
-                <AvatarImage
-                  src={gravatarUrl(accountsData.evm?.address)}
-                  alt={getRegisteredUsername() || "JD"}
-                />
-                <AvatarFallback>
-                  {accountsData.evm?.address.slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
+          {accountsData && !!accountsData.evm && getRegisteredUsername() && (
+            <div className="flex flex-col w-full gap-2">
+              {/* ACCOUNT DETAILS */}
+              <Card className="w-full">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    <Avatar className="h-20 w-20 border-2 border-primary/20">
+                      <AvatarImage
+                        src={gravatarUrl(accountsData.evm.address)}
+                        alt={getRegisteredUsername() || "JD"}
+                      />
+                      <AvatarFallback className="text-lg">
+                        {accountsData.evm.address.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
 
-              <div className="flex flex-row w-full justify-between gap-4 items-end">
-                <div>
-                  <h1 className="text-2xl font-bold text-primary">
-                    {getRegisteredUsername() || ""}
-                  </h1>
-                  <div className="flex items-center mt-1">
-                    <div className="flex flex-col">
-                      <p>Public Address:</p>
-
-                      <div className="flex flex-row items-center">
-                        <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
-                          {shortenAddress(accountsData.evm.address)}
-                        </code>
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 ml-1"
-                          onClick={() =>
-                            copyToClipboard(accountsData.evm.address, "public")
-                          }
-                        >
-                          {copiedPublic ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
+                    <div className="space-y-1">
+                      <h2 className="text-2xl font-bold text-primary">
+                        {getRegisteredUsername() || "JD"}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        Account created on {accountsData.evm.createdAt}
+                      </p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="flex items-center mt-3">
-                    <div className="flex flex-col">
-                      <p>Private Address:</p>
+              {/* PUBLIC ACCOUNT */}
 
-                      <div className="flex flex-row items-center">
-                        <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
-                          {shortenAddress(accountsData.rsa.publicKey)}
-                        </code>
+              <div className="flex flex-row w-full gap-2">
+                <Card className="w-full">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Wallet className="h-5 w-5" />
+                      Public Address
+                      <Badge variant="outline" className="ml-2">
+                        ETH
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
+                            {shortenAddress(accountsData.evm.address)}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() =>
+                              copyToClipboard(
+                                accountsData.evm.address,
+                                "public",
+                              )
+                            }
+                          >
+                            {copiedPublic ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
 
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 ml-1"
-                          onClick={() =>
-                            copyToClipboard(
-                              accountsData.rsa.publicKey,
-                              "private",
-                            )
-                          }
-                        >
-                          {copiedPrivate ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
+                      <Separator />
+
+                      <div className="pt-2">
+                        <div className="text-sm text-muted-foreground mb-1">
+                          Balance
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="font-mono text-xl font-semibold">
+                            10 USDC
+                          </div>
+                          <Badge variant="secondary">~$10</Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
+
+                {/* PRIVATE ACCOUNT */}
+                <Card className="w-full">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Wallet className="h-5 w-5" />
+                      Private Address
+                      <Badge variant="outline" className="ml-2">
+                        RSA
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
+                            {shortenAddress(accountsData.rsa.publicKey)}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() =>
+                              copyToClipboard(
+                                accountsData.rsa.publicKey,
+                                "private",
+                              )
+                            }
+                          >
+                            {copiedPrivate ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="pt-2 space-y-2">
+                        <div className="text-sm text-muted-foreground mb-1">
+                          Balances
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="font-mono text-lg font-semibold">
+                            $100
+                          </div>
+                          <Badge variant="secondary">USD</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           )}

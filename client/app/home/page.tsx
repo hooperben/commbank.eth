@@ -33,7 +33,7 @@ export default function Home() {
         {!isLoading && token ? (
           <AccountHome />
         ) : (
-          <div className="flex justify-center items-center w-full mt-[70%]">
+          <div className="flex justify-center items-center w-full h-screen">
             <Card className="w-full max-w-md">
               {isLoading && (
                 <CardContent className="pt-6">
