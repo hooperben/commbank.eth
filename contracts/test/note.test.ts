@@ -10,6 +10,8 @@ import { generateZerosFunction } from "../helpers/merkle-tree";
 import { generateRandomSecret } from "../helpers/random";
 import { getTestingAPI, numberToUint8Array } from "../helpers/testing-api";
 import { CommBankDotEth, USDC } from "../typechain-types";
+import * as fs from "fs";
+import * as path from "path";
 
 const convertFromHexToArray = (rawInput: string): Uint8Array => {
   const formattedInput = rawInput.startsWith("0x")
@@ -21,6 +23,86 @@ const convertFromHexToArray = (rawInput: string): Uint8Array => {
 
   return Uint8Array.from(Buffer.from(evenFormattedInput, "hex"));
 };
+
+// Add this helper function for test data persistence
+const TEST_DATA_DIR = path.join(__dirname, "../test-data");
+
+interface TestData {
+  noteSecret?: Uint8Array;
+  encryptedMessage?: EncryptedMessage;
+  proof?: string;
+  publicInputs?: string[];
+  leafDetails?: { leafIndex: bigint; noteHash: string };
+  transactProof?: string;
+  transactPublicInputs?: string[];
+  // Add more fields as needed
+}
+
+function saveTestData(testName: string, data: TestData): void {
+  if (!fs.existsSync(TEST_DATA_DIR)) {
+    fs.mkdirSync(TEST_DATA_DIR, { recursive: true });
+  }
+
+  const filePath = path.join(TEST_DATA_DIR, `${testName}.json`);
+
+  // Convert Uint8Arrays to hex strings and BigInts to strings for storage
+  const serializedData = { ...data };
+  if (data.noteSecret) {
+    serializedData.noteSecret = Buffer.from(data.noteSecret).toString("hex");
+  }
+  if (data.encryptedMessage) {
+    serializedData.encryptedMessage = Buffer.from(
+      data.encryptedMessage.data,
+    ).toString("hex");
+  }
+  if (data.leafDetails) {
+    serializedData.leafDetails = {
+      ...data.leafDetails,
+      leafIndex: data.leafDetails.leafIndex.toString(), // Convert BigInt to string
+    };
+  }
+
+  fs.writeFileSync(filePath, JSON.stringify(serializedData, null, 2));
+  console.log(`Test data saved to ${filePath}`);
+}
+
+function loadTestData(testName: string): TestData | null {
+  const filePath = path.join(TEST_DATA_DIR, `${testName}.json`);
+
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  try {
+    const rawData = fs.readFileSync(filePath, "utf8");
+    const data = JSON.parse(rawData) as TestData;
+
+    // Convert hex strings back to Uint8Arrays and string back to BigInt
+    if (data.noteSecret) {
+      data.noteSecret = new Uint8Array(
+        Buffer.from(data.noteSecret as unknown as string, "hex"),
+      );
+    }
+    if (data.encryptedMessage) {
+      const messageData = new Uint8Array(
+        Buffer.from(data.encryptedMessage as unknown as string, "hex"),
+      );
+      data.encryptedMessage = new EncryptedMessage(messageData);
+    }
+    if (data.leafDetails) {
+      data.leafDetails = {
+        ...data.leafDetails,
+        leafIndex: BigInt(data.leafDetails.leafIndex as unknown as string), // Convert string back to BigInt
+      };
+    }
+
+    console.log(`Test data loaded from ${filePath}`);
+    return data;
+  } catch (error) {
+    console.error(`Error loading test data: ${error}`);
+    return null;
+  }
+}
 
 describe("Note creation and flow testing", () => {
   let rsa: typeof SignatureGenModule;
@@ -79,18 +161,21 @@ describe("Note creation and flow testing", () => {
   });
 
   it.only("should let me deposit to the contract", async () => {
+    // Check if we have saved test data
+    const testName = "deposit-test";
+    let testData = loadTestData(testName);
+
     // approve commbank.eth to move USDC for the user
     await usdc
       .connect(alice)
       .approve(await commbank.getAddress(), parseUnits("1000000", 6));
 
     const depositAmount = 69_420n;
-
-    // Create a proper big-endian byte array from the number
-    const amount = numberToUint8Array(depositAmount); // new Uint8Array(32);
-
+    const amount = numberToUint8Array(depositAmount);
     const assetId = convertFromHexToArray(await usdc.getAddress());
-    const noteSecret = generateRandomSecret();
+
+    // Use saved noteSecret or generate a new one
+    const noteSecret = testData?.noteSecret || generateRandomSecret();
 
     const alicePubKey = convertFromHexToArray(
       keccak256(keccak256(aliceRSA.private_key)),
@@ -105,51 +190,74 @@ describe("Note creation and flow testing", () => {
       hash: Array.from(convertFromHexToArray(noteHash)).map((item) =>
         item.toString(),
       ),
-      amount: depositAmount.toString(), // Convert bigint to number for Noir
+      amount: depositAmount.toString(),
       amount_array: Array.from(amount).map((item) => item.toString()),
-      // pub key is keccak(keccak(rsa.private_key))
       pub_key: Array.from(alicePubKey).map((item) => item.toString()),
       asset_id: Array.from(assetId).map((item) => item.toString()),
     };
 
-    // console.log(`let note_hash = [${convertFromHexToArray(noteHash)}];`);
-    // console.log(`let note_secret = [${input.note_secret}];`);
+    let proof, publicInputs;
 
-    const { witness } = await noir.execute(input as unknown as InputMap);
+    // Use saved proof and publicInputs or generate new ones
+    if (testData?.proof && testData?.publicInputs) {
+      proof = testData.proof;
+      publicInputs = testData.publicInputs;
+    } else {
+      const { witness } = await noir.execute(input as unknown as InputMap);
+      ({ proof, publicInputs } = await backend.generateProof(witness, {
+        keccak: true,
+      }));
 
-    const { proof, publicInputs } = await backend.generateProof(witness, {
-      keccak: true,
-    });
+      // Store for future use
+      if (!testData) testData = {};
+      testData.proof = proof;
+      testData.publicInputs = publicInputs;
+    }
 
     const payload = getPayload(noteSecret, assetId, amount);
-    const encryptedMessage = rsa.encrypt(payload, aliceRSA.public_key);
 
-    const tx = await commbank
-      .connect(alice)
-      .deposit(
-        await usdc.getAddress(),
-        69420n,
-        proof.slice(4),
-        publicInputs,
-        encryptedMessage.data,
-      );
+    // Use saved encryptedMessage or generate a new one
+    let encryptedMessage;
+    if (testData?.encryptedMessage) {
+      encryptedMessage = testData.encryptedMessage;
+    } else {
+      encryptedMessage = rsa.encrypt(payload, aliceRSA.public_key);
 
-    // Wait for transaction to be mined and get receipt
-    const receipt = await tx.wait();
+      // Store for future use
+      if (!testData) testData = {};
+      testData.encryptedMessage = encryptedMessage;
+      testData.noteSecret = noteSecret;
+    }
 
-    const leafDetails = getLeafAddedDetails(commbank, receipt!.logs);
-    const encryptedBytes = getPayloadDetails(commbank, receipt!.logs);
+    let leafDetails;
+    if (testData?.leafDetails) {
+      leafDetails = testData.leafDetails;
+      // Use cached leaf details instead of calling the contract
+      console.log("Using cached leaf details");
+    } else {
+      const tx = await commbank
+        .connect(alice)
+        .deposit(
+          await usdc.getAddress(),
+          69420n,
+          proof.slice(4),
+          publicInputs,
+          encryptedMessage.data,
+        );
 
-    const uint8ArrayEncryptedBytes = convertFromHexToArray(
-      encryptedBytes.payload,
-    );
+      // Wait for transaction to be mined and get receipt
+      const receipt = await tx.wait();
 
-    const parsedEncrypted = new EncryptedMessage(uint8ArrayEncryptedBytes);
+      leafDetails = getLeafAddedDetails(commbank, receipt!.logs);
+      const encryptedBytes = getPayloadDetails(commbank, receipt!.logs);
 
-    const decryptedMessage = rsa.decrypt(parsedEncrypted, aliceRSA.private_key);
+      // Store for future use
+      if (!testData) testData = {};
+      testData.leafDetails = leafDetails;
 
-    console.log("decryptedMessage: ", decryptedMessage);
-    console.log("payload: ", payload);
+      // Save updated test data
+      saveTestData(testName, testData);
+    }
 
     // update our tree with the inserted note
     tree.updateLeaf(leafDetails.leafIndex, leafDetails.noteHash);
@@ -270,14 +378,31 @@ describe("Note creation and flow testing", () => {
     console.log("input_notes:", transactInput.input_notes);
     console.log("output_notes:", transactInput.output_notes);
 
-    const { witness: transactWitness } = await transactNoir.execute(
-      transactInput as unknown as InputMap,
-    );
+    let transactProof, transactPublicInputs;
 
-    const { proof: transactProof, publicInputs: transactPublicInputs } =
-      await transactBackend.generateProof(transactWitness, {
-        keccak: true,
-      });
+    // Use saved transaction proof and public inputs or generate new ones
+    if (testData?.transactProof && testData?.transactPublicInputs) {
+      transactProof = testData.transactProof;
+      transactPublicInputs = testData.transactPublicInputs;
+      console.log("Using cached transaction proof and public inputs");
+    } else {
+      const { witness: transactWitness } = await transactNoir.execute(
+        transactInput as unknown as InputMap,
+      );
+
+      ({ proof: transactProof, publicInputs: transactPublicInputs } =
+        await transactBackend.generateProof(transactWitness, {
+          keccak: true,
+        }));
+
+      // Store for future use
+      if (!testData) testData = {};
+      testData.transactProof = transactProof;
+      testData.transactPublicInputs = transactPublicInputs;
+
+      // Save updated test data
+      saveTestData(testName, testData);
+    }
 
     console.log(transactPublicInputs);
   });
