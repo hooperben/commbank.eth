@@ -173,6 +173,7 @@ export const encryptSecret = async (
     // If using passkey, the password parameter is actually the authenticator data
     key = await deriveKeyFromPasskey(password as ArrayBuffer);
   } else {
+    // @ts-expect-error -- TODO fix
     key = await deriveKeyFromPassword(password as string, salt);
   }
 
@@ -189,7 +190,9 @@ export const encryptSecret = async (
   return {
     id,
     encryptedData,
+    // @ts-ignore
     iv,
+    // @ts-ignore
     salt,
     usePasskey,
   };

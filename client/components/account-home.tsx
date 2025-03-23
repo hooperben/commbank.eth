@@ -14,7 +14,6 @@ import { Check, Copy, SendHorizontal, Wallet } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
-import { KeyPair } from "@/wasm/signature_gen";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
@@ -24,7 +23,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "./ui/dialog";
 import { Label } from "./ui/label";
 
@@ -76,7 +74,7 @@ const AccountHome = () => {
     return hexHash;
   };
 
-  const { data: accountsData, isLoading: isLoadingAccountsData } = useQuery({
+  const { data: accountsData } = useQuery({
     queryKey: ["accounts-data", getRegisteredUsername()],
     queryFn: getAccountsDetails,
   });
@@ -234,6 +232,7 @@ const AccountHome = () => {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() =>
+                              accountsData.evm &&
                               copyToClipboard(
                                 accountsData.evm.address,
                                 "public",
@@ -287,16 +286,26 @@ const AccountHome = () => {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
-                            {shortenAddress(accountsData.rsa.publicKey)}
-                          </code>
+                          {accountsData.rsa && (
+                            <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
+                              {shortenAddress(
+                                Buffer.from(
+                                  accountsData.rsa.publicKey,
+                                ).toString("hex"),
+                              )}
+                            </code>
+                          )}
+
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
                             onClick={() =>
+                              accountsData.rsa &&
                               copyToClipboard(
-                                accountsData.rsa.publicKey,
+                                Buffer.from(
+                                  accountsData.rsa.publicKey,
+                                ).toString("hex"),
                                 "private",
                               )
                             }
