@@ -45,7 +45,7 @@ describe("Note creation and flow testing", () => {
     console.log(decryptedMessage);
   });
 
-  it.only("should output sol code for zeros() in merkle tree", async () => {
+  it.skip("should output sol code for zeros() in merkle tree", async () => {
     generateZerosFunction();
   });
 });

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "./verifiers/contract.sol";
+import "./verifiers/NoteVerifier.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -9,10 +9,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "hardhat/console.sol";
 
 contract Keccak256Proof {
-    HonkVerifier verifier;
+    NoteVerifier noteVerifier;
 
     constructor() {
-        verifier = new HonkVerifier();
+        noteVerifier = new NoteVerifier();
     }
 
     error NumTooBig();
@@ -44,7 +44,7 @@ contract Keccak256Proof {
         );
         console.log(depositAddress);
 
-        bool validProof = verifier.verify(_proof, _publicInputs);
+        bool validProof = noteVerifier.verify(_proof, _publicInputs);
 
         require(validProof, "Proof Failed");
 

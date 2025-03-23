@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import "hardhat/console.sol";
 
-contract SimpleMerkleTree {
+contract MerkleTree {
     uint256 public depth; // Depth of the Merkle tree
     bytes32[] public nodes; // Array representing the entire tree nodes
     uint256 public nextLeafIndex = 0; // Tracks where the next leaf should go
@@ -31,10 +31,8 @@ contract SimpleMerkleTree {
     uint32 public currentRootIndex = 0;
     uint32 public nextIndex = 0;
 
-    constructor(uint32 _levels) {
-        require(_levels > 0, "_levels should be greater than zero");
-        require(_levels < 32, "_levels should be less than 32");
-        levels = _levels;
+    constructor() {
+        levels = 20;
 
         roots[0] = INITIAL_ROOT;
     }

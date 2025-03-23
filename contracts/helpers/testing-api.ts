@@ -33,7 +33,7 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
   });
 
   const keccakFile = readFileSync(
-    resolve("../circuits/target/circuits.json"),
+    resolve("../circuits/deposit/target/circuits.json"),
     "utf-8",
   );
   const keccakNoteCircuit = JSON.parse(keccakFile);

@@ -171,8 +171,6 @@ describe("Testing keccak hash utility in noir => sol", function () {
         keccak: true,
       });
 
-      console.log(publicInputs.length);
-
       await keccak256Proof.testProof(proof.slice(4), publicInputs);
     });
   });
