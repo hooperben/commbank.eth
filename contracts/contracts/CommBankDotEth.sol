@@ -28,7 +28,8 @@ contract CommBankDotEth is MerkleTree {
             uint8 lsb = uint8(uint256(_inputs[i]) & 0xff);
 
             // Shift it to its correct position in the final result and combine with OR
-            result = result | bytes32(uint256(lsb) << (8 * (31 - i)));
+            // We need to place bytes in positions 19-0 (least significant 20 bytes)
+            result = result | bytes32(uint256(lsb) << (8 * (19 - i)));
         }
 
         return address(uint160(uint256(result)));
@@ -68,14 +69,21 @@ contract CommBankDotEth is MerkleTree {
 
         require(depositTransfer, "failed to transfer");
 
+        // Log each public input for debugging
+        console.log("Public Inputs Length:", _publicInputs.length);
+
         bytes32 noteHash = reconstructBytes32FromArray(_publicInputs[0:32]);
         console.logBytes32(noteHash);
-        bytes32 value = reconstructBytes32FromArray(_publicInputs[33:65]);
-        console.logBytes32(value);
+
         address depositAddress = reconstructAddressFromArray(
             _publicInputs[65:85]
         );
-        console.log(depositAddress);
+        bytes32 value = _publicInputs[32];
+        require(_erc20 == depositAddress, "invalid address reconstruction");
+        require(uint256(value) == _amount, "invalid amount reconstruction");
+
+        // bytes32 otherValue = reconstructBytes32FromArray(_publicInputs[33:65]);
+        // console.log(uint256(otherValue));
 
         bool validProof = noteVerifier.verify(_proof, _publicInputs);
 

@@ -37,7 +37,7 @@ describe("Note creation and flow testing", () => {
     ({ circuit, noir, backend, alice, bob, aliceRSA, bobRSA, usdc, commbank } =
       await getTestingAPI());
 
-    await usdc.connect(alice).mint(alice.address, parseUnits("1000", 6));
+    await usdc.connect(alice).mint(alice.address, parseUnits("1000000", 6));
   });
 
   it("should let me create a key pair", async () => {
@@ -66,7 +66,7 @@ describe("Note creation and flow testing", () => {
     // approve commbank.eth to move USDC for the user
     await usdc
       .connect(alice)
-      .approve(await commbank.getAddress(), parseUnits("1000", 6));
+      .approve(await commbank.getAddress(), parseUnits("1000000", 6));
 
     const depositAmount = 69_420n;
 
@@ -89,6 +89,8 @@ describe("Note creation and flow testing", () => {
       ]),
     );
 
+    console.log(noteHash);
+
     const input = {
       hash: Array.from(convertFromHexToArray(noteHash)).map((item) =>
         item.toString(),
@@ -105,7 +107,21 @@ describe("Note creation and flow testing", () => {
       keccak: true,
     });
 
+    const isValid = await backend.verifyProof({
+      proof,
+      publicInputs,
+    });
+    console.log("isValid: ", isValid);
+
     console.log("proof generated!");
+
+    console.log(await usdc.getAddress());
+
+    const tx = await commbank
+      .connect(alice)
+      .deposit(await usdc.getAddress(), 69420n, proof.slice(4), publicInputs);
+
+    console.log(tx);
   });
 
   it.skip("should output sol code for zeros() in merkle tree", async () => {
