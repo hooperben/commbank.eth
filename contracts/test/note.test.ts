@@ -129,9 +129,7 @@ describe("Note creation and flow testing", () => {
 
     // Wait for transaction to be mined and get receipt
     const receipt = await tx.wait();
-
     const leafDetails = getLeafAddedDetails(commbank, receipt!.logs);
-    const encryptedBytes = getPayloadDetails(commbank, receipt!.logs);
 
     // update our tree with the inserted note
     tree.updateLeaf(leafDetails.leafIndex, leafDetails.noteHash);
@@ -245,25 +243,38 @@ describe("Note creation and flow testing", () => {
       output_hashes: [aliceOutputNoteHash, bobOutputNoteHash],
     };
 
-    console.log(transactInput.input_notes[0].path_data);
-    console.log(transactInput.input_notes[1].path_data);
-
-    console.log("root:", transactInput.root);
-    console.log("input_notes:", transactInput.input_notes);
-    console.log("output_notes:", transactInput.output_notes);
-
-    let transactProof, transactPublicInputs;
-
     const { witness: transactWitness } = await transactNoir.execute(
       transactInput as unknown as InputMap,
     );
 
-    ({ proof: transactProof, publicInputs: transactPublicInputs } =
+    const { proof: transactProof, publicInputs: transactPublicInputs } =
       await transactBackend.generateProof(transactWitness, {
         keccak: true,
-      }));
+      });
 
-    console.log(transactPublicInputs);
+    const transactPayloads = [
+      rsa.encrypt(
+        getPayload(
+          new Uint8Array(aliceOutputNote.note_secret),
+          assetId,
+          amount,
+        ),
+        aliceRSA.public_key,
+      ).data,
+      rsa.encrypt(
+        getPayload(new Uint8Array(bobOutputNote.note_secret), assetId, amount),
+        bobRSA.public_key,
+      ).data,
+    ];
+
+    // submit the encrypted transfer
+    await commbank.transfer(
+      transactProof.slice(4),
+      transactPublicInputs,
+      transactPayloads,
+    );
+
+    // now that bob has a balance, he is going to withdraw it back to usdc
   });
 
   it.skip("should output sol code for zeros() in merkle tree", async () => {

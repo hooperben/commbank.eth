@@ -119,6 +119,7 @@ contract CommBankDotEth is MerkleTree {
         bytes32[] calldata _publicInputs,
         bytes[] calldata _payloads
     ) public {
+        console.log(_publicInputs.length);
         bool validProof = transactVerifier.verify(_proof, _publicInputs);
         require(validProof, "not a valid proof");
 
@@ -129,7 +130,10 @@ contract CommBankDotEth is MerkleTree {
         require(isKnownRoot(root), "Unknown Merkle root");
 
         bytes32 nullifier1 = reconstructBytes32FromArray(_publicInputs[32:64]);
+        require(!nullifierUsed[nullifier1], "nullifier1 is already used");
+
         bytes32 nullifier2 = reconstructBytes32FromArray(_publicInputs[64:96]);
+        require(!nullifierUsed[nullifier2], "nullifier2 is already used");
 
         // nullifiers are used, mark them as used
         if (nullifier1 != bytes32(0)) {

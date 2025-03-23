@@ -2,6 +2,8 @@
 // Copyright 2022 Aztec
 pragma solidity >=0.8.21;
 
+import "hardhat/console.sol";
+
 uint256 constant N = 1048576;
 uint256 constant LOG_N = 20;
 uint256 constant NUMBER_OF_PUBLIC_INPUTS = 160;
@@ -1586,6 +1588,9 @@ abstract contract BaseHonkVerifier is IVerifier {
     function verify(bytes calldata proof, bytes32[] calldata publicInputs) public view override returns (bool) {
         Honk.VerificationKey memory vk = loadVerificationKey();
         Honk.Proof memory p = TranscriptLib.loadProof(proof);
+
+        console.log(publicInputs.length);
+        console.log(vk.publicInputsSize);
 
         if (publicInputs.length != vk.publicInputsSize) {
             revert PublicInputsLengthWrong();
