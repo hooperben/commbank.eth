@@ -3,7 +3,6 @@
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { addContact, getAllContacts, initDB } from "@/lib/db";

@@ -18,7 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { AppSidebar } from "@/components/app-sidebar";
 import {
   authenticateWithPasskey,
   isUsernameRegistered,

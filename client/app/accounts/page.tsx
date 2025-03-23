@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AppSidebar } from "@/components/app-sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
@@ -126,7 +125,6 @@ export default function AccountsPage() {
 
   return (
     <div className="flex min-h-screen">
-      <AppSidebar />
       <main className="flex-1 p-6">
         <div className="flex flex-col gap-6">
           <h1 className="text-3xl font-bold">My Account</h1>

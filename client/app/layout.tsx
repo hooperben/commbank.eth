@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/toaster";
 import PageHead from "@/components/page-head";
 import { AuthProvider } from "@/lib/auth-context";
 import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,21 +26,29 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthProvider>
-          <PageHead
-            title="commbank.eth"
-            description="a bank you don't need to trust"
-          />
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <div className="flex min-h-screen">
+        <SidebarProvider>
+          <AuthProvider>
+            <PageHead
+              title="commbank.eth"
+              description="a bank you don't need to trust"
+            />
+            <QueryClientProvider client={queryClient}>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+              >
                 <AppSidebar />
-                {children}
-              </div>
-              <Toaster />
-            </ThemeProvider>
-          </QueryClientProvider>
-        </AuthProvider>
+                <div className="flex flex-col w-full">
+                  <SidebarTrigger />
+
+                  {children}
+                </div>
+                <Toaster />
+              </ThemeProvider>
+            </QueryClientProvider>
+          </AuthProvider>
+        </SidebarProvider>
       </body>
     </html>
   );

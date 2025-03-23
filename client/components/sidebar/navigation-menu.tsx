@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
   },
 ];
 
-const SideBarContent = () => {
+const NavigationMenu = () => {
   const pathname = usePathname();
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
@@ -80,6 +80,6 @@ const SideBarContent = () => {
   );
 };
 
-export default SideBarContent;
+export default NavigationMenu;
 
 // ba73fa0ba74895597b6bf3e482187b3e59b87822db3ea464354c400e0a468799
