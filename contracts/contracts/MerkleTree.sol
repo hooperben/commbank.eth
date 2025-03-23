@@ -9,33 +9,18 @@ contract MerkleTree {
     uint256 public nextLeafIndex = 0; // Tracks where the next leaf should go
     uint256 public maxLeaves; // Maximum leaves based on depth
 
-    uint32 public immutable levels; // 5
-
-    // keccak256("PRIVATE_UNSTOPPABLE_BITCOIN")
-    bytes32 public constant EMPTY_NOTE =
-        0xe1bc205401da5e8e8e271e396cdfeb53e574c19af66ffa65e47fad18a61e8fb7;
-    bytes32 public constant INITIAL_ROOT =
-        0x4bae24af03a38508f27c9d5b1ca655a57408c047f8ad0e250b61eae68ad21e48;
-
-    // root hash of merkle tree with 32 leaves as EMPTY_NOTE
-    uint256 public constant FIELD_SIZE =
-        21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    uint32 public immutable levels = 20; // 20
 
     // filledSubtrees and roots could be bytes32[size], but using mappings makes it cheaper because
     // it removes index range check on every interaction
     mapping(uint256 => bytes32) public filledSubtrees;
     mapping(uint256 => bytes32) public roots;
-    mapping(bytes32 => bool) public nullifierUsed;
 
     uint32 public constant ROOT_HISTORY_SIZE = 100;
     uint32 public currentRootIndex = 0;
     uint32 public nextIndex = 0;
 
-    constructor() {
-        levels = 20;
-
-        roots[0] = INITIAL_ROOT;
-    }
+    constructor() {}
 
     function zeros(uint256 i) public pure returns (bytes32) {
         if (i == 0) {

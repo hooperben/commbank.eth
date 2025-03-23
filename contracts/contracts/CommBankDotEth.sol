@@ -14,6 +14,8 @@ contract CommBankDotEth is MerkleTree {
     NoteVerifier noteVerifier;
     TransactVerifier transactVerifier;
 
+    mapping(bytes32 => bool) public nullifierUsed;
+
     constructor(address _noteVerifier, address _transactVerifier) MerkleTree() {
         noteVerifier = NoteVerifier(_noteVerifier);
         transactVerifier = TransactVerifier(_transactVerifier);
@@ -58,6 +60,7 @@ contract CommBankDotEth is MerkleTree {
 
     event LeafAdded(uint256 indexed leafIndex, bytes32 indexed leaf);
     event EncryptedSecret(uint256 indexed leafIndex, bytes payload);
+    event NullifierUsed(bytes32 indexed nullifier);
 
     function deposit(
         address _erc20,
@@ -102,5 +105,51 @@ contract CommBankDotEth is MerkleTree {
         emit EncryptedSecret(index - 1, _payload);
     }
 
-    function transfer() public {}
+    // NOTE: this is currently only accepting 2 input/output notes proof times were getting
+    // too large
+    function transfer(
+        bytes calldata _proof,
+        bytes32[] calldata _publicInputs,
+        bytes[] calldata _payloads
+    ) public {
+        bool validProof = transactVerifier.verify(_proof, _publicInputs);
+        require(validProof, "not a valid proof");
+
+        // Reconstruct the root, nullifiers, and output hashes
+        bytes32 root = reconstructBytes32FromArray(_publicInputs[0:32]);
+
+        // Verify the root exists in our Merkle tree
+        require(isKnownRoot(root), "Unknown Merkle root");
+
+        bytes32 nullifier1 = reconstructBytes32FromArray(_publicInputs[32:64]);
+        bytes32 nullifier2 = reconstructBytes32FromArray(_publicInputs[64:96]);
+
+        // nullifiers are used, mark them as used
+        if (nullifier1 != bytes32(0)) {
+            nullifierUsed[nullifier1] = true;
+            emit NullifierUsed(nullifier1);
+        }
+        if (nullifier2 != bytes32(0)) {
+            nullifierUsed[nullifier2] = true;
+            emit NullifierUsed(nullifier2);
+        }
+
+        bytes32 outputHash1 = reconstructBytes32FromArray(
+            _publicInputs[96:128]
+        );
+        bytes32 outputHash2 = reconstructBytes32FromArray(
+            _publicInputs[128:160]
+        );
+
+        // Insert new output notes into the tree
+        uint256 index1 = _insert(outputHash1);
+        uint256 index2 = _insert(outputHash2);
+
+        // Emit events for the new leaves
+        emit LeafAdded(index1 - 1, outputHash1);
+        emit EncryptedSecret(index1 - 1, _payloads[0]);
+
+        emit LeafAdded(index2 - 1, outputHash2);
+        emit EncryptedSecret(index1 - 1, _payloads[1]);
+    }
 }
