@@ -5,6 +5,7 @@ import { UltraHonkBackend } from "@aztec/bb.js";
 import hre, { ethers } from "hardhat";
 import fs from "fs";
 import RSA from "./rsa";
+import { getEmptyTree } from "./merkle-tree";
 
 const RSA_ACCOUNTS = ["alice", "bob"];
 const RSA_ACCOUNT_PATH = "./const/";
@@ -78,6 +79,14 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
   const Keccak256Proof = await hre.ethers.getContractFactory("Keccak256Proof");
   const keccak256Proof = await Keccak256Proof.deploy();
 
+  const USDCMock = await hre.ethers.getContractFactory("USDC");
+  const usdc = await USDCMock.deploy();
+
+  const CommBank = await hre.ethers.getContractFactory("CommBankDotEth");
+  const commbank = await CommBank.deploy();
+
+  const tree = getEmptyTree();
+
   return {
     circuit,
     noir,
@@ -87,5 +96,8 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
     aliceRSA,
     bobRSA,
     keccak256Proof,
+    usdc,
+    commbank,
+    tree,
   };
 };

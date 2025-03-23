@@ -5,6 +5,7 @@ import { getTestingAPI } from "../helpers/testing-api";
 import { InputMap, Noir } from "@noir-lang/noir_js";
 import { UltraHonkBackend } from "@aztec/bb.js";
 import { Wallet, keccak256 } from "ethers";
+import { generateZerosFunction } from "../helpers/merkle-tree";
 
 describe("Note creation and flow testing", () => {
   let rsa: typeof SignatureGenModule;
@@ -42,5 +43,9 @@ describe("Note creation and flow testing", () => {
     );
 
     console.log(decryptedMessage);
+  });
+
+  it.only("should output sol code for zeros() in merkle tree", async () => {
+    generateZerosFunction();
   });
 });
