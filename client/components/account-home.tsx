@@ -165,7 +165,7 @@ const AccountHome = () => {
                               type="number"
                             />
                             <p className="text-xs text-muted-foreground">
-                              Available: 10 USDC
+                              Available: 0 USDC
                             </p>
                           </div>
                         </TabsContent>
@@ -181,7 +181,7 @@ const AccountHome = () => {
                               type="number"
                             />
                             <p className="text-xs text-muted-foreground">
-                              Available: $100 USD
+                              Available: 0 USDC
                             </p>
                           </div>
                         </TabsContent>
@@ -257,9 +257,9 @@ const AccountHome = () => {
                         </div>
                         <div className="flex justify-between items-center">
                           <div className="font-mono text-xl font-semibold">
-                            10 USDC
+                            0 USDC
                           </div>
-                          <Badge variant="secondary">~$10</Badge>
+                          <Badge variant="secondary">$0</Badge>
                         </div>
                       </div>
                     </div>
@@ -318,9 +318,9 @@ const AccountHome = () => {
                         </div>
                         <div className="flex justify-between items-center">
                           <div className="font-mono text-lg font-semibold">
-                            $100
+                            0
                           </div>
-                          <Badge variant="secondary">USD</Badge>
+                          <Badge variant="secondary">USDC</Badge>
                         </div>
                       </div>
                     </div>
