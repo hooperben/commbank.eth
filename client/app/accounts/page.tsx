@@ -119,10 +119,6 @@ export default function AccountsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const gravatarUrl = `https://www.gravatar.com/avatar/${generateMD5(
-    activeWallet.address,
-  )}?d=identicon&s=200`;
-
   return (
     <div className="flex min-h-screen">
       <main className="flex-1 p-6">
