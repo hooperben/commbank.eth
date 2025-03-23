@@ -10,10 +10,23 @@ import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Check, Copy, Wallet } from "lucide-react";
+import { Check, Copy, SendHorizontal, Wallet } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
+import { KeyPair } from "@/wasm/signature_gen";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { Label } from "./ui/label";
 
 const AccountHome = () => {
   const getAccountsDetails = async () => {
@@ -23,8 +36,24 @@ const AccountHome = () => {
 
     const evmAccounts = await getAllEVMAccounts();
     const evm = await getEVMAccountByUsername(username);
-
     const rsa = await getRSAKeyPairByUsername(username);
+
+    try {
+      // Dynamically import the WASM module
+      const wasmModule = await import("../wasm/signature_gen");
+
+      // Initialize the WASM module with the correct path to the .wasm file
+      // For Next.js 13+, WASM files should be in the public directory
+      await wasmModule.default("/signature_gen_bg.wasm");
+
+      console.log(rsa);
+
+      const keyPair = new wasmModule.KeyPair(rsa!.privateKey, rsa!.publicKey);
+
+      console.log(keyPair);
+    } catch (err) {
+      console.log(err);
+    }
 
     console.log("evm:", evmAccounts);
     console.log("evm:", evm);
@@ -73,6 +102,8 @@ const AccountHome = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+
   return (
     <div className="flex">
       <main className="flex-1 p-6">
@@ -83,7 +114,7 @@ const AccountHome = () => {
             <div className="flex flex-col w-full gap-2">
               {/* ACCOUNT DETAILS */}
               <Card className="w-full">
-                <CardContent className="pt-6">
+                <CardContent className="flex pt-6 flex-row justify-between items-center">
                   <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                     <Avatar className="h-20 w-20 border-2 border-primary/20">
                       <AvatarImage
@@ -99,24 +130,95 @@ const AccountHome = () => {
                       <h2 className="text-2xl font-bold text-primary">
                         {getRegisteredUsername() || "JD"}
                       </h2>
-                      <p className="text-sm text-muted-foreground">
-                        Account created on {accountsData.evm.createdAt}
-                      </p>
+                    </div>
+                  </div>
+
+                  <Dialog
+                    open={transferDialogOpen}
+                    onOpenChange={setTransferDialogOpen}
+                  >
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Transfer Between Accounts</DialogTitle>
+                        <DialogDescription>
+                          Move funds between your public and private accounts.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Tabs defaultValue="public-to-private" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="public-to-private">
+                            Public → Private
+                          </TabsTrigger>
+                          <TabsTrigger value="private-to-public">
+                            Private → Public
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent
+                          value="public-to-private"
+                          className="space-y-4 pt-4"
+                        >
+                          <div className="space-y-2">
+                            <Label htmlFor="public-amount">Amount (USDC)</Label>
+                            <Input
+                              id="public-amount"
+                              placeholder="0.00"
+                              type="number"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Available: 10 USDC
+                            </p>
+                          </div>
+                        </TabsContent>
+                        <TabsContent
+                          value="private-to-public"
+                          className="space-y-4 pt-4"
+                        >
+                          <div className="space-y-2">
+                            <Label htmlFor="private-amount">Amount (USD)</Label>
+                            <Input
+                              id="private-amount"
+                              placeholder="0.00"
+                              type="number"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Available: $100 USD
+                            </p>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                      <DialogFooter className="mt-4">
+                        <Button
+                          type="submit"
+                          onClick={() => setTransferDialogOpen(false)}
+                        >
+                          Transfer
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <div className="flex flex-col max-w-[300px]">
+                    <Button onClick={() => setTransferDialogOpen(true)}>
+                      Transfer Between Accounts
+                    </Button>
+
+                    <div className="text-muted-foreground mt-2 text-xs">
+                      Easily move funds between your public and private
+                      accounts.
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* PUBLIC ACCOUNT */}
-
-              <div className="flex flex-row w-full gap-2">
+              <div className="flex flex-col md:flex-row w-full gap-2">
+                {/* PUBLIC ACCOUNT */}
                 <Card className="w-full">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Wallet className="h-5 w-5" />
                       Public Address
                       <Badge variant="outline" className="ml-2">
-                        ETH
+                        EVM
                       </Badge>
                     </CardTitle>
                   </CardHeader>
@@ -161,6 +263,12 @@ const AccountHome = () => {
                         </div>
                       </div>
                     </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button size="sm" className="w-full">
+                        <SendHorizontal className="h-4 w-4 mr-2" />
+                        Send
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -171,7 +279,7 @@ const AccountHome = () => {
                       <Wallet className="h-5 w-5" />
                       Private Address
                       <Badge variant="outline" className="ml-2">
-                        RSA
+                        commbank.eth
                       </Badge>
                     </CardTitle>
                   </CardHeader>
@@ -215,6 +323,12 @@ const AccountHome = () => {
                           <Badge variant="secondary">USD</Badge>
                         </div>
                       </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button size="sm" className="w-full">
+                        <SendHorizontal className="h-4 w-4 mr-2" />
+                        Send
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

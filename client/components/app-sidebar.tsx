@@ -47,7 +47,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="px-3">
               {items.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
@@ -72,25 +72,21 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="border-t p-4">
-          <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-muted-foreground">
-            <div className="text-sm">
-              <div>
-                {token && (
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    onClick={() => {
-                      signOut();
-                    }}
-                  >
-                    Logout
-                  </Button>
-                )}
+        <div className="border-t w-full">
+          <div className="flex flex-col w-full gap-2 rounded-lg px-3 py-2 text-muted-foreground">
+            <ThemeToggle />
 
-                <ThemeToggle />
-              </div>
-            </div>
+            {token && (
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => {
+                  signOut();
+                }}
+              >
+                Logout
+              </Button>
+            )}
           </div>
         </div>
       </SidebarFooter>

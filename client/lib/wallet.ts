@@ -208,7 +208,12 @@ export const getAllRSAKeyPairs = (): Promise<any[]> => {
 // Get RSA key pair by username
 export const getRSAKeyPairByUsername = (
   username: string,
-): Promise<any | null> => {
+): Promise<{
+  username: string;
+  privateKey: Uint8Array;
+  publicKey: Uint8Array;
+  createdAt: number;
+} | null> => {
   return new Promise((resolve, reject) => {
     getAllRSAKeyPairs()
       .then((keyPairs) => {
