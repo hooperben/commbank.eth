@@ -485,8 +485,9 @@ export default function Home() {
                         <span className="font-semibold text-amber-500">
                           ZK Verification:
                         </span>{" "}
-                        DepositVerifier.sol and TransactVerifier.sol contracts
-                        validate proofs without revealing sensitive data.
+                        DepositVerifier.sol, TransactVerifier.sol and
+                        WithdrawVerifier.sol contracts validate proofs without
+                        revealing sensitive data.
                       </p>
                     </li>
                     <li className="flex gap-3">
