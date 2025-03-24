@@ -375,7 +375,7 @@ export default function Home() {
               <p className="text-gray-400 max-w-2xl mx-auto">
                 commbank.eth uses advanced cryptography to ensure your
                 transactions remain private while maintaining the security of
-                the blockchain.
+                ethereum.
               </p>
             </div>
 
@@ -500,7 +500,8 @@ export default function Home() {
                           Encrypted Sharing:
                         </span>{" "}
                         Notes are encrypted with the recipient&apos;s RSA public
-                        key and shared through the blockchain.
+                        key and shared through the chain, no third parties
+                        required.
                       </p>
                     </li>
                     <li className="flex gap-3">
@@ -612,10 +613,13 @@ export default function Home() {
                 Create your account now!
               </p>
               <Button
+                asChild
                 size="lg"
                 className="bg-amber-500 hover:bg-amber-600 text-black"
               >
-                Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                <Link href="/home">
+                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
             </div>
           </div>
