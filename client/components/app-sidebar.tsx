@@ -1,4 +1,4 @@
-import { Home, Users } from "lucide-react";
+import { Home, Settings, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import {
@@ -12,10 +12,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
-import { Button } from "./ui/button";
-import ThemeToggle from "./theme-toggle";
 import { useAuth } from "@/lib/auth-context";
+import Link from "next/link";
+import ThemeToggle from "./theme-toggle";
+import { Button } from "./ui/button";
 
 // Menu items.
 const items = [
@@ -29,6 +29,11 @@ const items = [
     icon: Users,
     label: "My Account",
   },
+  {
+    href: "/settings",
+    icon: Settings,
+    label: "Settings",
+  },
 ];
 
 export function AppSidebar() {
@@ -36,15 +41,15 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar>
-      <SidebarHeader>
+    <Sidebar className="bg-white dark:bg-black">
+      <SidebarHeader className="bg-background">
         <div className="flex h-14 items-center border-b px-6 font-semibold">
           <Link href="/" className="flex items-center gap-2">
             commbank.eth
           </Link>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-white dark:bg-black">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="px-3">
@@ -71,7 +76,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="bg-white dark:bg-black">
         <div className="border-t w-full">
           <div className="flex flex-col w-full gap-2 rounded-lg px-3 py-2 text-muted-foreground">
             <ThemeToggle />

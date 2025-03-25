@@ -7,6 +7,7 @@ interface AuthContextType {
   isSignedIn: boolean;
   username: string | null;
   token: string | null;
+  mnemonic: string | null;
   signIn: (secret: string) => void;
   signOut: () => void;
   isLoading: boolean;
@@ -18,7 +19,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [mnemonic, setMnemonic] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    console.log(mnemonic);
+  }, [mnemonic]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -31,14 +37,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUsername(registeredUsername);
       }
 
+      const existingToken = sessionStorage.getItem("authToken");
+
+      if (existingToken && isPasskeyRegistered()) {
+        setToken(existingToken);
+      }
+
       setIsLoading(false);
     };
-
-    const existingToken = sessionStorage.getItem("authToken");
-
-    if (existingToken && isPasskeyRegistered()) {
-      setToken(existingToken);
-    }
 
     checkAuth();
     window.addEventListener("storage", checkAuth);
@@ -91,6 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Save token to state and session storage
     setToken(jwt);
     setIsSignedIn(true);
+    console.log(secret);
+    setMnemonic(secret);
     sessionStorage.setItem("authToken", jwt);
   };
 
@@ -139,13 +147,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = () => {
     setToken(null);
+    setMnemonic(null);
     setIsSignedIn(false);
     sessionStorage.removeItem("authToken");
   };
 
   return (
     <AuthContext.Provider
-      value={{ isSignedIn, username, token, signIn, signOut, isLoading }}
+      value={{
+        isSignedIn,
+        username,
+        token,
+        mnemonic,
+        signIn,
+        signOut,
+        isLoading,
+      }}
     >
       {children}
     </AuthContext.Provider>

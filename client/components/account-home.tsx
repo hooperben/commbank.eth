@@ -1,5 +1,10 @@
 "use effect";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { DEFAULT_PASSKEY_USERNAME } from "@/const";
+import { gravatarUrl } from "@/const/gravatar";
+import { useAuth } from "@/lib/auth-context";
 import { getRegisteredUsername } from "@/lib/passkey";
 import {
   getAllEVMAccounts,
@@ -7,15 +12,11 @@ import {
   getRSAKeyPairByUsername,
 } from "@/lib/wallet";
 import { useQuery } from "@tanstack/react-query";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useState } from "react";
-import { Button } from "./ui/button";
 import { Check, Copy, SendHorizontal, Wallet } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "./ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
-import { Separator } from "./ui/separator";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import {
   Dialog,
   DialogContent,
@@ -25,33 +26,15 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Label } from "./ui/label";
+import { Separator } from "./ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 const AccountHome = () => {
+  const { mnemonic } = useAuth();
   const getAccountsDetails = async () => {
-    const username = getRegisteredUsername();
-
-    if (!username) throw new Error("shouldnt happen");
-
     const evmAccounts = await getAllEVMAccounts();
-    const evm = await getEVMAccountByUsername(username);
-    const rsa = await getRSAKeyPairByUsername(username);
-
-    try {
-      // Dynamically import the WASM module
-      const wasmModule = await import("../wasm/signature_gen");
-
-      // Initialize the WASM module with the correct path to the .wasm file
-      // For Next.js 13+, WASM files should be in the public directory
-      await wasmModule.default("/signature_gen_bg.wasm");
-
-      console.log(rsa);
-
-      const keyPair = new wasmModule.KeyPair(rsa!.privateKey, rsa!.publicKey);
-
-      console.log(keyPair);
-    } catch (err) {
-      console.log(err);
-    }
+    const evm = await getEVMAccountByUsername(DEFAULT_PASSKEY_USERNAME);
+    const rsa = await getRSAKeyPairByUsername(DEFAULT_PASSKEY_USERNAME);
 
     console.log("evm:", evmAccounts);
     console.log("evm:", evm);
@@ -63,24 +46,10 @@ const AccountHome = () => {
     };
   };
 
-  const generateMD5 = (input: string) => {
-    let hash = 0;
-    for (let i = 0; i < input.length; i++) {
-      const char = input.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    const hexHash = Math.abs(hash).toString(16).padStart(32, "0");
-    return hexHash;
-  };
-
   const { data: accountsData } = useQuery({
     queryKey: ["accounts-data", getRegisteredUsername()],
     queryFn: getAccountsDetails,
   });
-
-  const gravatarUrl = (address: string) =>
-    `https://www.gravatar.com/avatar/${generateMD5(address)}?d=identicon&s=200`;
 
   const [copiedPublic, setCopiedPublic] = useState(false);
   const [copiedPrivate, setCopiedPrivate] = useState(false);
@@ -106,8 +75,6 @@ const AccountHome = () => {
     <div className="flex">
       <main className="flex-1 p-6">
         <div className="flex flex-col gap-6">
-          <h1 className="text-3xl font-bold">My Account</h1>
-
           {accountsData && !!accountsData.evm && getRegisteredUsername() && (
             <div className="flex flex-col w-full gap-2">
               {/* ACCOUNT DETAILS */}
@@ -126,7 +93,7 @@ const AccountHome = () => {
 
                     <div className="space-y-1">
                       <h2 className="text-2xl font-bold text-primary">
-                        {getRegisteredUsername() || "JD"}
+                        commbank.eth
                       </h2>
                     </div>
                   </div>
@@ -194,17 +161,6 @@ const AccountHome = () => {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-
-                  <div className="flex flex-col max-w-[300px]">
-                    <Button onClick={() => setTransferDialogOpen(true)}>
-                      Transfer Between Accounts
-                    </Button>
-
-                    <div className="text-muted-foreground mt-2 text-xs">
-                      Easily move funds between your public and private
-                      accounts.
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
 
@@ -280,6 +236,12 @@ const AccountHome = () => {
                       <Badge variant="outline" className="ml-2">
                         commbank.eth
                       </Badge>
+                      <Badge
+                        variant={mnemonic ? "secondary" : "destructive"}
+                        className="ml-2"
+                      >
+                        {mnemonic ? "Live Syncing" : "Sync Disabled"}
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -327,9 +289,9 @@ const AccountHome = () => {
                         </div>
                         <div className="flex justify-between items-center">
                           <div className="font-mono text-lg font-semibold">
-                            0
+                            0 USDC
                           </div>
-                          <Badge variant="secondary">USDC</Badge>
+                          <Badge variant="secondary">$0</Badge>
                         </div>
                       </div>
                     </div>

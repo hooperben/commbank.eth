@@ -2,116 +2,37 @@
 
 import type React from "react";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { CheckCircle, Fingerprint, Loader2, User } from "lucide-react";
+import { CheckCircle, Fingerprint, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DEFAULT_PASSKEY_USERNAME } from "@/const";
 import { toast } from "@/hooks/use-toast";
-import {
-  authenticateWithPasskey,
-  isUsernameRegistered,
-  registerPasskey,
-} from "@/lib/passkey";
-import { encryptSecret, initDB, storeEncryptedSecret } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
+import { initDB } from "@/lib/db";
+import { registerPasskey, storeMnemonicWithPasskey } from "@/lib/passkey";
 import {
-  generateAndStoreEVMAccount,
   generateAndStoreRSAAccount,
+  storeEVMAccountPublicKey,
 } from "@/lib/wallet";
-
-// Mock API call to check if username is available
-const checkUsernameAvailability = async (
-  username: string,
-): Promise<{ available: boolean }> => {
-  // Simulate API call with delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Mock logic: usernames containing "taken" are considered unavailable
-      const available = !username.toLowerCase().includes("taken");
-      resolve({ available });
-    }, 1500);
-  });
-};
-
-// Mock API call to register a user
-const registerUser = async (
-  username: string,
-): Promise<{ success: boolean }> => {
-  // Simulate API call with delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true });
-    }, 1000);
-  });
-};
+import { ethers } from "ethers";
 
 // Generate a random 32-byte string
 
 const SignUp = () => {
   const { signIn } = useAuth();
-
-  const [step, setStep] = useState<
-    "username" | "checking" | "confirm" | "success"
-  >("username");
-
-  const [username, setUsername] = useState("");
+  const [step, setStep] = useState<"confirm" | "success" | "complete">(
+    "confirm",
+  );
   const [isRegistering, setIsRegistering] = useState(false);
-
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-
-  const handleUsernameSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!username.trim()) {
-      toast({
-        title: "Username Required",
-        description: "Please enter a username to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsCheckingUsername(true);
-    setStep("checking");
-
-    try {
-      // Check if username is available
-      const { available } = await checkUsernameAvailability(username);
-
-      if (available) {
-        setStep("confirm");
-      } else {
-        toast({
-          title: "Username Not Available",
-          description:
-            "This username is already taken. Please try another one.",
-          variant: "destructive",
-        });
-        setStep("username");
-      }
-    } catch (error) {
-      console.error("Error checking username:", error);
-      toast({
-        title: "Error",
-        description: "Failed to check username availability. Please try again.",
-        variant: "destructive",
-      });
-      setStep("username");
-    } finally {
-      setIsCheckingUsername(false);
-    }
-  };
+  const [isGeneratingAccount, setIsGeneratingAccount] = useState(false);
 
   const handleRegisterPasskey = async () => {
     setIsRegistering(true);
@@ -120,7 +41,7 @@ const SignUp = () => {
 
     try {
       // Register passkey
-      const success = await registerPasskey(username);
+      const success = await registerPasskey(DEFAULT_PASSKEY_USERNAME);
 
       if (!success) {
         throw new Error("Failed to register passkey");
@@ -140,58 +61,52 @@ const SignUp = () => {
     }
   };
 
-  const generateRandomSecret = (): string => {
-    const array = new Uint8Array(32);
-    window.crypto.getRandomValues(array);
-    return Array.from(array)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  };
-
-  const [isGeneratingAccount, setIsGeneratingAccount] = useState(false);
-
   const handleGenerateAccounts = async () => {
     setIsGeneratingAccount(true);
 
     await initDB();
 
     try {
-      const secret = generateRandomSecret();
-      const authData = await authenticateWithPasskey();
+      const random = ethers.Wallet.createRandom();
 
-      if (!authData) {
-        toast({
-          title: "Authentication Failed",
-          description: "Failed to authenticate with passkey",
-          variant: "destructive",
-        });
-        return;
+      console.log(random);
+
+      if (!random.mnemonic) {
+        throw new Error("Failed to create account.");
       }
 
-      const encryptedSecret = await encryptSecret(
-        "commbank.eth",
-        secret,
-        authData,
-        true,
+      // Store the secret securely with passkeys
+      const storageSuccess = await storeMnemonicWithPasskey(
+        DEFAULT_PASSKEY_USERNAME,
+        random.mnemonic?.phrase,
       );
 
-      await storeEncryptedSecret(encryptedSecret);
+      if (!storageSuccess) {
+        throw new Error("Failed to securely store mnemonic");
+      }
 
-      // generate EVM and RSA keys
-      generateAndStoreEVMAccount(secret, username);
-      await generateAndStoreRSAAccount(secret, username);
+      // Generate EVM and RSA keys
+      storeEVMAccountPublicKey(random.address, DEFAULT_PASSKEY_USERNAME);
+      await generateAndStoreRSAAccount(
+        random.mnemonic?.phrase,
+        DEFAULT_PASSKEY_USERNAME,
+      );
 
-      signIn(secret);
+      // Sign the user in
+      signIn(random.privateKey);
+
+      setStep("complete");
 
       toast({
         title: "Success",
-        description: "Secret encrypted and stored successfully",
+        description:
+          "Your wallet has been created and secured with your passkey",
       });
     } catch (err) {
-      console.error("Failed to store secret:", err);
+      console.error("Failed to generate accounts:", err);
       toast({
         title: "Error",
-        description: "Failed to encrypt and store secret",
+        description: "Failed to generate and secure your wallet",
         variant: "destructive",
       });
     } finally {
@@ -201,63 +116,13 @@ const SignUp = () => {
 
   return (
     <>
-      {step === "username" && (
-        <>
-          <CardHeader>
-            <CardTitle className="text-center">Create Account</CardTitle>
-            <CardDescription className="text-center">
-              commbank.eth stores a secret in your device using passkey
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUsernameSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-amber-500 hover:bg-amber-600 text-black"
-              >
-                <User className="mr-2 h-4 w-4" />
-                Continue
-              </Button>
-            </form>
-          </CardContent>
-        </>
-      )}
-
-      {step === "checking" && (
-        <>
-          <CardHeader>
-            <CardTitle className="text-center">Checking Username</CardTitle>
-            <CardDescription className="text-center">
-              Please wait while we check if the username is available
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center py-8">
-            <div className="flex flex-col items-center space-y-4">
-              <Loader2 className="h-12 w-12 animate-spin text-amber-500" />
-              <p className="text-sm text-zinc-400">
-                Checking availability for "{username}"
-              </p>
-            </div>
-          </CardContent>
-        </>
-      )}
-
       {step === "confirm" && (
         <>
           <CardHeader>
-            <CardTitle className="text-center">Confirm Your Identity</CardTitle>
+            <CardTitle className="text-center">Create your account</CardTitle>
             <CardDescription className="text-center">
-              Set up a passkey for {username} to secure your account
+              commbank.eth uses passkey authentication to store your account
+              details
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -265,12 +130,9 @@ const SignUp = () => {
               <div className="rounded-lg border border-zinc-800 p-4 text-center">
                 <Fingerprint className="h-12 w-12 mx-auto mb-2 text-amber-500" />
                 <p className="text-sm text-zinc-400">
-                  You'll use this passkey to securely access your account in the
-                  future. No password needed!
+                  You&apos;ll use this passkey to securely access your account
+                  in the future. No password needed!
                 </p>
-              </div>
-              <div className="text-center">
-                <p className="font-medium">Username: {username}</p>
               </div>
             </div>
           </CardContent>
@@ -283,22 +145,14 @@ const SignUp = () => {
               {isRegistering ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Setting up passkey...
+                  Registering your passkey...
                 </>
               ) : (
                 <>
                   <Fingerprint className="mr-2 h-4 w-4" />
-                  Confirm with Passkey
+                  Register Passkey
                 </>
               )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setStep("username")}
-              disabled={isRegistering}
-              className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-            >
-              Back
             </Button>
           </CardFooter>
         </>
