@@ -2,14 +2,13 @@
 pragma solidity ^0.8.28;
 
 import "./MerkleTree.sol";
+
 import {NoteVerifier} from "./verifiers/NoteVerifier.sol";
 import {TransactVerifier} from "./verifiers/TransactVerifier.sol";
 import {WithdrawVerifier} from "./verifiers/WithdrawVerifier.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
-import "hardhat/console.sol";
 
 contract CommBankDotEth is MerkleTree {
     NoteVerifier noteVerifier;
@@ -68,6 +67,7 @@ contract CommBankDotEth is MerkleTree {
     event LeafAdded(uint256 indexed leafIndex, bytes32 indexed leaf);
     event EncryptedSecret(uint256 indexed leafIndex, bytes payload);
     event NullifierUsed(bytes32 indexed nullifier);
+    event Withdrawal(address withdrawTo, address asset, uint256 amount);
 
     function deposit(
         address _erc20,
@@ -86,21 +86,13 @@ contract CommBankDotEth is MerkleTree {
 
         require(depositTransfer, "failed to transfer");
 
-        // Log each public input for debugging
-        console.log("Public Inputs Length:", _publicInputs.length);
-
         bytes32 noteHash = reconstructBytes32FromArray(_publicInputs[0:32]);
-        console.logBytes32(noteHash);
-
         address depositAddress = reconstructAddressFromArray(
             _publicInputs[65:85]
         );
         bytes32 value = _publicInputs[32];
         require(_erc20 == depositAddress, "invalid address reconstruction");
         require(uint256(value) == _amount, "invalid amount reconstruction");
-
-        // bytes32 otherValue = reconstructBytes32FromArray(_publicInputs[33:65]);
-        // console.log(uint256(otherValue));
 
         bool validProof = noteVerifier.verify(_proof, _publicInputs);
 
@@ -119,7 +111,6 @@ contract CommBankDotEth is MerkleTree {
         bytes32[] calldata _publicInputs,
         bytes[] calldata _payloads
     ) public {
-        console.log(_publicInputs.length);
         bool validProof = transactVerifier.verify(_proof, _publicInputs);
         require(validProof, "not a valid proof");
 
@@ -162,5 +153,60 @@ contract CommBankDotEth is MerkleTree {
 
         emit LeafAdded(index2 - 1, outputHash2);
         emit EncryptedSecret(index1 - 1, _payloads[1]);
+    }
+
+    function withdraw(
+        bytes calldata _proof,
+        bytes32[] calldata _publicInputs,
+        address _withdrawTo
+    ) public {
+        bool validProof = withdrawVerifier.verify(_proof, _publicInputs);
+        require(validProof, "not a valid proof");
+
+        // Reconstruct the root and check we have it in our history
+        bytes32 root = reconstructBytes32FromArray(_publicInputs[0:32]);
+        require(isKnownRoot(root), "Unknown Merkle root");
+
+        // ensure nullifiers aren't spent
+        bytes32 nullifier1 = reconstructBytes32FromArray(_publicInputs[32:64]);
+        require(!nullifierUsed[nullifier1], "nullifier1 is already used");
+
+        bytes32 nullifier2 = reconstructBytes32FromArray(_publicInputs[64:96]);
+        require(!nullifierUsed[nullifier2], "nullifier2 is already used");
+
+        address address1 = reconstructAddressFromArray(_publicInputs[96:116]);
+        address address2 = reconstructAddressFromArray(_publicInputs[116:136]);
+
+        uint256 amount1 = uint256(_publicInputs[136]);
+        uint256 amount2 = uint256(_publicInputs[137]);
+
+        // nullifiers are used, mark them as used
+        if (nullifier1 != bytes32(0)) {
+            nullifierUsed[nullifier1] = true;
+            emit NullifierUsed(nullifier1);
+        }
+        if (nullifier2 != bytes32(0)) {
+            nullifierUsed[nullifier2] = true;
+            emit NullifierUsed(nullifier2);
+        }
+
+        if (address1 != address(0)) {
+            bool withdraw1 = ERC20(address1).transfer(
+                _withdrawTo,
+                amount1 * 10 ** ERC20(address1).decimals()
+            );
+            require(withdraw1, "failed to withdraw1");
+            emit Withdrawal(_withdrawTo, address1, amount1);
+        }
+
+        if (address2 != address(0)) {
+            bool withdraw2 = ERC20(address2).transfer(
+                _withdrawTo,
+                amount2 * 10 ** ERC20(address2).decimals()
+            );
+            require(withdraw2, "failed to withdraw2");
+
+            emit Withdrawal(_withdrawTo, address2, amount2);
+        }
     }
 }

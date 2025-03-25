@@ -55,6 +55,11 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
     backendClass,
   );
 
+  const { noir: withdrawNoir, backend: withdrawBackend } = await getNoir(
+    "../circuits/withdraw/target/withdraw.json",
+    backendClass,
+  );
+
   const [funder] = await hre.ethers.getSigners();
 
   const alice_private_key =
@@ -117,6 +122,8 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
     backend,
     transactNoir,
     transactBackend,
+    withdrawNoir,
+    withdrawBackend,
     alice,
     bob,
     aliceRSA,
