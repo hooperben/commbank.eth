@@ -366,7 +366,7 @@ export default function Home() {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-16 px-4 md:px-6 bg-gray-100 dark:bg-zinc-900/50">
+        <section className="py-16 px-4 md:px-6 bg-gray-100 dark:bg-zinc-900/50 rounded-2xl">
           <div className="container mx-auto max-w-6xl">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-amber-500 mb-4">
@@ -374,8 +374,8 @@ export default function Home() {
               </h2>
               <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 commbank.eth uses advanced cryptography to ensure your
-                transactions remain private while maintaining the security of
-                ethereum.
+                transactions remain private while maintaining the security and
+                decentralisation of ethereum.
               </p>
             </div>
 
@@ -451,7 +451,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-zinc-800/70 border border-gray-200 dark:border-zinc-700 rounded-lg p-6 md:p-8 rounded-2xl">
+            <div className="bg-white dark:bg-zinc-800/70 border border-gray-200 dark:border-zinc-700 p-6 md:p-8 rounded-2xl">
               <div className="flex flex-col md:flex-row gap-8 items-center">
                 <div className="w-full md:w-1/2">
                   <ZkFlowDiagram />
@@ -467,7 +467,7 @@ export default function Home() {
                           1
                         </span>
                       </div>
-                      <p className="text-gray-300">
+                      <p className="dark:text-gray-300">
                         <span className="font-semibold text-amber-500">
                           Note Creation:
                         </span>{" "}
@@ -481,7 +481,7 @@ export default function Home() {
                           2
                         </span>
                       </div>
-                      <p className="text-gray-300">
+                      <p className="dark:text-gray-300">
                         <span className="font-semibold text-amber-500">
                           ZK Verification:
                         </span>{" "}
@@ -496,7 +496,7 @@ export default function Home() {
                           3
                         </span>
                       </div>
-                      <p className="text-gray-300">
+                      <p className="dark:text-gray-300">
                         <span className="font-semibold text-amber-500">
                           Encrypted Sharing:
                         </span>{" "}
@@ -511,12 +511,12 @@ export default function Home() {
                           4
                         </span>
                       </div>
-                      <p className="text-gray-300">
+                      <p className="dark:text-gray-300">
                         <span className="font-semibold text-amber-500">
-                          Local Storage:
+                          Encrypted Browser Storage:
                         </span>{" "}
-                        Your wallet monitors for notes encrypted to your key and
-                        stores them in IndexedDB for future use.
+                        Your browser monitors for incoming notes encrypted to
+                        your key and stores them in IndexedDB for future use.
                       </p>
                     </li>
                   </ul>
@@ -649,7 +649,7 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-bold text-black dark:text-amber-500 mb-4">
                 Curious?
               </h2>
-              <p className="text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-8">
+              <p className="text-gray-700 dark:dark:text-gray-300 max-w-2xl mx-auto mb-8">
                 Create your account now!
               </p>
               <Button
