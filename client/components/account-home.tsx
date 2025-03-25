@@ -1,5 +1,6 @@
 "use client";
 
+import { SendTransactionDialog } from "@/components/send-transaction";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,7 @@ const AccountHome = () => {
 
     try {
       const provider = new ethers.JsonRpcProvider(
-        "https://eth-mainnet.g.alchemy.com/v2/c6SDbF_tLXhMZGXWxSMgd-YqcPriLnEo",
+        "https://eth-sepolia.g.alchemy.com/v2/c6SDbF_tLXhMZGXWxSMgd-YqcPriLnEo",
       );
 
       // Fetch ETH balance
@@ -74,7 +75,7 @@ const AccountHome = () => {
       console.log(ethBalance);
 
       // USDC contract address
-      const usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+      const usdcAddress = "0x9bb68C037BFCE2A8ecF55fE165b1F2A59593A220";
 
       const usdcContract = new ethers.Contract(usdcAddress, erc20ABI, provider);
 
@@ -123,6 +124,12 @@ const AccountHome = () => {
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
   const [receiveAddress, setReceiveAddress] = useState("");
   const [receiveType, setReceiveType] = useState<"public" | "private">(
+    "public",
+  );
+
+  // New state for send transaction dialog
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [sendAccountType, setSendAccountType] = useState<"public" | "private">(
     "public",
   );
 
@@ -264,6 +271,14 @@ const AccountHome = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
+
+                  {/* Send Transaction Dialog */}
+                  <SendTransactionDialog
+                    open={sendDialogOpen}
+                    onOpenChange={setSendDialogOpen}
+                    accountType={sendAccountType}
+                    availableAssets={tokenBalances || { eth: "0", usdc: "0" }}
+                  />
                 </CardContent>
               </Card>
 
@@ -347,7 +362,14 @@ const AccountHome = () => {
                         <ArrowDownToLine className="h-4 w-4 mr-2" />
                         Receive
                       </Button>
-                      <Button size="sm" className="w-full">
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setSendAccountType("public");
+                          setSendDialogOpen(true);
+                        }}
+                      >
                         <SendHorizontal className="h-4 w-4 mr-2" />
                         Send
                       </Button>
@@ -440,7 +462,14 @@ const AccountHome = () => {
                         <ArrowDownToLine className="h-4 w-4 mr-2" />
                         Receive
                       </Button>
-                      <Button size="sm" className="w-full">
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setSendAccountType("private");
+                          setSendDialogOpen(true);
+                        }}
+                      >
                         <SendHorizontal className="h-4 w-4 mr-2" />
                         Send
                       </Button>
