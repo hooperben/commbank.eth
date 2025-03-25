@@ -72,7 +72,7 @@ export function AppSidebar() {
                     asChild
                     className={pathname === item.href ? "text-primary" : ""}
                   >
-                    <a href={item.href}>
+                    <Link href={item.href}>
                       <item.icon
                         className={pathname === item.href ? "text-primary" : ""}
                       />
@@ -81,7 +81,7 @@ export function AppSidebar() {
                       >
                         {item.label}
                       </span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
