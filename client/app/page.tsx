@@ -352,13 +352,13 @@ export default function Home() {
             <p className="text-xl md:text-2xl max-w-2xl mb-8 text-foreground/80">
               a bank you don&apos;t need to trust
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 cursor-pointer">
               <Button
                 asChild
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground hover:cursor-pointer"
               >
-                <Link href="/home">
+                <Link href="/home" className="hover:cursor-pointer">
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
