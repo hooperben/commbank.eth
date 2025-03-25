@@ -10,19 +10,20 @@ export default function Home() {
       <h6 className="text-lg text-amber-500">Foreword/Legal Disclaimer</h6>
 
       <p>
-        The following is a detailed explanation of how I was able to use
-        commbank.eth&apos;s technology to privately send my sister some money
-        for a coffee, but first a disclaimer.
+        The following is a detailed explanation of how{" "}
+        <span className="text-primary">commbank.eth</span> enables private
+        transfers of assets on public computer networks.
       </p>
 
       <p>
-        commbank.eth private transfers are currently only enabled for me
-        (meaning only I can deposit real money to the encrypted protocol). As
-        you can probably imagine, the ability to make money vanish in one spot
-        and appear in another is very attractive to those on the other side of
-        the law. It is not impossible to regulate and enforce the same
-        compliance regulations we have in the traditional finance system in
-        commbank.eth, but it is much harder.
+        <span className="text-primary">commbank.eth</span> private transfers are
+        currently only enabled for me (meaning only I can deposit real money to
+        the encrypted protocol). As you can probably imagine, the ability to
+        make money vanish in one spot and appear in another is very attractive
+        to those on the other side of the law. It is not impossible to regulate
+        and enforce the same compliance regulations we have in the traditional
+        finance system in <span className="text-primary">commbank.eth</span>,
+        but it is much harder.
       </p>
 
       <p>
@@ -37,8 +38,8 @@ export default function Home() {
 
       <p>
         Now that I&apos;ve done my &apos;here&apos;s why I can&apos;t be
-        imprisoned for this&apos; explanation, let us get into the magic of how
-        commbank.eth works.
+        imprisoned for this&apos; explanation, let us get into the magic of how{" "}
+        <span className="text-primary">commbank.eth</span> works.
       </p>
 
       <h6 className="text-lg text-amber-500">Context</h6>
@@ -72,12 +73,12 @@ export default function Home() {
       </div>
 
       <p>
-        This is a noted feature of blockchains, the fact that everyone can see
-        everything means that accountability and transparency are much more
-        tangible, but it&apos;s a terrible feature compared to the privacy that
-        our traditional banking system offers. If we could all see each others
-        bank balances, the dynamic of society would change pretty drastically,
-        and probably not for the better.
+        This is a noted feature of blockchains/public computers, the fact that
+        everyone can see everything means that accountability and transparency
+        are much more tangible, but it&apos;s a terrible feature when compared
+        to the privacy that our traditional banking system offers. If we could
+        all see each others bank balances, the dynamic of society would change
+        pretty drastically, and probably not for the better.
       </p>
 
       <p>
@@ -88,21 +89,21 @@ export default function Home() {
       </p>
 
       <p>
-        As the internet and digital payments specifically have increased
-        exponentially, a handful of very powerful corporations have essentially
-        formed a monopoly on how money moves. These corporations and the fees
-        that they charge are currently quite a political issue in Australia, as
-        it is basically theft. ~1% surcharges on all transactions is not a good
-        outcome for anybody except these corporations, and contributes even more
-        to the ongoing cost of living pressures.
+        As digital payments have increased exponentially, a handful of very
+        powerful corporations have essentially formed a monopoly on how money
+        moves. These corporations and the fees that they charge are currently
+        quite a political issue in Australia, as it is basically theft. ~1%
+        surcharges on all transactions is not a good outcome for anybody except
+        these corporations, and contributes even more to the ongoing cost of
+        living pressures.
       </p>
 
       <p>
         But, not all hope is lost. What if we could have the privacy that we
         have with the traditional banking system, but on public computers? Where
-        we don&apos;t pay a middleman to facilitate the transaction, we pay for
-        the electricity to process the transaction. This thought experiment is
-        the thesis for <span className="text-primary">commbank.eth</span>.
+        we don&apos;t pay a middleman to facilitate the transaction, we just pay
+        for the electricity to process the transaction. This thought experiment
+        is the thesis for <span className="text-primary">commbank.eth</span>.
       </p>
 
       <h6 className="text-lg text-amber-500">
@@ -179,7 +180,8 @@ export default function Home() {
         transferred to <span className="text-primary">commbank.eth</span>, with
         the user providing the note hash too. This note hash is validated with a
         Zero Knowledge proof, which verifies that the note_hash does actually
-        equal the amount and asset publicly deposited, or the transaction fails.
+        contain the amount and asset publicly deposited, or the transaction
+        fails.
       </p>
 
       <p>
@@ -204,16 +206,19 @@ export default function Home() {
         To do this, she takes her Note A as an input note, and creates 2 output
         notes, one for $6 belonging to Bob, and one for $4 to herself as change.
         The most important part of the transfer process is ensuring that the sum
-        of asset inputs = the sum of asset outputs. Alice also proves:
+        of asset inputs = the sum of asset outputs. For each input note, Alice
+        also proves:
       </p>
 
       <p>
         <li>
-          She knows some hash leaf value that is contained within a recent
-          merkle root
+          She knows where the public hash of this note fits into the merkle tree
+          (by providing the leaf_index, merkle_path and merkle_path_values).
         </li>
+        <li>She knows the secret value of the note</li>
         <li>
-          She knows some secret that when hashed = the owner value on the note
+          She knows some private value that when hashed = the owner address on
+          the note
         </li>
       </p>
 
@@ -238,6 +243,8 @@ export default function Home() {
         withdrawal amount, and the nullifiers are recorded just the same as
         transfers.
       </p>
+
+      <h6 className="text-xl text-amber-500">Real Transactions</h6>
     </main>
   );
 }
