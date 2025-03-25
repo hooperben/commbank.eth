@@ -16,11 +16,20 @@ async function main() {
   ) as unknown as USDC;
 
   const tx = await usdc.transfer(
-    "0xC3c30d94db48b33842Ee612FcD53Af466b72f1c5",
-    ethers.parseUnits("414", 6),
+    "0x800A6FC6cfCd48A0330d352B7e3aA777750eaC3e",
+    ethers.parseUnits("420", 6),
   );
 
-  console.log(tx);
+  await tx.wait(2);
+
+  const second = await Deployer.sendTransaction({
+    to: "0x800A6FC6cfCd48A0330d352B7e3aA777750eaC3e",
+    value: ethers.parseEther("0.01"),
+  });
+
+  await second.wait(2);
+
+  console.log("done");
 }
 
 main()

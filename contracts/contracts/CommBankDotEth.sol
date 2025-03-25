@@ -10,6 +10,8 @@ import {WithdrawVerifier} from "./verifiers/WithdrawVerifier.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+import "hardhat/console.sol";
+
 contract CommBankDotEth is MerkleTree {
     NoteVerifier noteVerifier;
     TransactVerifier transactVerifier;
@@ -100,8 +102,8 @@ contract CommBankDotEth is MerkleTree {
 
         uint256 index = _insert(noteHash);
 
-        emit LeafAdded(index - 1, noteHash);
-        emit EncryptedSecret(index - 1, _payload);
+        emit LeafAdded(index, noteHash);
+        emit EncryptedSecret(index, _payload);
     }
 
     // NOTE: this is currently only accepting 2 input/output notes proof times were getting
@@ -147,12 +149,14 @@ contract CommBankDotEth is MerkleTree {
         uint256 index1 = _insert(outputHash1);
         uint256 index2 = _insert(outputHash2);
 
-        // Emit events for the new leaves
-        emit LeafAdded(index1 - 1, outputHash1);
-        emit EncryptedSecret(index1 - 1, _payloads[0]);
+        console.logBytes32(getLastRoot());
 
-        emit LeafAdded(index2 - 1, outputHash2);
-        emit EncryptedSecret(index1 - 1, _payloads[1]);
+        // Emit events for the new leaves
+        emit LeafAdded(index1, outputHash1);
+        emit EncryptedSecret(index1, _payloads[0]);
+
+        emit LeafAdded(index2, outputHash2);
+        emit EncryptedSecret(index2, _payloads[1]);
     }
 
     function withdraw(
@@ -165,6 +169,8 @@ contract CommBankDotEth is MerkleTree {
 
         // Reconstruct the root and check we have it in our history
         bytes32 root = reconstructBytes32FromArray(_publicInputs[0:32]);
+        console.logBytes32(root);
+        console.logBytes32(getLastRoot());
         require(isKnownRoot(root), "Unknown Merkle root");
 
         // ensure nullifiers aren't spent

@@ -18,12 +18,12 @@ export const getLeafAddedDetails = (
         topics: log.topics,
         data: log.data,
       });
-    })[0];
+    });
 
-  return {
-    leafIndex: formatted?.args[0],
-    noteHash: formatted?.args[1],
-  };
+  return formatted.map((event) => ({
+    leafIndex: event!.args[0],
+    noteHash: event!.args[1],
+  }));
 };
 
 export const getPayloadDetails = (

@@ -123,7 +123,7 @@ describe("Note creation and flow testing", () => {
 
     // Wait for transaction to be mined and get receipt
     const receipt = await tx.wait();
-    const leafDetails = getLeafAddedDetails(commbank, receipt!.logs);
+    const [leafDetails] = getLeafAddedDetails(commbank, receipt!.logs);
 
     // update our tree with the inserted note
     tree.updateLeaf(leafDetails.leafIndex, leafDetails.noteHash);
@@ -262,26 +262,35 @@ describe("Note creation and flow testing", () => {
     ];
 
     // submit the encrypted transfer
-    await commbank.transfer(
+    const transactTx = await commbank.transfer(
       transactProof.slice(4),
       transactPublicInputs,
       transactPayloads,
     );
 
+    const transactReceipt = await transactTx.wait();
+
+    const [aliceLeafInsert, bobLeafInsert] = getLeafAddedDetails(
+      commbank,
+      transactReceipt!.logs,
+    );
+
+    console.log("aliceLeafInsert: ", aliceLeafInsert);
+    console.log("bobLeafInsert: ", bobLeafInsert);
+
     // update our typescript tree to match our contract tree
-    tree.updateLeaf(1, Buffer.from(aliceOutputNoteHash));
-    tree.updateLeaf(2, Buffer.from(bobOutputNoteHash));
+    tree.updateLeaf(1, aliceLeafInsert.noteHash);
+    tree.updateLeaf(2, bobLeafInsert.noteHash);
 
     // now that bob has a balance, he is going to withdraw it back to usdc
+    const bobMerklePath = tree.getProof(bobLeafInsert.noteHash).map((step) => {
+      return {
+        path: step.position === "right" ? 1 : 0,
+        value: convertFromHexToArray(step.data.toString("hex")),
+      };
+    });
 
-    const bobMerklePath = tree
-      .getProof("0x" + Buffer.from(bobOutputNoteHash).toString("hex"))
-      .map((step) => {
-        return {
-          path: step.position === "right" ? 1 : 0,
-          value: convertFromHexToArray(step.data.toString("hex")),
-        };
-      });
+    console.log("bobMerklePath: ", bobMerklePath);
 
     const bobPaths = bobMerklePath.map((x) => x.path);
     const bobValues = bobMerklePath.map((x) => x.value);
@@ -333,6 +342,7 @@ describe("Note creation and flow testing", () => {
 
     const bobERC20BalanceBefore = await usdc.balanceOf(bob.address);
     console.log("bob before withdraw: ", bobERC20BalanceBefore);
+    console.log("0x" + tree.getRoot().toString("hex"));
 
     await commbank.withdraw(
       withdrawProof.slice(4),

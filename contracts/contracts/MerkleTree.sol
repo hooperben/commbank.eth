@@ -148,9 +148,10 @@ contract MerkleTree {
     }
 
     function _insert(bytes32 leaf) internal returns (uint32 index) {
-        uint32 current_index = nextIndex;
-        require(current_index != 2 ** (levels - 1), "Merkle tree is full");
+        uint32 insertIndex = nextIndex; // Store the insertion index
+        require(insertIndex != 2 ** (levels - 1), "Merkle tree is full");
 
+        uint32 current_index = insertIndex; // Use a separate variable for tree traversal
         bytes32 current_level_hash = leaf;
         bytes32 left;
         bytes32 right;
@@ -174,9 +175,9 @@ contract MerkleTree {
         uint32 newRootIndex = (currentRootIndex + 1) % ROOT_HISTORY_SIZE;
         currentRootIndex = newRootIndex;
         roots[newRootIndex] = current_level_hash;
-        nextIndex = current_index + 1;
+        nextIndex = insertIndex + 1; // Increment nextIndex based on the original insertion index
 
-        return nextIndex;
+        return insertIndex; // Return the index where this leaf was inserted
     }
 
     function hashLeftRight(
