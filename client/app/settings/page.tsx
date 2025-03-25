@@ -47,7 +47,7 @@ export default function Home() {
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-col gap-2">
-          <p>Export your secret phrase.</p>
+          <p className="text-sm">Export your secret phrase</p>
           <Button className="max-w-[200px]" onClick={handleExportAccount}>
             Export Account
           </Button>
@@ -55,7 +55,7 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-bold">Theme Settings</h2>
+        <p className="text-sm">Theme Settings</p>
 
         <ThemeToggle />
       </div>
