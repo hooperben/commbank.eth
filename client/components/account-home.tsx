@@ -1,19 +1,6 @@
-"use effect";
+"use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { DEFAULT_PASSKEY_USERNAME } from "@/const";
-import { gravatarUrl } from "@/const/gravatar";
-import { useAuth } from "@/lib/auth-context";
-import { getRegisteredUsername } from "@/lib/passkey";
-import {
-  getAllEVMAccounts,
-  getEVMAccountByUsername,
-  getRSAKeyPairByUsername,
-} from "@/lib/wallet";
-import { useQuery } from "@tanstack/react-query";
-import { Check, Copy, SendHorizontal, Wallet } from "lucide-react";
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,8 +12,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { DEFAULT_PASSKEY_USERNAME } from "@/const";
+import { erc20ABI } from "@/const/erc20-abi";
+import { gravatarUrl } from "@/const/gravatar";
+import { useAuth } from "@/lib/auth-context";
+import { getRegisteredUsername } from "@/lib/passkey";
+import {
+  getAllEVMAccounts,
+  getEVMAccountByUsername,
+  getRSAKeyPairByUsername,
+} from "@/lib/wallet";
+import { useQuery } from "@tanstack/react-query";
+import { ethers } from "ethers";
+import {
+  ArrowDownToLine,
+  Check,
+  Copy,
+  SendHorizontal,
+  Wallet,
+} from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 const AccountHome = () => {
@@ -51,6 +60,47 @@ const AccountHome = () => {
     queryFn: getAccountsDetails,
   });
 
+  const fetchTokenBalances = async () => {
+    if (!accountsData?.evm?.address) return { eth: "0", usdc: "0" };
+
+    try {
+      const provider = new ethers.JsonRpcProvider(
+        "https://eth-mainnet.g.alchemy.com/v2/c6SDbF_tLXhMZGXWxSMgd-YqcPriLnEo",
+      );
+
+      // Fetch ETH balance
+      console.log(accountsData.evm.address);
+      const ethBalance = await provider.getBalance(accountsData.evm.address);
+      console.log(ethBalance);
+
+      // USDC contract address
+      const usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+
+      const usdcContract = new ethers.Contract(usdcAddress, erc20ABI, provider);
+
+      // Fetch USDC balance
+      const usdcBalance = await usdcContract.balanceOf(
+        accountsData.evm.address,
+      );
+
+      console.log(usdcAddress);
+
+      return {
+        eth: ethers.formatEther(ethBalance),
+        usdc: ethers.formatUnits(usdcBalance, 6), // USDC has 6 decimals
+      };
+    } catch (error) {
+      console.error("Error fetching token balances:", error);
+      return { eth: "0", usdc: "0" };
+    }
+  };
+
+  const { data: tokenBalances, isLoading: isLoadingBalances } = useQuery({
+    queryKey: ["token-balances", accountsData?.evm?.address],
+    queryFn: fetchTokenBalances,
+    enabled: !!accountsData?.evm?.address,
+  });
+
   const [copiedPublic, setCopiedPublic] = useState(false);
   const [copiedPrivate, setCopiedPrivate] = useState(false);
 
@@ -70,6 +120,11 @@ const AccountHome = () => {
   };
 
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
+  const [receiveAddress, setReceiveAddress] = useState("");
+  const [receiveType, setReceiveType] = useState<"public" | "private">(
+    "public",
+  );
 
   return (
     <div className="flex">
@@ -161,6 +216,54 @@ const AccountHome = () => {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+
+                  <Dialog
+                    open={receiveDialogOpen}
+                    onOpenChange={setReceiveDialogOpen}
+                  >
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Receive Funds</DialogTitle>
+                        <DialogDescription>
+                          Scan this QR code or copy the address to receive
+                          funds.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="flex flex-col items-center justify-center gap-4 py-4">
+                        <div className="bg-white p-4 rounded-lg">
+                          <QRCodeSVG value={receiveAddress} size={200} />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="bg-muted text-center px-3 py-1.5 rounded text-sm font-mono flex-1 overflow-hidden text-ellipsis">
+                            {receiveAddress}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 flex-shrink-0"
+                            onClick={() =>
+                              copyToClipboard(receiveAddress, receiveType)
+                            }
+                          >
+                            {(
+                              receiveType === "public"
+                                ? copiedPublic
+                                : copiedPrivate
+                            ) ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {receiveType === "public"
+                            ? "Public EVM Address"
+                            : "Private Address"}
+                        </p>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </CardContent>
               </Card>
 
@@ -210,15 +313,40 @@ const AccountHome = () => {
                         <div className="text-sm text-muted-foreground mb-1">
                           Balance
                         </div>
-                        <div className="flex justify-between items-center">
-                          <div className="font-mono text-xl font-semibold">
-                            0 USDC
+                        {isLoadingBalances ? (
+                          <div className="h-12 flex items-center">
+                            <div className="h-5 w-24 bg-muted animate-pulse rounded"></div>
                           </div>
-                          <Badge variant="secondary">$0</Badge>
-                        </div>
+                        ) : (
+                          <>
+                            <div className="flex justify-between items-center">
+                              <div className="font-mono text-xl font-semibold">
+                                {tokenBalances?.usdc || "0"} USDC
+                              </div>
+                              <Badge variant="secondary">
+                                ${tokenBalances?.usdc || "0"}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1 font-mono">
+                              {tokenBalances?.eth || "0"} ETH
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setReceiveAddress(accountsData.evm.address);
+                          setReceiveType("public");
+                          setReceiveDialogOpen(true);
+                        }}
+                      >
+                        <ArrowDownToLine className="h-4 w-4 mr-2" />
+                        Receive
+                      </Button>
                       <Button size="sm" className="w-full">
                         <SendHorizontal className="h-4 w-4 mr-2" />
                         Send
@@ -296,6 +424,22 @@ const AccountHome = () => {
                       </div>
                     </div>
                     <div className="flex gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setReceiveAddress(
+                            Buffer.from(accountsData.rsa.publicKey).toString(
+                              "hex",
+                            ),
+                          );
+                          setReceiveType("private");
+                          setReceiveDialogOpen(true);
+                        }}
+                      >
+                        <ArrowDownToLine className="h-4 w-4 mr-2" />
+                        Receive
+                      </Button>
                       <Button size="sm" className="w-full">
                         <SendHorizontal className="h-4 w-4 mr-2" />
                         Send
