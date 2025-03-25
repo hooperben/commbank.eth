@@ -1,14 +1,14 @@
 # commbank.eth
 
-### Commbank.eth - the bank you don't have to trust.
+### the bank you don't have to trust
 
-Commbank.eth allows for easy sending and receiving of both public and private ERC20s, by utilising Zero Knowledge circuits written with Noir and compiled to Solidity.
+commbank.eth allows for easy sending and receiving of both public and private ERC20s, by utilising Zero Knowledge circuits written with Noir and compiled to Solidity.
 
 No data ever leaves the browser, except to send transactions and balance checks. All secrets and private balance proofs are stored in the browsers IndexDB, which is guarded by PassKey authentication.
 
-Commbank.eth is able to do this by utilising quite a few cryptographic techniques, mainly:
+commbank.eth is able to do this by utilising quite a few cryptographic techniques, mainly:
 
-- an EVM address and an RSA key pair is created and saved in the browsers indexdb based on a secret stored in the users pass key
+- an EVM address and an RSA 2048 key pair is created and saved in the browsers indexdb based on a secret stored in the users pass key
 - when a user wishes to deposit to the privacy pool, they create a note hash to add to the contract. A note contains:
 
   - asset id (address)
