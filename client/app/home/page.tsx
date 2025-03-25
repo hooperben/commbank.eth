@@ -5,12 +5,12 @@ import type React from "react";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import AccountHome from "@/components/account-home";
+import SignIn from "@/components/sign-in";
 import SignUp from "@/components/sign-up";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 import { isPasskeyRegistered } from "@/lib/passkey";
-import SignIn from "@/components/sign-in";
-import AccountHome from "@/components/account-home";
 
 // if the user has a token, they're logged in
 // if a user is registered, show them sign in

@@ -534,8 +534,7 @@ export default function Home() {
                 Key Features
               </h2>
               <p className="text-gray-400 max-w-2xl mx-auto">
-                Discover what makes commbank.eth the leading private wallet
-                solution
+                What makes commbank.eth the right bank for you?
               </p>
             </div>
 

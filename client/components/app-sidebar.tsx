@@ -1,3 +1,5 @@
+"use client";
+
 import { Home, Settings, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -13,8 +15,10 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth-context";
+import { isPasskeyRegistered } from "@/lib/passkey";
 import Link from "next/link";
-import ThemeToggle from "./theme-toggle";
+import { useEffect, useState } from "react";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 
 // Menu items.
@@ -37,8 +41,14 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { token, signOut } = useAuth();
+  const { token, signOut, handleSignIn } = useAuth();
   const pathname = usePathname();
+
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  useEffect(() => {
+    setIsRegistered(isPasskeyRegistered());
+  }, [setIsRegistered, token]);
 
   return (
     <Sidebar className="bg-white dark:bg-black">
@@ -47,6 +57,9 @@ export function AppSidebar() {
           <Link href="/" className="flex items-center gap-2">
             commbank.eth
           </Link>
+          <Badge variant="default" className="ml-2">
+            beta
+          </Badge>
         </div>
       </SidebarHeader>
       <SidebarContent className="bg-white dark:bg-black">
@@ -79,8 +92,6 @@ export function AppSidebar() {
       <SidebarFooter className="bg-white dark:bg-black">
         <div className="border-t w-full">
           <div className="flex flex-col w-full gap-2 rounded-lg px-3 py-2 text-muted-foreground">
-            <ThemeToggle />
-
             {token && (
               <Button
                 className="w-full"
@@ -90,6 +101,21 @@ export function AppSidebar() {
                 }}
               >
                 Logout
+              </Button>
+            )}
+
+            {!token && isRegistered && (
+              <Button
+                onClick={() => {
+                  handleSignIn();
+                }}
+              >
+                Login
+              </Button>
+            )}
+            {!token && !isRegistered && (
+              <Button asChild>
+                <Link href="/home">Register</Link>
               </Button>
             )}
           </div>

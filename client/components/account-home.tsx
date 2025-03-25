@@ -9,12 +9,9 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { DEFAULT_PASSKEY_USERNAME } from "@/const";
 import { erc20ABI } from "@/const/erc20-abi";
@@ -37,12 +34,13 @@ import {
   SendHorizontal,
   Wallet,
 } from "lucide-react";
+import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Banner } from "./banner";
 
 const AccountHome = () => {
-  const { mnemonic } = useAuth();
+  const { mnemonic, token } = useAuth();
   const getAccountsDetails = async () => {
     const evmAccounts = await getAllEVMAccounts();
     const evm = await getEVMAccountByUsername(DEFAULT_PASSKEY_USERNAME);
@@ -117,7 +115,6 @@ const AccountHome = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
   const [receiveAddress, setReceiveAddress] = useState("");
   const [receiveType, setReceiveType] = useState<"public" | "private">(
@@ -131,8 +128,20 @@ const AccountHome = () => {
   );
 
   return (
-    <div className="flex">
-      <main className="flex-1 p-6">
+    <div className="flex flex-col">
+      {token && (
+        <Banner className="border-none px-6">
+          <Badge variant="destructive">
+            <p>
+              WARNING: commbank.eth is extremely experimental. Please ensure you
+              have exported your mnemonic from the{" "}
+              <Link href="/settings"> {" Settings "} </Link> page before
+              depositing.
+            </p>
+          </Badge>
+        </Banner>
+      )}
+      <main className="flex-1 px-6">
         <div className="flex flex-col gap-6">
           {accountsData && !!accountsData.evm && getRegisteredUsername() && (
             <div className="flex flex-col w-full gap-2">
@@ -152,74 +161,10 @@ const AccountHome = () => {
 
                     <div className="space-y-1">
                       <h2 className="text-2xl font-bold text-primary">
-                        commbank.eth
+                        My Account
                       </h2>
                     </div>
                   </div>
-
-                  <Dialog
-                    open={transferDialogOpen}
-                    onOpenChange={setTransferDialogOpen}
-                  >
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Transfer Between Accounts</DialogTitle>
-                        <DialogDescription>
-                          Move funds between your public and private accounts.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <Tabs defaultValue="public-to-private" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="public-to-private">
-                            Public → Private
-                          </TabsTrigger>
-                          <TabsTrigger value="private-to-public">
-                            Private → Public
-                          </TabsTrigger>
-                        </TabsList>
-                        <TabsContent
-                          value="public-to-private"
-                          className="space-y-4 pt-4"
-                        >
-                          <div className="space-y-2">
-                            <Label htmlFor="public-amount">Amount (USDC)</Label>
-                            <Input
-                              id="public-amount"
-                              placeholder="0.00"
-                              type="number"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Available: 0 USDC
-                            </p>
-                          </div>
-                        </TabsContent>
-                        <TabsContent
-                          value="private-to-public"
-                          className="space-y-4 pt-4"
-                        >
-                          <div className="space-y-2">
-                            <Label htmlFor="private-amount">Amount (USD)</Label>
-                            <Input
-                              id="private-amount"
-                              placeholder="0.00"
-                              type="number"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Available: 0 USDC
-                            </p>
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                      <DialogFooter className="mt-4">
-                        <Button
-                          type="submit"
-                          onClick={() => setTransferDialogOpen(false)}
-                        >
-                          Transfer
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
 
                   <Dialog
                     open={receiveDialogOpen}
@@ -351,7 +296,7 @@ const AccountHome = () => {
                         size="sm"
                         className="w-full"
                         onClick={() => {
-                          setReceiveAddress(accountsData.evm.address);
+                          setReceiveAddress(accountsData.evm!.address);
                           setReceiveType("public");
                           setReceiveDialogOpen(true);
                         }}
@@ -448,7 +393,7 @@ const AccountHome = () => {
                         className="w-full"
                         onClick={() => {
                           setReceiveAddress(
-                            Buffer.from(accountsData.rsa.publicKey).toString(
+                            Buffer.from(accountsData.rsa!.publicKey).toString(
                               "hex",
                             ),
                           );
