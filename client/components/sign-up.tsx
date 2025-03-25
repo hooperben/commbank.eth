@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { DEFAULT_PASSKEY_USERNAME } from "@/const";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
@@ -33,6 +34,9 @@ const SignUp = () => {
   );
   const [isRegistering, setIsRegistering] = useState(false);
   const [isGeneratingAccount, setIsGeneratingAccount] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importMnemonic, setImportMnemonic] = useState("");
+  const [isImportingAccount, setIsImportingAccount] = useState(false);
 
   const handleRegisterPasskey = async () => {
     setIsRegistering(true);
@@ -114,6 +118,61 @@ const SignUp = () => {
     }
   };
 
+  const handleImportAccount = async () => {
+    setIsImportingAccount(true);
+
+    await initDB();
+
+    try {
+      // Validate the mnemonic
+      if (!ethers.Wallet.fromPhrase(importMnemonic.trim())) {
+        throw new Error("Invalid mnemonic phrase");
+      }
+
+      // Create wallet from mnemonic
+      const wallet = ethers.Wallet.fromPhrase(importMnemonic.trim());
+
+      // Store the secret securely with passkeys
+      const storageSuccess = await storeMnemonicWithPasskey(
+        DEFAULT_PASSKEY_USERNAME,
+        importMnemonic.trim(),
+      );
+
+      if (!storageSuccess) {
+        throw new Error("Failed to securely store mnemonic");
+      }
+
+      // Generate EVM and RSA keys
+      storeEVMAccountPublicKey(wallet.address, DEFAULT_PASSKEY_USERNAME);
+      await generateAndStoreRSAAccount(
+        importMnemonic.trim(),
+        DEFAULT_PASSKEY_USERNAME,
+      );
+
+      // Sign the user in
+      signIn(wallet.privateKey);
+
+      setStep("complete");
+
+      toast({
+        title: "Success",
+        description:
+          "Your wallet has been imported and secured with your passkey",
+      });
+    } catch (err) {
+      console.error("Failed to import account:", err);
+      toast({
+        title: "Error",
+        description:
+          "Failed to import your wallet. Please check your recovery phrase.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImportingAccount(false);
+      setIsImporting(false);
+    }
+  };
+
   return (
     <>
       {step === "confirm" && (
@@ -166,28 +225,79 @@ const SignUp = () => {
             </div>
             <CardTitle className="text-center">Pass Key Linked</CardTitle>
             <CardDescription className="text-center">
-              Now you we need to generate your account details.
+              {isImporting
+                ? "Please enter your recovery phrase below"
+                : "Now you we need to generate your account details."}
             </CardDescription>
           </CardHeader>
-          <CardContent></CardContent>
-          <CardFooter>
-            <Button
-              onClick={handleGenerateAccounts}
-              disabled={isGeneratingAccount}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              {isGeneratingAccount ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Account Details
-                </>
-              ) : (
-                <>
-                  <Fingerprint className="mr-2 h-4 w-4" />
-                  Generate Account
-                </>
-              )}
-            </Button>
+          <CardFooter className="flex flex-col">
+            {isImporting ? (
+              <>
+                <Textarea
+                  placeholder="Enter your 12 or 24 word recovery phrase..."
+                  className="mb-4 h-24 resize-none"
+                  value={importMnemonic}
+                  onChange={(e) => setImportMnemonic(e.target.value)}
+                />
+                <div className="flex gap-2 w-full">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsImporting(false);
+                      setImportMnemonic("");
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleImportAccount}
+                    disabled={isImportingAccount || !importMnemonic.trim()}
+                    className="flex-1 bg-amber-500 hover:bg-amber-600 text-black"
+                  >
+                    {isImportingAccount ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      "Import"
+                    )}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={handleGenerateAccounts}
+                  disabled={isGeneratingAccount}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-black"
+                >
+                  {isGeneratingAccount ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Account Details
+                    </>
+                  ) : (
+                    <>
+                      <Fingerprint className="mr-2 h-4 w-4" />
+                      Generate Account
+                    </>
+                  )}
+                </Button>
+
+                <div className="flex flex-col pt-4 gap-2">
+                  <p className="text-xs">or, import an existing account</p>
+
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsImporting(true)}
+                  >
+                    Import Account
+                  </Button>
+                </div>
+              </>
+            )}
           </CardFooter>
         </>
       )}
