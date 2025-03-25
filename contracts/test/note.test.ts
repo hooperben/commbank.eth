@@ -10,17 +10,7 @@ import { generateZerosFunction } from "../helpers/merkle-tree";
 import { generateRandomSecret } from "../helpers/random";
 import { getTestingAPI, numberToUint8Array } from "../helpers/testing-api";
 import { CommBankDotEth, USDC } from "../typechain-types";
-
-const convertFromHexToArray = (rawInput: string): Uint8Array => {
-  const formattedInput = rawInput.startsWith("0x")
-    ? rawInput.slice(2)
-    : rawInput;
-
-  const evenFormattedInput =
-    formattedInput.length % 2 === 0 ? formattedInput : "0" + formattedInput;
-
-  return Uint8Array.from(Buffer.from(evenFormattedInput, "hex"));
-};
+import { convertFromHexToArray } from "../helpers/formatter";
 
 describe("Note creation and flow testing", () => {
   let rsa: typeof SignatureGenModule;
@@ -78,7 +68,7 @@ describe("Note creation and flow testing", () => {
     console.log(decryptedMessage);
   });
 
-  it.only("should let me deposit to the contract", async () => {
+  it("should let me deposit to the contract", async () => {
     // approve commbank.eth to move USDC for the user
     await usdc
       .connect(alice)
