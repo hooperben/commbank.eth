@@ -19,6 +19,8 @@ import { Separator } from "@/components/ui/separator";
 import { DEFAULT_PASSKEY_USERNAME } from "@/const";
 import { erc20ABI } from "@/const/erc20-abi";
 import { gravatarUrl } from "@/const/gravatar";
+import { RPC_URL } from "@/const/rpc";
+import { USDC_ADDRESS } from "@/const/supported-assets";
 import { useAuth } from "@/lib/auth-context";
 import { getRegisteredUsername } from "@/lib/passkey";
 import {
@@ -65,26 +67,21 @@ const AccountHome = () => {
     if (!accountsData?.evm?.address) return { eth: "0", usdc: "0" };
 
     try {
-      const provider = new ethers.JsonRpcProvider(
-        "https://eth-sepolia.g.alchemy.com/v2/c6SDbF_tLXhMZGXWxSMgd-YqcPriLnEo",
-      );
+      const provider = new ethers.JsonRpcProvider(RPC_URL);
 
       // Fetch ETH balance
-      console.log(accountsData.evm.address);
       const ethBalance = await provider.getBalance(accountsData.evm.address);
-      console.log(ethBalance);
 
-      // USDC contract address
-      const usdcAddress = "0x9bb68C037BFCE2A8ecF55fE165b1F2A59593A220";
-
-      const usdcContract = new ethers.Contract(usdcAddress, erc20ABI, provider);
+      const usdcContract = new ethers.Contract(
+        USDC_ADDRESS,
+        erc20ABI,
+        provider,
+      );
 
       // Fetch USDC balance
       const usdcBalance = await usdcContract.balanceOf(
         accountsData.evm.address,
       );
-
-      console.log(usdcAddress);
 
       return {
         eth: ethers.formatEther(ethBalance),

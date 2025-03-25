@@ -14,8 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { erc20ABI } from "@/const/erc20-abi";
+import { RPC_URL } from "@/const/rpc";
+import { USDC_ADDRESS } from "@/const/supported-assets";
 import { toast } from "@/hooks/use-toast";
 import { retrieveMnemonic } from "@/lib/passkey";
+import { ethers, parseEther, parseUnits } from "ethers";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
@@ -46,30 +50,53 @@ export function SendTransactionDialog({
 
     setIsPending(true);
 
-    const mnemonic = await retrieveMnemonic();
+    try {
+      const mnemonic = await retrieveMnemonic();
 
-    if (!mnemonic) {
-      throw new Error("Failed");
+      if (!mnemonic) {
+        throw new Error("Failed");
+      }
+
+      const userToast = toast({
+        title: "Submitting Tx",
+      });
+
+      console.log(userToast);
+
+      const provider = new ethers.JsonRpcProvider(RPC_URL);
+      const signer = ethers.Wallet.fromPhrase(mnemonic, provider);
+
+      let tx;
+
+      console.log(signer);
+
+      if (selectedAsset === "ETH") {
+        tx = await signer.sendTransaction({
+          to: recipient,
+          value: parseEther(amount),
+        });
+      } else {
+        const erc20 = new ethers.Contract(USDC_ADDRESS, erc20ABI, signer);
+
+        tx = await erc20.transfer(recipient, parseUnits(amount, 6));
+      }
+
+      await tx.wait(2);
+
+      userToast.update({
+        id: userToast.id,
+        title: "Transaction confirmed",
+      });
+
+      // Reset form and close dialog after successful transaction
+      setRecipient("");
+      setAmount("");
+      onOpenChange(false);
+    } catch (err) {
+      console.log(err);
+
+      setIsPending(false);
     }
-
-    const userToast = toast({
-      title: "Submitting",
-    });
-
-    console.log(userToast);
-
-    // Simulate transaction processing with a delay
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    userToast.update({
-      id: userToast.id,
-      title: "Transaction confirmed",
-    });
-
-    // Reset form and close dialog after successful transaction
-    setRecipient("");
-    setAmount("");
-    onOpenChange(false);
   };
 
   return (
