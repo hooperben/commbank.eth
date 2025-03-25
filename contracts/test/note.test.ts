@@ -10,17 +10,7 @@ import { generateZerosFunction } from "../helpers/merkle-tree";
 import { generateRandomSecret } from "../helpers/random";
 import { getTestingAPI, numberToUint8Array } from "../helpers/testing-api";
 import { CommBankDotEth, USDC } from "../typechain-types";
-
-const convertFromHexToArray = (rawInput: string): Uint8Array => {
-  const formattedInput = rawInput.startsWith("0x")
-    ? rawInput.slice(2)
-    : rawInput;
-
-  const evenFormattedInput =
-    formattedInput.length % 2 === 0 ? formattedInput : "0" + formattedInput;
-
-  return Uint8Array.from(Buffer.from(evenFormattedInput, "hex"));
-};
+import { convertFromHexToArray } from "../helpers/formatter";
 
 describe("Note creation and flow testing", () => {
   let rsa: typeof SignatureGenModule;
@@ -29,6 +19,8 @@ describe("Note creation and flow testing", () => {
   let noir: Noir;
   let transactBackend: UltraHonkBackend;
   let transactNoir: Noir;
+  let withdrawBackend: UltraHonkBackend;
+  let withdrawNoir: Noir;
 
   let alice: Wallet;
   let bob: Wallet;
@@ -45,6 +37,8 @@ describe("Note creation and flow testing", () => {
       backend,
       transactNoir,
       transactBackend,
+      withdrawNoir,
+      withdrawBackend,
       alice,
       bob,
       aliceRSA,
@@ -193,7 +187,7 @@ describe("Note creation and flow testing", () => {
     );
 
     const bobPubKey = convertFromHexToArray(
-      keccak256(keccak256(aliceRSA.private_key)),
+      keccak256(keccak256(bobRSA.private_key)),
     );
 
     const bobOutputNote = {
@@ -274,7 +268,82 @@ describe("Note creation and flow testing", () => {
       transactPayloads,
     );
 
+    // update our typescript tree to match our contract tree
+    tree.updateLeaf(1, Buffer.from(aliceOutputNoteHash));
+    tree.updateLeaf(2, Buffer.from(bobOutputNoteHash));
+
     // now that bob has a balance, he is going to withdraw it back to usdc
+
+    const bobMerklePath = tree
+      .getProof("0x" + Buffer.from(bobOutputNoteHash).toString("hex"))
+      .map((step) => {
+        return {
+          path: step.position === "right" ? 1 : 0,
+          value: convertFromHexToArray(step.data.toString("hex")),
+        };
+      });
+
+    const bobPaths = bobMerklePath.map((x) => x.path);
+    const bobValues = bobMerklePath.map((x) => x.value);
+
+    const bobInputNote = {
+      owner: formatUint8Array(bobPubKey),
+      owner_secret: formatUint8Array(
+        convertFromHexToArray(keccak256(bobRSA.private_key)),
+      ),
+      note_secret: bobOutputNote.note_secret,
+      asset_id: formatUint8Array(assetId),
+      amount_array: formatUint8Array(numberToUint8Array(420n)),
+      amount: 420,
+      leaf_index: formatUint8Array(numberToUint8Array(2n)),
+      path: bobPaths,
+      path_data: bobValues.map((item) => formatUint8Array(item)),
+    };
+
+    const bobInputNoteNullifier = keccak256(
+      Uint8Array.from([
+        ...bobInputNote.leaf_index,
+        ...bobInputNote.note_secret,
+        ...bobInputNote.amount_array,
+        ...bobInputNote.asset_id,
+      ]),
+    );
+
+    const withdrawInput = {
+      root: formatUint8Array(
+        convertFromHexToArray("0x" + tree.getRoot().toString("hex")),
+      ),
+      input_notes: [bobInputNote, emptyNote],
+      nullifiers: [
+        formatUint8Array(convertFromHexToArray(bobInputNoteNullifier)),
+        emptyNullifier,
+      ],
+      exit_assets: [bobInputNote.asset_id, emptyNote.asset_id],
+      exit_amounts: [420, 0],
+    };
+
+    const { witness: withdrawWitness } = await withdrawNoir.execute(
+      withdrawInput as unknown as InputMap,
+    );
+
+    const { proof: withdrawProof, publicInputs: withdrawPublicInputs } =
+      await withdrawBackend.generateProof(withdrawWitness, {
+        keccak: true,
+      });
+
+    const bobERC20BalanceBefore = await usdc.balanceOf(bob.address);
+    console.log("bob before withdraw: ", bobERC20BalanceBefore);
+
+    await commbank.withdraw(
+      withdrawProof.slice(4),
+      withdrawPublicInputs,
+      bob.address,
+    );
+
+    console.log("worked");
+
+    const bobERC20BalanceAfter = await usdc.balanceOf(bob.address);
+    console.log("bob after withdraw: ", bobERC20BalanceAfter);
   });
 
   it.skip("should output sol code for zeros() in merkle tree", async () => {

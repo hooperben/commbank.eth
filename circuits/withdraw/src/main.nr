@@ -99,6 +99,7 @@ fn main(
     root: pub [u8; 32],
     input_notes: [InputNote; 2],
     nullifiers: pub [[u8; 32]; 2],
+    exit_assets: pub [[u8; 20]; 2],
     exit_amounts: pub [u64; 2],
 ) {
     let mut inputs_map: HashMap<[u8; 20], u64, 2, BuildHasherDefault<Poseidon2Hasher>> =
@@ -133,6 +134,7 @@ fn main(
             );
 
             assert(root == merkle_root, "Invalid merkle proof");
+            assert(exit_assets[i] == input_notes[i].asset_id, "Invalid public address input");
 
             inputs_map.insert(input_notes[i].asset_id, input_notes[i].amount);
         }
@@ -281,6 +283,7 @@ fn test_main() {
         root,
         [alice_input_note, empty_input_note],
         [alice_nullifier, [0; 32]],
+        [alice_input_note.asset_id, [0;20]],
         [69420, 0],
     );
 }

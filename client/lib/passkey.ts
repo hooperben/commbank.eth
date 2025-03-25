@@ -1,9 +1,5 @@
 "use client";
 
-import { generateJWT, generateRSAPair, storePublicKey } from "./db";
-
-// Passkey (WebAuthn) authentication and key derivation
-
 // Function to register a new passkey
 export async function registerPasskey(username: string): Promise<boolean> {
   try {
@@ -166,4 +162,215 @@ export function getRegisteredUsername(): string | null {
 // Check if a username is already registered with a passkey
 export function isUsernameRegistered(): boolean {
   return localStorage.getItem("passkeyUsername") !== null;
+}
+
+// Function to store a mnemonic phrase securely with passkey
+export async function storeMnemonicWithPasskey(
+  username: string,
+  mnemonic: string,
+): Promise<boolean> {
+  try {
+    // First ensure the user has a registered passkey
+    if (!isPasskeyRegistered()) {
+      const success = await registerPasskey(username);
+      if (!success) {
+        throw new Error("Failed to register passkey");
+      }
+    }
+
+    // Authenticate to get authenticator data
+    const authData = await authenticateWithPasskey();
+    if (!authData) {
+      throw new Error("Failed to authenticate with passkey");
+    }
+
+    // Derive encryption key from the authenticator data
+    const key = await deriveKeyFromPasskey(authData);
+
+    // Encrypt the mnemonic
+    const encoder = new TextEncoder();
+    const mnemonicData = encoder.encode(mnemonic);
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+
+    const encryptedData = await window.crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv,
+      },
+      key,
+      mnemonicData,
+    );
+
+    // Store the encrypted mnemonic in multiple places for redundancy
+    const encryptedMnemonic = {
+      iv: Array.from(iv),
+      data: Array.from(new Uint8Array(encryptedData)),
+      username,
+    };
+
+    // 1. IndexedDB (most resilient against cache clearing)
+    await storeMnemonicInIndexedDB(encryptedMnemonic);
+
+    // 2. localStorage as a backup
+    localStorage.setItem(
+      "encryptedMnemonic",
+      JSON.stringify(encryptedMnemonic),
+    );
+
+    return true;
+  } catch (error) {
+    console.error("Error storing mnemonic:", error);
+    return false;
+  }
+}
+
+// Retrieve and decrypt the mnemonic
+export async function retrieveMnemonic(): Promise<string | null> {
+  try {
+    // Check if there's a registered username first
+    const username = getRegisteredUsername();
+
+    // First try to authenticate with regular passkey if username exists
+    let authData: ArrayBuffer | null = null;
+    if (username) {
+      authData = await authenticateWithPasskey();
+    }
+
+    // If no username or regular authentication failed, try conditional UI
+    if (!authData) {
+      authData = await authenticateWithConditionalUI();
+    }
+
+    if (!authData) {
+      throw new Error("Failed to authenticate with passkey");
+    }
+
+    // Derive the decryption key
+    const key = await deriveKeyFromPasskey(authData);
+
+    // Try to get the encrypted mnemonic from IndexedDB first
+    let encryptedMnemonic = await getMnemonicFromIndexedDB();
+
+    // Fall back to localStorage if needed
+    if (!encryptedMnemonic) {
+      const storedData = localStorage.getItem("encryptedMnemonic");
+      if (storedData) {
+        encryptedMnemonic = JSON.parse(storedData);
+      } else {
+        throw new Error("No stored mnemonic found");
+      }
+    }
+
+    // Decrypt the mnemonic
+    const iv = new Uint8Array(encryptedMnemonic.iv);
+    const encryptedData = new Uint8Array(encryptedMnemonic.data);
+
+    const decryptedData = await window.crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv,
+      },
+      key,
+      encryptedData,
+    );
+
+    const decoder = new TextDecoder();
+    return decoder.decode(decryptedData);
+  } catch (error) {
+    console.error("Error retrieving mnemonic:", error);
+    return null;
+  }
+}
+
+// Use WebAuthn Conditional UI for authentication
+async function authenticateWithConditionalUI(): Promise<ArrayBuffer | null> {
+  try {
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+
+    // Try conditional UI first (uses passkey without requiring explicit credential ID)
+    try {
+      const assertion = (await navigator.credentials.get({
+        publicKey: {
+          challenge,
+          userVerification: "required",
+          timeout: 60000,
+        },
+      })) as PublicKeyCredential;
+
+      if (assertion) {
+        const response = assertion.response as AuthenticatorAssertionResponse;
+        return response.authenticatorData;
+      }
+    } catch (e) {
+      console.log("Conditional UI failed, falling back to standard method");
+    }
+
+    // Fall back to standard authentication if conditional UI fails
+    return authenticateWithPasskey();
+  } catch (error) {
+    console.error("Error with conditional UI authentication:", error);
+    return null;
+  }
+}
+
+// Store encrypted mnemonic in IndexedDB
+async function storeMnemonicInIndexedDB(encryptedMnemonic: any): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open("mnemonicStore", 1);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains("mnemonics")) {
+        db.createObjectStore("mnemonics", { keyPath: "username" });
+      }
+    };
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction("mnemonics", "readwrite");
+      const store = transaction.objectStore("mnemonics");
+      store.put(encryptedMnemonic);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (event) => reject(event);
+    };
+
+    request.onerror = (event) => reject(event);
+  });
+}
+
+// Retrieve encrypted mnemonic from IndexedDB
+async function getMnemonicFromIndexedDB(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("mnemonicStore", 1);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains("mnemonics")) {
+        db.createObjectStore("mnemonics", { keyPath: "username" });
+      }
+    };
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const username = getRegisteredUsername();
+
+      if (!username) {
+        resolve(null);
+        return;
+      }
+
+      const transaction = db.transaction("mnemonics", "readonly");
+      const store = transaction.objectStore("mnemonics");
+      const getRequest = store.get(username);
+
+      getRequest.onsuccess = () => {
+        resolve(getRequest.result || null);
+      };
+
+      getRequest.onerror = (event) => reject(event);
+    };
+
+    request.onerror = (event) => reject(event);
+  });
 }

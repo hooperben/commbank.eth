@@ -1,15 +1,16 @@
 "use client";
 
-import { ArrowRight, Repeat, Shield, Zap, Lock } from "lucide-react";
+import CommBankDotETHLogo from "@/components/commbankdotethlogo";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
   CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
+import { ArrowRight, Lock, Repeat, Shield, Zap } from "lucide-react";
+import Link from "next/link";
 
 function ZkFlowDiagram() {
   return (
@@ -282,66 +283,7 @@ export default function Home() {
       <div className="flex flex-col gap-6">
         <section className="relative h-[70vh] min-h-[500px] w-full overflow-hidden">
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-            <svg
-              width={400}
-              height={400}
-              viewBox="0 0 120 120"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <g transform="rotate(15, 60, 60)">
-                {/* Main Triangle */}
-                <path
-                  d="M60 15L105 90H15L60 15Z"
-                  fill="url(#gradient)"
-                  stroke="#E8A317"
-                  strokeWidth="2"
-                />
-
-                {/* Artistic Lines */}
-                <path
-                  d="M30 65L90 65"
-                  stroke="#E8A317"
-                  strokeWidth="1.5"
-                  strokeDasharray="2 3"
-                />
-                <path
-                  d="M40 50L80 80"
-                  stroke="#E8A317"
-                  strokeWidth="1.5"
-                  strokeDasharray="2 3"
-                />
-                <path
-                  d="M80 50L40 80"
-                  stroke="#E8A317"
-                  strokeWidth="1.5"
-                  strokeDasharray="2 3"
-                />
-
-                {/* Inner Triangle */}
-                <path
-                  d="M60 35L85 75H35L60 35Z"
-                  stroke="#E8A317"
-                  strokeWidth="1"
-                  fill="none"
-                />
-              </g>
-
-              {/* Gradient Definition */}
-              <defs>
-                <linearGradient
-                  id="gradient"
-                  x1="15"
-                  y1="90"
-                  x2="105"
-                  y2="15"
-                  gradientUnits="userSpaceOnUse"
-                >
-                  <stop stopColor="#E8A317" />
-                  <stop offset="1" stopColor="#E8A317" stopOpacity="0.7" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <CommBankDotETHLogo />
             <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
                 commbank.eth
@@ -350,13 +292,13 @@ export default function Home() {
             <p className="text-xl md:text-2xl max-w-2xl mb-8 text-foreground/80">
               a bank you don&apos;t need to trust
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 cursor-pointer">
               <Button
                 asChild
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground hover:cursor-pointer"
               >
-                <Link href="/home">
+                <Link href="/home" className="hover:cursor-pointer">
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -366,21 +308,21 @@ export default function Home() {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-16 px-4 md:px-6 bg-zinc-900/50">
+        <section className="py-16 px-4 md:px-6 bg-gray-100 dark:bg-zinc-900/50 rounded-2xl">
           <div className="container mx-auto max-w-6xl">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-amber-500 mb-4">
                 How It Works
               </h2>
-              <p className="text-gray-400 max-w-2xl mx-auto">
+              <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 commbank.eth uses advanced cryptography to ensure your
-                transactions remain private while maintaining the security of
-                ethereum.
+                transactions remain private while maintaining the security and
+                decentralisation of ethereum.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-              <Card className="bg-zinc-800/70 border-zinc-700 hover:border-amber-500/50 transition-all">
+              <Card className="bg-white dark:bg-zinc-800/70 border-gray-200 dark:border-zinc-700 hover:border-amber-500/50 transition-all">
                 <CardHeader>
                   <div className="h-12 w-12 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
                     <Lock className="h-6 w-6 text-amber-500" />
@@ -392,13 +334,13 @@ export default function Home() {
                 <CardContent>
                   <CardDescription className="text-gray-400">
                     Deposit any ERC20 token into an encrypted account. Your
-                    funds are represented as encrypted notes in a Merkle tree,
-                    which only you know about.
+                    funds are represented as encrypted notes in a Merkle tree
+                    data structure, which only you have knowledge of.
                   </CardDescription>
                 </CardContent>
               </Card>
 
-              <Card className="bg-zinc-800/70 border-zinc-700 hover:border-amber-500/50 transition-all">
+              <Card className="bg-white dark:bg-zinc-800/70 border-gray-200 dark:border-zinc-700 hover:border-amber-500/50 transition-all">
                 <CardHeader>
                   <div className="h-12 w-12 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
                     <Shield className="h-6 w-6 text-amber-500" />
@@ -417,7 +359,7 @@ export default function Home() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-zinc-800/70 border-zinc-700 hover:border-amber-500/50 transition-all">
+              <Card className="bg-white dark:bg-zinc-800/70 border-gray-200 dark:border-zinc-700 hover:border-amber-500/50 transition-all">
                 <CardHeader>
                   <div className="h-12 w-12 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
                     <Repeat className="h-6 w-6 text-amber-500" />
@@ -445,13 +387,13 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-bold text-amber-500 mb-4">
                 Technical Overview
               </h2>
-              <p className="text-gray-400 max-w-2xl mx-auto">
+              <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 Understanding the zero-knowledge infrastructure that powers
                 commbank.eth
               </p>
             </div>
 
-            <div className="bg-zinc-800/70 border border-zinc-700 rounded-lg p-6 md:p-8">
+            <div className="bg-white dark:bg-zinc-800/70 border border-gray-200 dark:border-zinc-700 p-6 md:p-8 rounded-2xl">
               <div className="flex flex-col md:flex-row gap-8 items-center">
                 <div className="w-full md:w-1/2">
                   <ZkFlowDiagram />
@@ -467,7 +409,7 @@ export default function Home() {
                           1
                         </span>
                       </div>
-                      <p className="text-gray-300">
+                      <p className="dark:text-gray-300">
                         <span className="font-semibold text-amber-500">
                           Note Creation:
                         </span>{" "}
@@ -481,7 +423,7 @@ export default function Home() {
                           2
                         </span>
                       </div>
-                      <p className="text-gray-300">
+                      <p className="dark:text-gray-300">
                         <span className="font-semibold text-amber-500">
                           ZK Verification:
                         </span>{" "}
@@ -496,7 +438,7 @@ export default function Home() {
                           3
                         </span>
                       </div>
-                      <p className="text-gray-300">
+                      <p className="dark:text-gray-300">
                         <span className="font-semibold text-amber-500">
                           Encrypted Sharing:
                         </span>{" "}
@@ -511,12 +453,12 @@ export default function Home() {
                           4
                         </span>
                       </div>
-                      <p className="text-gray-300">
+                      <p className="dark:text-gray-300">
                         <span className="font-semibold text-amber-500">
-                          Local Storage:
+                          Encrypted Browser Storage:
                         </span>{" "}
-                        Your wallet monitors for notes encrypted to your key and
-                        stores them in IndexedDB for future use.
+                        Your browser monitors for incoming notes encrypted to
+                        your key and stores them in IndexedDB for future use.
                       </p>
                     </li>
                   </ul>
@@ -527,35 +469,59 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="py-16 px-4 md:px-6 bg-zinc-900/50">
+        <section className="py-16 px-4 md:px-6 bg-gray-100 dark:bg-zinc-900/50 rounded-2xl">
           <div className="container mx-auto max-w-6xl">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-amber-500 mb-4">
                 Key Features
               </h2>
-              <p className="text-gray-400 max-w-2xl mx-auto">
-                Discover what makes commbank.eth the leading private wallet
-                solution
+              <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                What makes commbank.eth the right bank for you?
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="flex gap-4 p-6 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-all">
+              <div className="flex gap-4 p-6 bg-white dark:bg-zinc-800/50 rounded-lg border border-gray-200 dark:border-zinc-700 hover:border-amber-500/50 transition-all">
                 <div className="h-12 w-12 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center">
                   <Zap className="h-6 w-6 text-amber-500" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-amber-500 mb-2">
-                    Complete Privacy
+                    Open Source
                   </h3>
                   <p className="text-gray-400">
-                    All transaction details, including amounts and recipient
-                    addresses, are fully encrypted and private.
+                    All code used for commbank.eth is public and auditable by
+                    anyone. You can view the repository{" "}
+                    <a
+                      href="https://github.com/hooperben/commbank.eth"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-amber-500 hover:underline"
+                    >
+                      here
+                    </a>
+                    .
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-4 p-6 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-all">
+              <div className="flex gap-4 p-6 bg-white dark:bg-zinc-800/50 rounded-lg border border-gray-200 dark:border-zinc-700 hover:border-amber-500/50 transition-all">
+                <div className="h-12 w-12 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-amber-500 mb-2">
+                    No Third Parties
+                  </h3>
+                  <p className="text-gray-400">
+                    If commbank.eth can connect to the ethereum network, it
+                    works. There is no other middlemen or third party services
+                    required to operate.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 p-6 bg-white dark:bg-zinc-800/50 rounded-lg border border-gray-200 dark:border-zinc-700 hover:border-amber-500/50 transition-all">
                 <div className="h-12 w-12 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center">
                   <Zap className="h-6 w-6 text-amber-500" />
                 </div>
@@ -570,7 +536,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex gap-4 p-6 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-all">
+              <div className="flex gap-4 p-6 bg-white dark:bg-zinc-800/50 rounded-lg border border-gray-200 dark:border-zinc-700 hover:border-amber-500/50 transition-all">
                 <div className="h-12 w-12 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center">
                   <Zap className="h-6 w-6 text-amber-500" />
                 </div>
@@ -585,7 +551,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex gap-4 p-6 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-all">
+              <div className="flex gap-4 p-6 bg-white dark:bg-zinc-800/50 rounded-lg border border-gray-200 dark:border-zinc-700 hover:border-amber-500/50 transition-all">
                 <div className="h-12 w-12 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center">
                   <Zap className="h-6 w-6 text-amber-500" />
                 </div>
@@ -599,18 +565,33 @@ export default function Home() {
                   </p>
                 </div>
               </div>
+
+              <div className="flex gap-4 p-6 bg-white dark:bg-zinc-800/50 rounded-lg border border-gray-200 dark:border-zinc-700 hover:border-amber-500/50 transition-all">
+                <div className="h-12 w-12 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-amber-500 mb-2">
+                    Passkey Authentication
+                  </h3>
+                  <p className="text-gray-400">
+                    No emails, phone numbers or passwords - just an encrypted
+                    secret stored securely on your device.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 px-4 md:px-6">
+        <section className="py-10 px-4 md:px-6">
           <div className="container mx-auto max-w-6xl">
-            <div className="bg-gradient-to-r from-amber-900/30 to-amber-700/30 rounded-2xl p-8 md:p-12 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-amber-500 mb-4">
+            <div className="bg-gradient-to-r from-amber-50 to-amber-600 dark:from-amber-900/30 dark:to-amber-700/30 rounded-2xl p-8 md:p-12 text-center">
+              <h2 className="text-3xl md:text-4xl font-bold text-black dark:text-amber-500 mb-4">
                 Curious?
               </h2>
-              <p className="text-gray-300 max-w-2xl mx-auto mb-8">
+              <p className="text-gray-700 dark:dark:text-gray-300 max-w-2xl mx-auto mb-8">
                 Create your account now!
               </p>
               <Button
@@ -623,6 +604,20 @@ export default function Home() {
                 </Link>
               </Button>
             </div>
+          </div>
+        </section>
+
+        <section className="py-5 px-4 md:px-6">
+          <div className="container mx-auto max-w-6xl text-center text-xs">
+            <h6>
+              created, owned and maintained by{" "}
+              <a
+                href="https://github.com/hooperben"
+                className="text-amber-500 hover:underline"
+              >
+                Ben Hooper
+              </a>
+            </h6>
           </div>
         </section>
       </div>

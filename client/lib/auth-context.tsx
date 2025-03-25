@@ -1,13 +1,23 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { isPasskeyRegistered, getRegisteredUsername } from "./passkey";
+import { toast } from "@/hooks/use-toast";
+import { decryptSecret, getEncryptedSecretById, initDB } from "@/lib/db";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import {
+  authenticateWithPasskey,
+  getRegisteredUsername,
+  isPasskeyRegistered,
+  retrieveMnemonic,
+} from "./passkey";
 
 interface AuthContextType {
   isSignedIn: boolean;
   username: string | null;
   token: string | null;
+  mnemonic: string | null;
   signIn: (secret: string) => void;
+  handleSignIn: () => void;
+  isAuthenticating: boolean;
   signOut: () => void;
   isLoading: boolean;
 }
@@ -18,7 +28,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [mnemonic, setMnemonic] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    console.log(mnemonic);
+  }, [mnemonic]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -31,14 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUsername(registeredUsername);
       }
 
+      const existingToken = sessionStorage.getItem("authToken");
+
+      if (existingToken && isPasskeyRegistered()) {
+        setToken(existingToken);
+      }
+
       setIsLoading(false);
     };
-
-    const existingToken = sessionStorage.getItem("authToken");
-
-    if (existingToken && isPasskeyRegistered()) {
-      setToken(existingToken);
-    }
 
     checkAuth();
     window.addEventListener("storage", checkAuth);
@@ -49,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("auth-change", checkAuth);
     };
   }, []);
+
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const signIn = async (secret: string) => {
     // Create payload with 1-hour expiration
@@ -91,7 +108,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Save token to state and session storage
     setToken(jwt);
     setIsSignedIn(true);
+    setMnemonic(secret);
     sessionStorage.setItem("authToken", jwt);
+  };
+
+  const handleSignIn = async () => {
+    setIsAuthenticating(true);
+
+    try {
+      await initDB();
+
+      // Use the provided username or fall back to retrieving from storage
+      const userToAuthenticate = "commbank.eth";
+
+      // Try to retrieve mnemonic using our enhanced method
+      const mnemonic = await retrieveMnemonic();
+
+      if (mnemonic) {
+        // Sign in with the retrieved mnemonic
+        signIn(mnemonic);
+        return;
+      }
+
+      // Fall back to original approach if retrieveMnemonic fails
+      const commbankSecret = await getEncryptedSecretById(userToAuthenticate);
+
+      if (!commbankSecret)
+        throw new Error(`No ${userToAuthenticate} registered`);
+
+      const authData = await authenticateWithPasskey();
+
+      if (!authData) {
+        toast({
+          title: "Authentication Failed",
+          description: "Failed to authenticate with passkey",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const decryptedSecret = await decryptSecret(commbankSecret, authData);
+      signIn(decryptedSecret);
+    } catch (err) {
+      console.log(err);
+      toast({
+        title: "Authentication Failed",
+        description: "Failed to authenticate with passkey",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
 
   // Production-ready HMAC-SHA256 implementation using Web Crypto API
@@ -139,13 +206,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = () => {
     setToken(null);
+    setMnemonic(null);
     setIsSignedIn(false);
     sessionStorage.removeItem("authToken");
   };
 
   return (
     <AuthContext.Provider
-      value={{ isSignedIn, username, token, signIn, signOut, isLoading }}
+      value={{
+        isSignedIn,
+        username,
+        token,
+        mnemonic,
+        signIn,
+        handleSignIn,
+        signOut,
+        isLoading,
+        isAuthenticating,
+      }}
     >
       {children}
     </AuthContext.Provider>

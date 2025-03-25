@@ -1,29 +1,25 @@
 "use client";
 
-import { Wallet } from "ethers";
-import type { KeyPair, SignatureResult } from "../wasm/signature_gen";
+import type { KeyPair } from "../wasm/signature_gen";
 import { initDB } from "./db";
 
-export const generateAndStoreEVMAccount = async (
-  secret: string,
+export const storeEVMAccountPublicKey = async (
+  address: string,
   username: string,
 ) => {
-  const wallet = new Wallet(secret);
-
   // Initialize database if needed
   await initDB();
 
-  console.log(username);
+  console.log(address);
 
   // Store the account data (no private key)
   await storeEVMAccount({
     username,
-    address: wallet.address,
+    address,
     createdAt: Date.now(),
   });
 
-  console.log(wallet.address);
-  return wallet.address;
+  return address;
 };
 
 // Store EVM account in IndexedDB
@@ -133,7 +129,6 @@ export const generateAndStoreRSAAccount = async (
   await storeRSAKeyPair({
     username,
     publicKey: keyPair.public_key,
-    privateKey: keyPair.private_key,
     createdAt: Date.now(),
   });
 

@@ -1,5 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "dotenv/config";
 
 import "@typechain/hardhat";
 import "@nomicfoundation/hardhat-ethers";
@@ -13,6 +14,12 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 100000000,
       },
+    },
+  },
+  networks: {
+    sepolia: {
+      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      accounts: [process.env.PRIVATE_KEY!],
     },
   },
   gasReporter: {

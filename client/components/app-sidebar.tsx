@@ -1,4 +1,6 @@
-import { Home, Users } from "lucide-react";
+"use client";
+
+import { Home, Settings, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import {
@@ -12,10 +14,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
-import { Button } from "./ui/button";
-import ThemeToggle from "./theme-toggle";
 import { useAuth } from "@/lib/auth-context";
+import { isPasskeyRegistered } from "@/lib/passkey";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 
 // Menu items.
 const items = [
@@ -29,22 +33,36 @@ const items = [
     icon: Users,
     label: "My Account",
   },
+  {
+    href: "/settings",
+    icon: Settings,
+    label: "Settings",
+  },
 ];
 
 export function AppSidebar() {
-  const { token, signOut } = useAuth();
+  const { token, signOut, handleSignIn } = useAuth();
   const pathname = usePathname();
 
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  useEffect(() => {
+    setIsRegistered(isPasskeyRegistered());
+  }, [setIsRegistered, token]);
+
   return (
-    <Sidebar>
-      <SidebarHeader>
+    <Sidebar className="bg-white dark:bg-black">
+      <SidebarHeader className="bg-background">
         <div className="flex h-14 items-center border-b px-6 font-semibold">
           <Link href="/" className="flex items-center gap-2">
             commbank.eth
           </Link>
+          <Badge variant="default" className="ml-2">
+            beta
+          </Badge>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-white dark:bg-black">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="px-3">
@@ -54,7 +72,7 @@ export function AppSidebar() {
                     asChild
                     className={pathname === item.href ? "text-primary" : ""}
                   >
-                    <a href={item.href}>
+                    <Link href={item.href}>
                       <item.icon
                         className={pathname === item.href ? "text-primary" : ""}
                       />
@@ -63,7 +81,7 @@ export function AppSidebar() {
                       >
                         {item.label}
                       </span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -71,11 +89,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="bg-white dark:bg-black">
         <div className="border-t w-full">
           <div className="flex flex-col w-full gap-2 rounded-lg px-3 py-2 text-muted-foreground">
-            <ThemeToggle />
-
             {token && (
               <Button
                 className="w-full"
@@ -85,6 +101,21 @@ export function AppSidebar() {
                 }}
               >
                 Logout
+              </Button>
+            )}
+
+            {!token && isRegistered && (
+              <Button
+                onClick={() => {
+                  handleSignIn();
+                }}
+              >
+                Login
+              </Button>
+            )}
+            {!token && !isRegistered && (
+              <Button asChild>
+                <Link href="/home">Register</Link>
               </Button>
             )}
           </div>
