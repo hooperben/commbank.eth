@@ -133,8 +133,8 @@ const AccountHome = () => {
         <Banner className="border-none px-6">
           <Badge variant="destructive">
             <p>
-              WARNING: commbank.eth is extremely experimental. Please ensure you
-              have exported your mnemonic from the{" "}
+              WARNING: commbank.eth is experimental and unaudited. Please ensure
+              you have exported your mnemonic from the{" "}
               <Link href="/settings"> {" Settings "} </Link> page before
               depositing.
             </p>
