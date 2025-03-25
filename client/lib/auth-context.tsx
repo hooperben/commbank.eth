@@ -97,7 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Save token to state and session storage
     setToken(jwt);
     setIsSignedIn(true);
-    console.log(secret);
     setMnemonic(secret);
     sessionStorage.setItem("authToken", jwt);
   };
