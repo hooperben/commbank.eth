@@ -14,7 +14,7 @@ export const useTokenBalances = (
         } | null;
         rsa: {
           username: string;
-          privateKey: Uint8Array;
+          circuitPubKey: string;
           publicKey: Uint8Array;
           createdAt: number;
         } | null;

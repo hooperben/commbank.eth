@@ -1,5 +1,6 @@
 "use client";
 
+import { keccak256 } from "ethers";
 import type { KeyPair } from "../wasm/signature_gen";
 import {
   initDB,
@@ -73,18 +74,16 @@ export const generateAndStoreRSAAccount = async (
   // Create RSA key pair
   const keyPair: KeyPair = wasmModule.create_key_pair(secret, 2048, 65537);
 
+  const circuitPubKey = keccak256(keyPair.private_key);
+
   // Store RSA key pair in IndexedDB
   await storeRSAKeyPair({
     username,
+    circuitPubKey,
     publicKey: keyPair.public_key,
     createdAt: Date.now(),
   });
 
-  const keys = await getRSAKeyPairByUsername(username);
-
-  console.log(keys);
-
-  console.log("RSA key pair generated and stored for:", username);
   return keyPair;
 };
 
@@ -99,7 +98,7 @@ export const getRSAKeyPairByUsername = (
   username: string,
 ): Promise<{
   username: string;
-  privateKey: Uint8Array;
+  circuitPubKey: string;
   publicKey: Uint8Array;
   createdAt: number;
 } | null> => {

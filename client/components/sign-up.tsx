@@ -69,8 +69,6 @@ const SignUp = () => {
     try {
       const random = ethers.Wallet.createRandom();
 
-      console.log(random);
-
       if (!random.mnemonic) {
         throw new Error("Failed to create account.");
       }
@@ -87,6 +85,7 @@ const SignUp = () => {
 
       // Generate EVM and RSA keys
       storeEVMAccountPublicKey(random.address, DEFAULT_PASSKEY_USERNAME);
+
       await generateAndStoreRSAAccount(
         random.mnemonic?.phrase,
         DEFAULT_PASSKEY_USERNAME,

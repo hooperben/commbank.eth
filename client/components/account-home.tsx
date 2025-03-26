@@ -278,12 +278,6 @@ const AccountHome = () => {
                         <Badge variant="outline" className="ml-2">
                           commbank.eth
                         </Badge>
-                        <Badge
-                          variant={mnemonic ? "secondary" : "destructive"}
-                          className="ml-2"
-                        >
-                          {mnemonic ? "Live Syncing" : "Sync Disabled"}
-                        </Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -293,9 +287,11 @@ const AccountHome = () => {
                             {accountsData.rsa && (
                               <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
                                 {shortenAddress(
-                                  Buffer.from(
+                                  `0x${Buffer.from(
                                     accountsData.rsa.publicKey,
-                                  ).toString("hex"),
+                                  ).toString("hex")}:${
+                                    accountsData.rsa.circuitPubKey
+                                  }`,
                                 )}
                               </code>
                             )}
@@ -307,9 +303,11 @@ const AccountHome = () => {
                               onClick={() =>
                                 accountsData.rsa &&
                                 copyToClipboard(
-                                  Buffer.from(
+                                  `0x${Buffer.from(
                                     accountsData.rsa.publicKey,
-                                  ).toString("hex"),
+                                  ).toString("hex")}:${
+                                    accountsData.rsa.circuitPubKey
+                                  }`,
                                   "private",
                                 )
                               }
