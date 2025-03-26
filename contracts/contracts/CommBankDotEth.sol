@@ -85,6 +85,12 @@ contract CommBankDotEth is MerkleTree {
         bytes32[] calldata _publicInputs,
         bytes calldata _payload
     ) public {
+        // !! REQUIRED ON MAINNET !!
+        // require(
+        //     msg.sender == 0x0981c335A692a5Fd933887B02F74d13148f50323,
+        //     "Sorry :( I don't make the rules"
+        // );
+
         uint8 decimals = ERC20(_erc20).decimals();
 
         bool depositTransfer = ERC20(_erc20).transferFrom(
