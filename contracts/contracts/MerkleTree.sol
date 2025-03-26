@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "hardhat/console.sol";
-
 contract MerkleTree {
     uint256 public depth; // Depth of the Merkle tree
     bytes32[] public nodes; // Array representing the entire tree nodes
     uint256 public nextLeafIndex = 0; // Tracks where the next leaf should go
     uint256 public maxLeaves; // Maximum leaves based on depth
 
-    uint32 public immutable levels = 20; // 20
+    uint32 public immutable levels = 20;
 
-    // filledSubtrees and roots could be bytes32[size], but using mappings makes it cheaper because
-    // it removes index range check on every interaction
     mapping(uint256 => bytes32) public filledSubtrees;
     mapping(uint256 => bytes32) public roots;
 
