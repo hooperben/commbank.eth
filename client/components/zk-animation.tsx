@@ -57,7 +57,7 @@ export default function ZKArchitecture() {
     <div className="w-full max-w-6xl mx-auto mt-12">
       <div className="text-center mb-12">
         <h2 className="text-xl md:text-4xl font-bold text-amber-500 mb-4">
-          How does commbank.eth enable completely anonymous payments?
+          how does commbank.eth enable completely anonymous payments?
         </h2>
       </div>
       <div className=" border border-gray-200 dark:border-zinc-700 p-6 md:p-8 rounded-2xl shadow-lg overflow-hidden">
@@ -203,65 +203,6 @@ export default function ZKArchitecture() {
                   </motion.li>
                 ))}
               </ul>
-            )}
-
-            {isCarousel && (
-              <div className="relative">
-                <div className="overflow-hidden">
-                  <motion.div
-                    key={activeSlide}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="py-4"
-                  >
-                    <h4 className="text-lg font-semibold text-amber-500 mb-2">
-                      {(index) => index + 1}. {steps[activeSlide].title}
-                    </h4>
-                    <p className="dark:text-gray-300">
-                      {steps[activeSlide].description}
-                    </p>
-                  </motion.div>
-                </div>
-
-                <div className="flex justify-between mt-6">
-                  <button
-                    onClick={() =>
-                      setActiveSlide(
-                        (prev) => (prev - 1 + steps.length) % steps.length,
-                      )
-                    }
-                    className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 hover:bg-amber-500/30 transition-colors"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-
-                  <div className="flex gap-2">
-                    {steps.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setActiveSlide(index)}
-                        className={cn(
-                          "h-2 w-2 rounded-full transition-all",
-                          activeSlide === index
-                            ? "bg-amber-500 w-4"
-                            : "bg-amber-500/30 hover:bg-amber-500/50",
-                        )}
-                      />
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      setActiveSlide((prev) => (prev + 1) % steps.length)
-                    }
-                    className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 hover:bg-amber-500/30 transition-colors"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
             )}
           </div>
         </div>

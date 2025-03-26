@@ -14,7 +14,7 @@ export default function Home() {
   const { isSignedIn } = useAuth();
 
   const { data: isRegisteredUsername, isLoading: isPageLoading } = useQuery({
-    queryKey: ["registered-username"],
+    queryKey: ["registered-username", isSignedIn],
     queryFn: async () => {
       const username = await getRegisteredUsername();
       return { username };

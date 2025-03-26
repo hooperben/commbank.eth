@@ -118,8 +118,9 @@ export default function Home() {
                     Flexible Privacy Control
                   </h3>
                   <p className="text-gray-400">
-                    Switch between public and private transfer balances at any
-                    time, giving you more control over your privacy preferences.
+                    Transfer your assets between public and private view at any
+                    time, giving you complete control over your privacy
+                    preferences.
                   </p>
                 </div>
               </div>
@@ -156,7 +157,7 @@ export default function Home() {
                 Create your account now!
               </p>
 
-              <div className="flex flex-row gap-2 w-full justify-center">
+              <div className="flex flex-col sm:flex-row gap-2 w-full justify-center">
                 <Button
                   asChild
                   variant="outline"

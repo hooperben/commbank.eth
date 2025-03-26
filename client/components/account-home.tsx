@@ -23,6 +23,7 @@ import {
   ArrowDownToLine,
   Check,
   Copy,
+  ExternalLinkIcon,
   SendHorizontal,
   Wallet,
 } from "lucide-react";
@@ -32,7 +33,7 @@ import { useState } from "react";
 import { Banner } from "./banner";
 
 const AccountHome = () => {
-  const { mnemonic, token } = useAuth();
+  const { token } = useAuth();
 
   const { data: accountsData } = useAccountsData();
   const { data: tokenBalances, isLoading: isLoadingBalances } =
@@ -121,7 +122,7 @@ const AccountHome = () => {
                       open={receiveDialogOpen}
                       onOpenChange={setReceiveDialogOpen}
                     >
-                      <DialogContent>
+                      <DialogContent className="max-w-[500px]">
                         <DialogHeader>
                           <DialogTitle>Receive Funds</DialogTitle>
                           <DialogDescription>
@@ -133,14 +134,12 @@ const AccountHome = () => {
                           <div className="bg-white p-4 rounded-lg">
                             <QRCodeSVG value={receiveAddress} size={200} />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <code className="bg-muted text-center px-3 py-1.5 rounded text-sm font-mono flex-1 overflow-hidden text-ellipsis">
+                          <div className="flex flex-col items-center gap-2">
+                            <code className="bg-muted text-center px-2 py-1.5 rounded text-sm font-mono flex-1 overflow-hidden text-ellipsis">
                               {receiveAddress}
                             </code>
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 flex-shrink-0"
+                              variant="outline"
                               onClick={() =>
                                 copyToClipboard(receiveAddress, receiveType)
                               }
@@ -150,17 +149,18 @@ const AccountHome = () => {
                                   ? copiedPublic
                                   : copiedPrivate
                               ) ? (
-                                <Check className="h-4 w-4 text-green-500" />
+                                <>
+                                  Address Copied
+                                  <Check className="h-4 w-4 text-green-500" />
+                                </>
                               ) : (
-                                <Copy className="h-4 w-4" />
+                                <>
+                                  Copy Address to Clipboard
+                                  <Copy className="h-4 w-4" />
+                                </>
                               )}
                             </Button>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {receiveType === "public"
-                              ? "Public EVM Address"
-                              : "Private Address"}
-                          </p>
                         </div>
                       </DialogContent>
                     </Dialog>
@@ -211,6 +211,20 @@ const AccountHome = () => {
                                 <Copy className="h-4 w-4" />
                               )}
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              asChild
+                            >
+                              <Link
+                                href={`https://etherscan.io/address/${accountsData.evm.address}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLinkIcon />
+                              </Link>
+                            </Button>
                           </div>
                         </div>
 
@@ -237,6 +251,14 @@ const AccountHome = () => {
                               <div className="text-sm text-muted-foreground mt-1 font-mono">
                                 {tokenBalances?.eth || "0"} ETH
                               </div>
+                              <Badge
+                                variant="outline"
+                                className="mt-3 w-full justify-center"
+                              >
+                                Only ethereum ETH and USDC are viewable at the
+                                moment - support for more assets and networks is
+                                coming soon.
+                              </Badge>
                             </>
                           )}
                         </div>
@@ -335,7 +357,7 @@ const AccountHome = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2 mt-4">
+                      <div className="flex gap-2 mt-9">
                         <Button
                           size="sm"
                           className="w-full"

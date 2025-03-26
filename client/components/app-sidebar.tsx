@@ -29,12 +29,12 @@ const items = [
     label: "Dashboard",
   },
   {
-    href: "/home",
+    href: "/home/",
     icon: Users,
     label: "My Account",
   },
   {
-    href: "/settings",
+    href: "/settings/",
     icon: Settings,
     label: "Settings",
   },
