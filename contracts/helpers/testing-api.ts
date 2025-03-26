@@ -1,12 +1,9 @@
-import { Noir } from "@noir-lang/noir_js";
-import { readFileSync } from "fs";
-import { resolve } from "path";
 import { UltraHonkBackend } from "@aztec/bb.js";
-import hre, { ethers } from "hardhat";
 import fs from "fs";
-import RSA from "./rsa";
-import { getEmptyTree } from "./merkle-tree";
+import hre, { ethers } from "hardhat";
 import { getNoir } from "./get-noir";
+import { getEmptyTree } from "./merkle-tree";
+import RSA from "./rsa";
 
 const RSA_ACCOUNTS = ["alice", "bob"];
 const RSA_ACCOUNT_PATH = "./const/";

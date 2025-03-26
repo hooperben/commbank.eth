@@ -13,16 +13,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { DEFAULT_PASSKEY_USERNAME } from "@/const";
-import { erc20ABI } from "@/const/erc20-abi";
 import { gravatarUrl } from "@/const/gravatar";
-import { RPC_URL } from "@/const/rpc";
-import { USDC_ADDRESS } from "@/const/supported-assets";
+import { useAccountsData } from "@/hooks/use-accounts-data";
+import { useTokenBalances } from "@/hooks/use-token-balances";
 import { useAuth } from "@/lib/auth-context";
 import { getRegisteredUsername } from "@/lib/passkey";
-import { getEVMAccountByUsername, getRSAKeyPairByUsername } from "@/lib/wallet";
 import { useQuery } from "@tanstack/react-query";
-import { ethers } from "ethers";
 import {
   ArrowDownToLine,
   Check,
@@ -37,59 +33,10 @@ import { Banner } from "./banner";
 
 const AccountHome = () => {
   const { mnemonic, token } = useAuth();
-  const getAccountsDetails = async () => {
-    const evm = await getEVMAccountByUsername(DEFAULT_PASSKEY_USERNAME);
-    const rsa = await getRSAKeyPairByUsername(DEFAULT_PASSKEY_USERNAME);
 
-    console.log("evm:", evm);
-    console.log("rsa:", rsa);
-
-    return {
-      evm,
-      rsa,
-    };
-  };
-
-  const { data: accountsData } = useQuery({
-    queryKey: ["accounts-data", token],
-    queryFn: getAccountsDetails,
-  });
-
-  const fetchTokenBalances = async () => {
-    if (!accountsData?.evm?.address) return { eth: "0", usdc: "0" };
-
-    try {
-      const provider = new ethers.JsonRpcProvider(RPC_URL);
-
-      // Fetch ETH balance
-      const ethBalance = await provider.getBalance(accountsData.evm.address);
-
-      const usdcContract = new ethers.Contract(
-        USDC_ADDRESS,
-        erc20ABI,
-        provider,
-      );
-
-      // Fetch USDC balance
-      const usdcBalance = await usdcContract.balanceOf(
-        accountsData.evm.address,
-      );
-
-      return {
-        eth: ethers.formatEther(ethBalance),
-        usdc: ethers.formatUnits(usdcBalance, 6), // USDC has 6 decimals
-      };
-    } catch (error) {
-      console.error("Error fetching token balances:", error);
-      return { eth: "0", usdc: "0" };
-    }
-  };
-
-  const { data: tokenBalances, isLoading: isLoadingBalances } = useQuery({
-    queryKey: ["token-balances", accountsData?.evm?.address],
-    queryFn: fetchTokenBalances,
-    enabled: !!accountsData?.evm?.address,
-  });
+  const { data: accountsData } = useAccountsData();
+  const { data: tokenBalances, isLoading: isLoadingBalances } =
+    useTokenBalances(accountsData);
 
   const [copiedPublic, setCopiedPublic] = useState(false);
   const [copiedPrivate, setCopiedPrivate] = useState(false);
@@ -223,7 +170,6 @@ const AccountHome = () => {
                       open={sendDialogOpen}
                       onOpenChange={setSendDialogOpen}
                       accountType={sendAccountType}
-                      availableAssets={tokenBalances || { eth: "0", usdc: "0" }}
                     />
                   </CardContent>
                 </Card>
@@ -404,6 +350,7 @@ const AccountHome = () => {
                             setReceiveType("private");
                             setReceiveDialogOpen(true);
                           }}
+                          disabled
                         >
                           <ArrowDownToLine className="h-4 w-4 mr-2" />
                           Receive
@@ -415,6 +362,7 @@ const AccountHome = () => {
                             setSendAccountType("private");
                             setSendDialogOpen(true);
                           }}
+                          disabled
                         >
                           <SendHorizontal className="h-4 w-4 mr-2" />
                           Send

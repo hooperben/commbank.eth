@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
 import { retrieveMnemonic } from "@/lib/passkey";
+import { CheckIcon } from "lucide-react";
 import { useState } from "react";
 
 export default function Home() {
@@ -20,6 +21,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mnemonic, setMnemonic] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleExportAccount = async () => {
     try {
@@ -90,10 +92,19 @@ export default function Home() {
               onClick={() => {
                 if (mnemonic) {
                   navigator.clipboard.writeText(mnemonic);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
                 }
               }}
             >
-              Copy to Clipboard
+              {copied ? (
+                <>
+                  <CheckIcon className="mr-2 h-4 w-4 animate-pulse text-green-500" />
+                  Copied!
+                </>
+              ) : (
+                "Copy to Clipboard"
+              )}
             </Button>
             <Button onClick={() => setIsModalOpen(false)}>Close</Button>
           </DialogFooter>
