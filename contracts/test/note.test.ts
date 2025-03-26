@@ -8,7 +8,11 @@ import MerkleTree from "merkletreejs";
 import { getLeafAddedDetails, getPayloadDetails } from "../helpers/logs";
 import { generateZerosFunction } from "../helpers/merkle-tree";
 import { generateRandomSecret } from "../helpers/random";
-import { getTestingAPI, numberToUint8Array } from "../helpers/testing-api";
+import {
+  formatUint8Array,
+  getTestingAPI,
+  numberToUint8Array,
+} from "../helpers/testing-api";
 import { CommBankDotEth, USDC } from "../typechain-types";
 import { convertFromHexToArray } from "../helpers/formatter";
 
@@ -137,9 +141,6 @@ describe("Note creation and flow testing", () => {
 
     const paths = merklePath.map((x) => x.path);
     const values = merklePath.map((x) => x.value);
-
-    const formatUint8Array = (inputArray: Uint8Array) =>
-      Array.from(inputArray.map((item) => Number(item)));
 
     const inputNote = {
       owner: formatUint8Array(alicePubKey),

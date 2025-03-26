@@ -21,13 +21,25 @@ const config: HardhatUserConfig = {
       url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
       accounts: [process.env.PRIVATE_KEY!],
     },
+    mainnet: {
+      url: `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      accounts: {
+        mnemonic: process.env.DEMO_MNEMONIC_ALICE!,
+      },
+    },
   },
   gasReporter: {
     enabled: true,
     excludeContracts: [],
+    currency: "USD",
+    L1Etherscan: process.env.ETHERSCAN_API_KEY!,
+    coinmarketcap: process.env.CMC_API_KEY,
   },
   mocha: {
     timeout: 100000000,
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY!,
   },
 };
 

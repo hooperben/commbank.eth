@@ -11,6 +11,9 @@ import { getNoir } from "./get-noir";
 const RSA_ACCOUNTS = ["alice", "bob"];
 const RSA_ACCOUNT_PATH = "./const/";
 
+export const formatUint8Array = (inputArray: Uint8Array) =>
+  Array.from(inputArray.map((item) => Number(item)));
+
 export const numberToUint8Array = (num: bigint) => {
   const amount = new Uint8Array(32);
   // Convert to big-endian representation (most significant byte first)
