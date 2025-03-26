@@ -1,10 +1,5 @@
 "use client";
 
-import type React from "react";
-
-import { CheckCircle, Fingerprint, Loader2 } from "lucide-react";
-import { useState } from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   CardContent,
@@ -24,8 +19,9 @@ import {
   storeEVMAccountPublicKey,
 } from "@/lib/wallet";
 import { ethers } from "ethers";
-
-// Generate a random 32-byte string
+import { CheckCircle, Fingerprint, Loader2 } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 
 const SignUp = () => {
   const { signIn } = useAuth();
@@ -180,8 +176,8 @@ const SignUp = () => {
           <CardHeader>
             <CardTitle className="text-center">Create your account</CardTitle>
             <CardDescription className="text-center">
-              commbank.eth uses passkey authentication to store your account
-              details
+              commbank.eth uses passkey authentication to store your encrypted
+              account details
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -190,7 +186,7 @@ const SignUp = () => {
                 <Fingerprint className="h-12 w-12 mx-auto mb-2 text-amber-500" />
                 <p className="text-sm text-zinc-400">
                   You&apos;ll use this passkey to securely access your account
-                  in the future. No password needed!
+                  in the future, no password needed.
                 </p>
               </div>
             </div>

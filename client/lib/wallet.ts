@@ -1,7 +1,13 @@
 "use client";
 
 import type { KeyPair } from "../wasm/signature_gen";
-import { initDB } from "./db";
+import {
+  initDB,
+  storeEVMAccount,
+  getAllEVMAccounts,
+  storeRSAKeyPair,
+  getAllRSAKeyPairs,
+} from "./db";
 
 export const storeEVMAccountPublicKey = async (
   address: string,
@@ -22,69 +28,11 @@ export const storeEVMAccountPublicKey = async (
   return address;
 };
 
-// Store EVM account in IndexedDB
-export const storeEVMAccount = (account: {
-  username: string;
-  address: string;
-  createdAt: number;
-}): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    const db = window.indexedDB.databases().then((databases) => {
-      const db = databases.find((db) => db.name === "commbankDB");
-      if (!db) {
-        reject(new Error("Database not initialized"));
-        return;
-      }
-
-      const request = window.indexedDB.open("commbankDB", db.version);
-
-      request.onsuccess = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        const transaction = db.transaction(["evm-accounts"], "readwrite");
-        const store = transaction.objectStore("evm-accounts");
-        const request = store.put(account);
-
-        request.onsuccess = () => resolve();
-        request.onerror = () =>
-          reject(new Error("Failed to store EVM account"));
-
-        transaction.oncomplete = () => db.close();
-      };
-
-      request.onerror = () => reject(new Error("Failed to open database"));
-    });
-  });
-};
-
 // Get all EVM accounts from IndexedDB
-export const getAllEVMAccounts = (): Promise<
+export const getAllEVMAccountsFromDB = (): Promise<
   Array<{ address: string; createdAt: number; username: string }>
 > => {
-  return new Promise((resolve, reject) => {
-    const db = window.indexedDB.databases().then((databases) => {
-      const db = databases.find((db) => db.name === "commbankDB");
-      if (!db) {
-        reject(new Error("Database not initialized"));
-        return;
-      }
-
-      const request = window.indexedDB.open("commbankDB", db.version);
-
-      request.onsuccess = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        const transaction = db.transaction(["evm-accounts"], "readonly");
-        const store = transaction.objectStore("evm-accounts");
-        const request = store.getAll();
-
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(new Error("Failed to get EVM accounts"));
-
-        transaction.oncomplete = () => db.close();
-      };
-
-      request.onerror = () => reject(new Error("Failed to open database"));
-    });
-  });
+  return getAllEVMAccounts();
 };
 
 // Get EVM account by username
@@ -140,64 +88,10 @@ export const generateAndStoreRSAAccount = async (
   return keyPair;
 };
 
-// Store RSA key pair in IndexedDB
-export const storeRSAKeyPair = (keyPair: any): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    const db = window.indexedDB.databases().then((databases) => {
-      const db = databases.find((db) => db.name === "commbankDB");
-      if (!db) {
-        reject(new Error("Database not initialized"));
-        return;
-      }
-
-      const request = window.indexedDB.open("commbankDB", db.version);
-
-      request.onsuccess = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        const transaction = db.transaction(["rsa_keys"], "readwrite");
-        const store = transaction.objectStore("rsa_keys");
-        const request = store.add(keyPair);
-
-        request.onsuccess = () => resolve();
-        request.onerror = () =>
-          reject(new Error("Failed to store RSA key pair"));
-
-        transaction.oncomplete = () => db.close();
-      };
-
-      request.onerror = () => reject(new Error("Failed to open database"));
-    });
-  });
-};
-
 // Get all RSA key pairs from IndexedDB
-export const getAllRSAKeyPairs = (): Promise<any[]> => {
-  return new Promise((resolve, reject) => {
-    const db = window.indexedDB.databases().then((databases) => {
-      const db = databases.find((db) => db.name === "commbankDB");
-      if (!db) {
-        reject(new Error("Database not initialized"));
-        return;
-      }
-
-      const request = window.indexedDB.open("commbankDB", db.version);
-
-      request.onsuccess = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        const transaction = db.transaction(["rsa_keys"], "readonly");
-        const store = transaction.objectStore("rsa_keys");
-        const request = store.getAll();
-
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () =>
-          reject(new Error("Failed to get RSA key pairs"));
-
-        transaction.oncomplete = () => db.close();
-      };
-
-      request.onerror = () => reject(new Error("Failed to open database"));
-    });
-  });
+// TODO typing is pretty gross
+export const getAllRSAKeyPairsFromDB = (): Promise<any[]> => {
+  return getAllRSAKeyPairs();
 };
 
 // Get RSA key pair by username

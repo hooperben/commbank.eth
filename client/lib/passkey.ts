@@ -1,5 +1,23 @@
 "use client";
 
+import {
+  initDB,
+  storePasskeyRegistration,
+  getPasskeyRegistration,
+  storeMnemonicInDB,
+  getMnemonicFromDB,
+  getRegisteredUsername as readRegisteredUser,
+} from "./db";
+
+// Store passkey registration in IndexedDB
+async function storePasskeyData(
+  username: string,
+  credentialId: string,
+): Promise<void> {
+  await initDB();
+  return storePasskeyRegistration(username, credentialId);
+}
+
 // Function to register a new passkey
 export async function registerPasskey(username: string): Promise<boolean> {
   try {
@@ -33,6 +51,8 @@ export async function registerPasskey(username: string): Promise<boolean> {
         attestation: "none",
       };
 
+    await initDB();
+
     // Create the credential
     const credential = (await navigator.credentials.create({
       publicKey: publicKeyCredentialCreationOptions,
@@ -42,12 +62,9 @@ export async function registerPasskey(username: string): Promise<boolean> {
       throw new Error("Failed to create credential");
     }
 
-    // Store the credential ID in localStorage for later use
+    // Store the credential ID in IndexedDB
     const credentialId = credential.id;
-    localStorage.setItem("passkeyCredentialId", credentialId);
-
-    // Store the username in localStorage
-    localStorage.setItem("passkeyUsername", username);
+    await storePasskeyData(username, credentialId);
 
     return true;
   } catch (error) {
@@ -59,11 +76,13 @@ export async function registerPasskey(username: string): Promise<boolean> {
 // Function to authenticate with a passkey and get authentication data
 export async function authenticateWithPasskey(): Promise<ArrayBuffer | null> {
   try {
-    // Get the credential ID from localStorage
-    const credentialId = localStorage.getItem("passkeyCredentialId");
-    if (!credentialId) {
+    // Get the registration from IndexedDB
+    const registration = await getPasskeyRegistration();
+    if (!registration) {
       throw new Error("No passkey registered");
     }
+
+    const credentialId = registration.credentialId;
 
     // Create a new challenge
     const challenge = new Uint8Array(32);
@@ -149,19 +168,33 @@ export function isPasskeySupported(): boolean {
   );
 }
 
-// Check if a passkey is already registered
-export function isPasskeyRegistered(): boolean {
-  return localStorage.getItem("passkeyCredentialId") !== null;
+// Check if a passkey is already registered - now using DB function
+export async function isPasskeyRegistered(): Promise<boolean> {
+  try {
+    await initDB();
+    const registration = await getPasskeyRegistration();
+    return registration !== null;
+  } catch (error) {
+    console.error("Error checking passkey registration:", error);
+    return false;
+  }
 }
 
-// Get the registered username if available
-export function getRegisteredUsername(): string | null {
-  return localStorage.getItem("passkeyUsername");
+// Get the registered username if available - now using DB function
+export async function getRegisteredUsername(): Promise<string | null> {
+  return readRegisteredUser();
 }
 
 // Check if a username is already registered with a passkey
-export function isUsernameRegistered(): boolean {
-  return localStorage.getItem("passkeyUsername") !== null;
+export async function isUsernameRegistered(username: string): Promise<boolean> {
+  try {
+    await initDB();
+    const registration = await getPasskeyRegistration(username);
+    return registration !== null;
+  } catch (error) {
+    console.error("Error checking username registration:", error);
+    return false;
+  }
 }
 
 // Function to store a mnemonic phrase securely with passkey
@@ -170,8 +203,9 @@ export async function storeMnemonicWithPasskey(
   mnemonic: string,
 ): Promise<boolean> {
   try {
+    const isRegistered = await isPasskeyRegistered();
     // First ensure the user has a registered passkey
-    if (!isPasskeyRegistered()) {
+    if (!isRegistered) {
       const success = await registerPasskey(username);
       if (!success) {
         throw new Error("Failed to register passkey");
@@ -201,7 +235,7 @@ export async function storeMnemonicWithPasskey(
       mnemonicData,
     );
 
-    // Store the encrypted mnemonic in multiple places for redundancy
+    // Store the encrypted mnemonic
     const encryptedMnemonic = {
       iv: Array.from(iv),
       data: Array.from(new Uint8Array(encryptedData)),
@@ -209,7 +243,7 @@ export async function storeMnemonicWithPasskey(
     };
 
     // 1. IndexedDB (most resilient against cache clearing)
-    await storeMnemonicInIndexedDB(encryptedMnemonic);
+    await storeMnemonicInDB(encryptedMnemonic);
 
     // 2. localStorage as a backup
     localStorage.setItem(
@@ -228,7 +262,7 @@ export async function storeMnemonicWithPasskey(
 export async function retrieveMnemonic(): Promise<string | null> {
   try {
     // Check if there's a registered username first
-    const username = getRegisteredUsername();
+    const username = await getRegisteredUsername();
 
     // First try to authenticate with regular passkey if username exists
     let authData: ArrayBuffer | null = null;
@@ -249,7 +283,7 @@ export async function retrieveMnemonic(): Promise<string | null> {
     const key = await deriveKeyFromPasskey(authData);
 
     // Try to get the encrypted mnemonic from IndexedDB first
-    let encryptedMnemonic = await getMnemonicFromIndexedDB();
+    let encryptedMnemonic = await getMnemonicFromDB();
 
     // Fall back to localStorage if needed
     if (!encryptedMnemonic) {
@@ -312,65 +346,4 @@ async function authenticateWithConditionalUI(): Promise<ArrayBuffer | null> {
     console.error("Error with conditional UI authentication:", error);
     return null;
   }
-}
-
-// Store encrypted mnemonic in IndexedDB
-async function storeMnemonicInIndexedDB(encryptedMnemonic: any): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const request = indexedDB.open("mnemonicStore", 1);
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains("mnemonics")) {
-        db.createObjectStore("mnemonics", { keyPath: "username" });
-      }
-    };
-
-    request.onsuccess = () => {
-      const db = request.result;
-      const transaction = db.transaction("mnemonics", "readwrite");
-      const store = transaction.objectStore("mnemonics");
-      store.put(encryptedMnemonic);
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = (event) => reject(event);
-    };
-
-    request.onerror = (event) => reject(event);
-  });
-}
-
-// Retrieve encrypted mnemonic from IndexedDB
-async function getMnemonicFromIndexedDB(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open("mnemonicStore", 1);
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains("mnemonics")) {
-        db.createObjectStore("mnemonics", { keyPath: "username" });
-      }
-    };
-
-    request.onsuccess = () => {
-      const db = request.result;
-      const username = getRegisteredUsername();
-
-      if (!username) {
-        resolve(null);
-        return;
-      }
-
-      const transaction = db.transaction("mnemonics", "readonly");
-      const store = transaction.objectStore("mnemonics");
-      const getRequest = store.get(username);
-
-      getRequest.onsuccess = () => {
-        resolve(getRequest.result || null);
-      };
-
-      getRequest.onerror = (event) => reject(event);
-    };
-
-    request.onerror = (event) => reject(event);
-  });
 }

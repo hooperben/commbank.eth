@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Settings, Users } from "lucide-react";
+import { Home, Loader2, Settings, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import {
@@ -15,9 +15,9 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth-context";
-import { isPasskeyRegistered } from "@/lib/passkey";
+import { getRegisteredUsername } from "@/lib/passkey";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 
@@ -41,14 +41,18 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { token, signOut, handleSignIn } = useAuth();
+  const { isSignedIn, signOut, handleSignIn } = useAuth();
   const pathname = usePathname();
 
-  const [isRegistered, setIsRegistered] = useState(false);
-
-  useEffect(() => {
-    setIsRegistered(isPasskeyRegistered());
-  }, [setIsRegistered, token]);
+  const { data: isRegisteredUsername, isLoading: isLoadingUsername } = useQuery(
+    {
+      queryKey: ["registered-username"],
+      queryFn: async () => {
+        const username = await getRegisteredUsername();
+        return { username };
+      },
+    },
+  );
 
   return (
     <Sidebar className="bg-white dark:bg-black">
@@ -92,7 +96,13 @@ export function AppSidebar() {
       <SidebarFooter className="bg-white dark:bg-black">
         <div className="border-t w-full">
           <div className="flex flex-col w-full gap-2 rounded-lg px-3 py-2 text-muted-foreground">
-            {token && (
+            {isLoadingUsername && (
+              <Button className="w-full" disabled variant="outline">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              </Button>
+            )}
+
+            {isSignedIn && (
               <Button
                 className="w-full"
                 variant="outline"
@@ -104,7 +114,7 @@ export function AppSidebar() {
               </Button>
             )}
 
-            {!token && isRegistered && (
+            {isRegisteredUsername?.username && !isSignedIn && (
               <Button
                 onClick={() => {
                   handleSignIn();
@@ -113,7 +123,7 @@ export function AppSidebar() {
                 Login
               </Button>
             )}
-            {!token && !isRegistered && (
+            {!isRegisteredUsername && !isSignedIn && (
               <Button asChild>
                 <Link href="/home">Register</Link>
               </Button>

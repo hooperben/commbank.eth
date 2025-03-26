@@ -2,69 +2,29 @@
 
 import { toast } from "@/hooks/use-toast";
 import { decryptSecret, getEncryptedSecretById, initDB } from "@/lib/db";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import {
   authenticateWithPasskey,
   getRegisteredUsername,
-  isPasskeyRegistered,
   retrieveMnemonic,
 } from "./passkey";
 
 interface AuthContextType {
   isSignedIn: boolean;
-  username: string | null;
   token: string | null;
   mnemonic: string | null;
   signIn: (secret: string) => void;
   handleSignIn: () => void;
   isAuthenticating: boolean;
   signOut: () => void;
-  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [mnemonic, setMnemonic] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    console.log(mnemonic);
-  }, [mnemonic]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      setIsLoading(true);
-      const isRegistered = isPasskeyRegistered();
-      setIsSignedIn(isRegistered);
-
-      if (isRegistered) {
-        const registeredUsername = getRegisteredUsername();
-        setUsername(registeredUsername);
-      }
-
-      const existingToken = sessionStorage.getItem("authToken");
-
-      if (existingToken && isPasskeyRegistered()) {
-        setToken(existingToken);
-      }
-
-      setIsLoading(false);
-    };
-
-    checkAuth();
-    window.addEventListener("storage", checkAuth);
-    window.addEventListener("auth-change", checkAuth);
-
-    return () => {
-      window.removeEventListener("storage", checkAuth);
-      window.removeEventListener("auth-change", checkAuth);
-    };
-  }, []);
-
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const signIn = async (secret: string) => {
@@ -73,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const expiresIn = 60 * 60; // 1 hour in seconds
 
     const payload = {
-      username: getRegisteredUsername(),
+      username: await getRegisteredUsername(),
       iat: now,
       exp: now + expiresIn,
     };
@@ -208,20 +168,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setMnemonic(null);
     setIsSignedIn(false);
-    sessionStorage.removeItem("authToken");
   };
 
   return (
     <AuthContext.Provider
       value={{
         isSignedIn,
-        username,
         token,
         mnemonic,
         signIn,
         handleSignIn,
         signOut,
-        isLoading,
         isAuthenticating,
       }}
     >

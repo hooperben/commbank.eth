@@ -18,7 +18,7 @@ export const initDB = (): Promise<void> => {
       return;
     }
 
-    const request = window.indexedDB.open("commbankDB", 2);
+    const request = window.indexedDB.open("commbankDB", 3);
 
     request.onerror = (event) => {
       reject(new Error("Failed to open database"));
@@ -32,28 +32,27 @@ export const initDB = (): Promise<void> => {
     request.onupgradeneeded = (event) => {
       const database = (event.target as IDBOpenDBRequest).result;
 
-      // Create an object store for contacts if it doesn't exist
-      if (!database.objectStoreNames.contains("contacts")) {
-        database.createObjectStore("contacts", { autoIncrement: true });
-      }
+      // TODO audit these and probably consolidate
 
-      // Create an object store for secrets if it doesn't exist
-      if (!database.objectStoreNames.contains("secrets")) {
-        database.createObjectStore("secrets", { keyPath: "id" });
-      }
-
-      // Create an object store for RSA keys if it doesn't exist
       if (!database.objectStoreNames.contains("rsa_keys")) {
         database.createObjectStore("rsa_keys", { autoIncrement: true });
       }
 
-      // Create an object store for public keys if it doesn't exist
       if (!database.objectStoreNames.contains("public_keys")) {
         database.createObjectStore("public_keys", { keyPath: "username" });
       }
 
       if (!database.objectStoreNames.contains("evm-accounts")) {
         database.createObjectStore("evm-accounts", { keyPath: "address" });
+      }
+
+      if (!database.objectStoreNames.contains("users")) {
+        database.createObjectStore("users", { keyPath: "username" });
+      }
+
+      // encrypted when written
+      if (!database.objectStoreNames.contains("mnemonics")) {
+        database.createObjectStore("mnemonics", { keyPath: "username" });
       }
     };
   });
@@ -534,5 +533,185 @@ export const getRSAKeys = async (
     request.onerror = () => {
       reject(new Error("Failed to get RSA keys"));
     };
+  });
+};
+
+// New functions for passkey operations
+export const storePasskeyRegistration = async (
+  username: string,
+  credentialId: string,
+): Promise<void> => {
+  return new Promise<void>((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    const transaction = db.transaction(["users"], "readwrite");
+    const store = transaction.objectStore("users");
+    store.put({
+      username,
+      credentialId,
+      registeredAt: Date.now(),
+    });
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = (event) => reject(event);
+  });
+};
+
+export const getPasskeyRegistration = async (
+  username?: string,
+): Promise<{ username: string; credentialId: string } | null> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    const transaction = db.transaction(["users"], "readonly");
+    const store = transaction.objectStore("users");
+
+    // If username is provided, get that specific user
+    if (username) {
+      const request = store.get(username);
+
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () =>
+        reject(new Error("Failed to get user registration"));
+    } else {
+      // Otherwise, get all users and return the first one (if any)
+      const request = store.getAll();
+      console.log(request);
+      request.onsuccess = () => {
+        if (request.result && request.result.length > 0) {
+          resolve(request.result[0]);
+        } else {
+          resolve(null);
+        }
+      };
+      request.onerror = () =>
+        reject(new Error("Failed to get user registrations"));
+    }
+  });
+};
+
+// Mnemonic storage in IndexedDB
+export const storeMnemonicInDB = async (
+  encryptedMnemonic: any,
+): Promise<void> => {
+  await initDB();
+  return new Promise<void>((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    const transaction = db.transaction("mnemonics", "readwrite");
+    const store = transaction.objectStore("mnemonics");
+    store.put(encryptedMnemonic);
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = (event) => reject(event);
+  });
+};
+
+export const getMnemonicFromDB = async (): Promise<any> => {
+  return new Promise(async (resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    try {
+      const username = await getRegisteredUsername();
+
+      if (!username) {
+        resolve(null);
+        return;
+      }
+
+      const transaction = db.transaction("mnemonics", "readonly");
+      const store = transaction.objectStore("mnemonics");
+      const getRequest = store.get(username);
+
+      getRequest.onsuccess = () => {
+        resolve(getRequest.result || null);
+      };
+
+      getRequest.onerror = (event) => reject(event);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const getRegisteredUsername = async (): Promise<string | null> => {
+  try {
+    await initDB();
+    const registration = await getPasskeyRegistration();
+    console.log(registration);
+    return registration ? registration.username : null;
+  } catch (error) {
+    console.error("Error getting registered username:", error);
+    return null;
+  }
+};
+
+// EVM account operations
+export const storeEVMAccount = async (account: {
+  username: string;
+  address: string;
+  createdAt: number;
+}): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    const transaction = db.transaction(["evm-accounts"], "readwrite");
+    const store = transaction.objectStore("evm-accounts");
+    const request = store.put(account);
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(new Error("Failed to store EVM account"));
+
+    transaction.oncomplete = () => {};
+  });
+};
+
+export const getAllEVMAccounts = async (): Promise<
+  Array<{ address: string; createdAt: number; username: string }>
+> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    const transaction = db.transaction(["evm-accounts"], "readonly");
+    const store = transaction.objectStore("evm-accounts");
+    const request = store.getAll();
+
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(new Error("Failed to get EVM accounts"));
+  });
+};
+
+// RSA key pair operations - updated version
+export const getAllRSAKeyPairs = async (): Promise<any[]> => {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject(new Error("Database not initialized"));
+      return;
+    }
+
+    const transaction = db.transaction(["rsa_keys"], "readonly");
+    const store = transaction.objectStore("rsa_keys");
+    const request = store.getAll();
+
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(new Error("Failed to get RSA key pairs"));
   });
 };
