@@ -78,7 +78,8 @@ export default function Home() {
             <DialogTitle>Your Secret Recovery Phrase</DialogTitle>
             <DialogDescription>
               Keep this phrase safe and secure. Anyone with this phrase can
-              access your account.
+              access your account. Paste this somewhere only you have access to,
+              ideally not on the internet.
             </DialogDescription>
           </DialogHeader>
 
