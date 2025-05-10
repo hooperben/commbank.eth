@@ -2,6 +2,16 @@
 
 ### the bank you don't have to trust
 
+## Components
+
+- `client/`: the web app deployed at https://commbank.eth.limo
+- `contracts/`: the EVM smart contracts required to facilitate private transfers
+- `keccak-circuits`: an implementation of a Multi Asset Shield Pool with `keccak256` as the merkle tree hash function
+- `poseidon2-circuits`: an implementation of a Multi Asset Shield Pool with `poseidon2` as the merkle tree hash function
+- `rust-rsa`: a rust RSA key pair library that's used for the note model encryption and decryption
+
+## Overview
+
 commbank.eth allows for easy sending and receiving of both public and private ERC20s, by utilising Zero Knowledge circuits written with Noir and compiled to Solidity.
 
 No data ever leaves the browser, except to send transactions and balance checks. All secrets and private balance proofs are stored in the browsers IndexDB, which is guarded by PassKey authentication.

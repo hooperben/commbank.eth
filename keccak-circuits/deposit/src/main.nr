@@ -5,7 +5,6 @@ pub fn calculate_leaf(
     note_secret: [u8; 32],
 ) -> [u8; 32] {
     // need to combine into one giga array
-
     let mut concat_values = [0; 116];
 
     for i in 0..32 {
