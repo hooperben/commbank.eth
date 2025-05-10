@@ -46,17 +46,17 @@ export const getTestingAPI = async <T = UltraHonkBackend>(
   });
 
   const { noir, backend } = await getNoir(
-    "../circuits/deposit/target/circuits.json",
+    "../keccak-circuits/deposit/target/circuits.json",
     backendClass,
   );
 
   const { noir: transactNoir, backend: transactBackend } = await getNoir(
-    "../circuits/transact/target/transact.json",
+    "../keccak-circuits/transact/target/transact.json",
     backendClass,
   );
 
   const { noir: withdrawNoir, backend: withdrawBackend } = await getNoir(
-    "../circuits/withdraw/target/withdraw.json",
+    "../keccak-circuits/withdraw/target/withdraw.json",
     backendClass,
   );
 

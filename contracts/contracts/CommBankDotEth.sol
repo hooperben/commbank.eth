@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "./MerkleTree.sol";
+import "./KeccakMerkleTree.sol";
 
 import {NoteVerifier} from "./verifiers/NoteVerifier.sol";
 import {TransactVerifier} from "./verifiers/TransactVerifier.sol";
@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 //
 // author: benhooper.eth
 
-contract CommBankDotEth is MerkleTree {
+contract CommBankDotEth is KeccakMerkleTree {
     NoteVerifier noteVerifier;
     TransactVerifier transactVerifier;
     WithdrawVerifier withdrawVerifier;
@@ -30,7 +30,7 @@ contract CommBankDotEth is MerkleTree {
         address _noteVerifier,
         address _transactVerifier,
         address _withdrawalVerifier
-    ) MerkleTree() {
+    ) KeccakMerkleTree() {
         noteVerifier = NoteVerifier(_noteVerifier);
         transactVerifier = TransactVerifier(_transactVerifier);
         withdrawVerifier = WithdrawVerifier(_withdrawalVerifier);

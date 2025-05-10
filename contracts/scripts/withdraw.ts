@@ -35,7 +35,7 @@ async function main() {
   ) as unknown as CommBankDotEth;
 
   const { noir: withdrawNoir, backend: withdrawBackend } = await getNoir(
-    "../circuits/withdraw/target/withdraw.json",
+    "../keccak-circuits/withdraw/target/withdraw.json",
   );
 
   // previous tree history:
