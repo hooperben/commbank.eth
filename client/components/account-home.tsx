@@ -1,73 +1,23 @@
 "use client";
 
-import { SendTransactionDialog } from "@/components/send-transaction";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { gravatarUrl } from "@/const/gravatar";
 import { useAccountsData } from "@/hooks/use-accounts-data";
-import { useTokenBalances } from "@/hooks/use-token-balances";
+import { useTestnet } from "@/hooks/use-testnet-mode";
 import { useAuth } from "@/lib/auth-context";
 import { getRegisteredUsername } from "@/lib/passkey";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowDownToLine,
-  Check,
-  Copy,
-  ExternalLinkIcon,
-  SendHorizontal,
-  Wallet,
-} from "lucide-react";
 import Link from "next/link";
-import { QRCodeSVG } from "qrcode.react";
-import { useState } from "react";
 import { Banner } from "./banner";
+import PrivateAddressManager from "./private-address-manager";
+import PublicAddressManager from "./public-address-manager";
 
 const AccountHome = () => {
   const { token } = useAuth();
-
   const { data: accountsData } = useAccountsData();
-  const { data: tokenBalances, isLoading: isLoadingBalances } =
-    useTokenBalances(accountsData);
-
-  const [copiedPublic, setCopiedPublic] = useState(false);
-  const [copiedPrivate, setCopiedPrivate] = useState(false);
-
-  const copyToClipboard = (text: string, type: "public" | "private") => {
-    navigator.clipboard.writeText(text);
-    if (type === "public") {
-      setCopiedPublic(true);
-      setTimeout(() => setCopiedPublic(false), 2000);
-    } else {
-      setCopiedPrivate(true);
-      setTimeout(() => setCopiedPrivate(false), 2000);
-    }
-  };
-
-  const shortenAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
-  const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
-  const [receiveAddress, setReceiveAddress] = useState("");
-  const [receiveType, setReceiveType] = useState<"public" | "private">(
-    "public",
-  );
-
-  // New state for send transaction dialog
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [sendAccountType, setSendAccountType] = useState<"public" | "private">(
-    "public",
-  );
 
   const { data: isRegisteredUsername } = useQuery({
     queryKey: ["registered-username"],
@@ -76,6 +26,8 @@ const AccountHome = () => {
       return { username };
     },
   });
+
+  const { testnetEnabled, setTestnetEnabled } = useTestnet();
 
   return (
     <div className="flex flex-col">
@@ -118,278 +70,19 @@ const AccountHome = () => {
                       </div>
                     </div>
 
-                    <Dialog
-                      open={receiveDialogOpen}
-                      onOpenChange={setReceiveDialogOpen}
-                    >
-                      <DialogContent className="max-w-[500px]">
-                        <DialogHeader>
-                          <DialogTitle>Receive Funds</DialogTitle>
-                          <DialogDescription>
-                            Scan this QR code or copy the address to receive
-                            funds.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex flex-col items-center justify-center gap-4 py-4">
-                          <div className="bg-white p-4 rounded-lg">
-                            <QRCodeSVG value={receiveAddress} size={200} />
-                          </div>
-                          <div className="flex flex-col items-center gap-2">
-                            <code className="bg-muted text-center px-2 py-1.5 rounded text-sm font-mono flex-1 overflow-hidden text-ellipsis">
-                              {receiveAddress}
-                            </code>
-                            <Button
-                              variant="outline"
-                              onClick={() =>
-                                copyToClipboard(receiveAddress, receiveType)
-                              }
-                            >
-                              {(
-                                receiveType === "public"
-                                  ? copiedPublic
-                                  : copiedPrivate
-                              ) ? (
-                                <>
-                                  Address Copied
-                                  <Check className="h-4 w-4 text-green-500" />
-                                </>
-                              ) : (
-                                <>
-                                  Copy Address to Clipboard
-                                  <Copy className="h-4 w-4" />
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    {/* Send Transaction Dialog */}
-                    <SendTransactionDialog
-                      open={sendDialogOpen}
-                      onOpenChange={setSendDialogOpen}
-                      accountType={sendAccountType}
-                    />
+                    <div className="flex flex-col">
+                      <p>Testnet</p>
+                      <Switch
+                        checked={testnetEnabled}
+                        onCheckedChange={setTestnetEnabled}
+                      />{" "}
+                    </div>
                   </CardContent>
                 </Card>
 
                 <div className="flex flex-col md:flex-row w-full gap-2">
-                  {/* PUBLIC ACCOUNT */}
-                  <Card className="w-full">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Wallet className="h-5 w-5" />
-                        Public Address
-                        <Badge variant="outline" className="ml-2">
-                          EVM
-                        </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
-                              {shortenAddress(accountsData.evm.address)}
-                            </code>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() =>
-                                accountsData.evm &&
-                                copyToClipboard(
-                                  accountsData.evm.address,
-                                  "public",
-                                )
-                              }
-                            >
-                              {copiedPublic ? (
-                                <Check className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              asChild
-                            >
-                              <Link
-                                href={`https://etherscan.io/address/${accountsData.evm.address}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <ExternalLinkIcon />
-                              </Link>
-                            </Button>
-                          </div>
-                        </div>
-
-                        <Separator />
-
-                        <div className="pt-2">
-                          <div className="text-sm text-muted-foreground mb-1">
-                            Balance
-                          </div>
-                          {isLoadingBalances ? (
-                            <div className="h-12 flex items-center">
-                              <div className="h-5 w-24 bg-muted animate-pulse rounded"></div>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex justify-between items-center">
-                                <div className="font-mono text-xl font-semibold">
-                                  {tokenBalances?.usdc || "0"} USDC
-                                </div>
-                                <Badge variant="secondary">
-                                  ${tokenBalances?.usdc || "0"}
-                                </Badge>
-                              </div>
-                              <div className="text-sm text-muted-foreground mt-1 font-mono">
-                                {tokenBalances?.eth || "0"} ETH
-                              </div>
-                              <Badge
-                                variant="outline"
-                                className="mt-3 w-full justify-center"
-                              >
-                                Only ethereum ETH and USDC are viewable at the
-                                moment - support for more assets and networks is
-                                coming soon.
-                              </Badge>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setReceiveAddress(accountsData.evm!.address);
-                            setReceiveType("public");
-                            setReceiveDialogOpen(true);
-                          }}
-                        >
-                          <ArrowDownToLine className="h-4 w-4 mr-2" />
-                          Receive
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setSendAccountType("public");
-                            setSendDialogOpen(true);
-                          }}
-                        >
-                          <SendHorizontal className="h-4 w-4 mr-2" />
-                          Send
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* PRIVATE ACCOUNT */}
-                  <Card className="w-full">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Wallet className="h-5 w-5" />
-                        Private Address
-                        <Badge variant="outline" className="ml-2">
-                          commbank.eth
-                        </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {accountsData.rsa && (
-                              <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono">
-                                {shortenAddress(
-                                  `0x${Buffer.from(
-                                    accountsData.rsa.publicKey,
-                                  ).toString("hex")}:${
-                                    accountsData.rsa.circuitPubKey
-                                  }`,
-                                )}
-                              </code>
-                            )}
-
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() =>
-                                accountsData.rsa &&
-                                copyToClipboard(
-                                  `0x${Buffer.from(
-                                    accountsData.rsa.publicKey,
-                                  ).toString("hex")}:${
-                                    accountsData.rsa.circuitPubKey
-                                  }`,
-                                  "private",
-                                )
-                              }
-                            >
-                              {copiedPrivate ? (
-                                <Check className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-
-                        <Separator />
-
-                        <div className="pt-2 space-y-2">
-                          <div className="text-sm text-muted-foreground mb-1">
-                            Balances
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <div className="font-mono text-lg font-semibold">
-                              0 USDC
-                            </div>
-                            <Badge variant="secondary">$0</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 mt-9">
-                        <Button
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setReceiveAddress(
-                              Buffer.from(accountsData.rsa!.publicKey).toString(
-                                "hex",
-                              ),
-                            );
-                            setReceiveType("private");
-                            setReceiveDialogOpen(true);
-                          }}
-                          disabled
-                        >
-                          <ArrowDownToLine className="h-4 w-4 mr-2" />
-                          Receive
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setSendAccountType("private");
-                            setSendDialogOpen(true);
-                          }}
-                          disabled
-                        >
-                          <SendHorizontal className="h-4 w-4 mr-2" />
-                          Send
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <PublicAddressManager />
+                  <PrivateAddressManager />
                 </div>
               </div>
             )}
