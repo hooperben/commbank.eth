@@ -10,7 +10,7 @@ describe("Testing address derivation", () => {
     rsa = RSA();
   });
 
-  it.only("should create the correct details for a given mnemonic", async () => {
+  it("should create the correct details for a given mnemonic", async () => {
     const mnemonic = process.env.MNEMONIC;
     console.log(mnemonic);
 

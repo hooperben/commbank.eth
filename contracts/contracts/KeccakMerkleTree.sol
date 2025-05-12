@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-contract MerkleTree {
+contract KeccakMerkleTree {
     uint256 public depth; // Depth of the Merkle tree
     bytes32[] public nodes; // Array representing the entire tree nodes
     uint256 public nextLeafIndex = 0; // Tracks where the next leaf should go

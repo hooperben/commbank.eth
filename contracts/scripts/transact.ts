@@ -40,7 +40,7 @@ async function main() {
   tree.updateLeaf(0, depositLeafHash);
 
   const { noir: transactNoir, backend: transactBackend } = await getNoir(
-    "../circuits/transact/target/transact.json",
+    "../keccak-circuits/transact/target/transact.json",
   );
 
   const merklePath = tree.getProof(depositLeafHash).map((step) => {

@@ -70,7 +70,7 @@ async function main() {
   };
 
   const { noir, backend } = await getNoir(
-    "../circuits/deposit/target/circuits.json",
+    "../keccak-circuits/deposit/target/circuits.json",
   );
 
   const { witness } = await noir.execute(input as unknown as InputMap);

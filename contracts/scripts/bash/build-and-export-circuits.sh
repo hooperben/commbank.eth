@@ -5,7 +5,7 @@ ORIGINAL_DIR=$(pwd)
 echo "$ORIGINAL_DIR"
 
 echo "building deposit verifier (1/3)"
-cd ../circuits/deposit/
+cd ../keccak-circuits/deposit/
 
 nargo compile
 bb write_vk_ultra_keccak_honk -b ./target/circuits.json

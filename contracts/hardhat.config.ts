@@ -29,7 +29,7 @@ const config: HardhatUserConfig = {
     },
   },
   gasReporter: {
-    enabled: true,
+    enabled: false,
     excludeContracts: [],
     currency: "USD",
     L1Etherscan: process.env.ETHERSCAN_API_KEY!,

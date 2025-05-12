@@ -76,7 +76,7 @@ describe("Note creation and flow testing", () => {
     console.log(decryptedMessage);
   });
 
-  it.only("should let me deposit to the contract", async () => {
+  it("should let me deposit to the contract", async () => {
     // approve commbank.eth to move USDC for the user
     await usdc
       .connect(alice)
