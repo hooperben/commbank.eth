@@ -1,14 +1,13 @@
-"use client";
-
 import { Home, Loader2, Settings, Users } from "lucide-react";
-import { usePathname } from "next/navigation";
+import * as React from "react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -18,8 +17,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getRegisteredUsername } from "@/lib/passkey";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
+import { usePathname } from "next/navigation";
 
 // Menu items.
 const items = [
@@ -40,7 +38,7 @@ const items = [
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isSignedIn, signOut, handleSignIn } = useAuth();
   const pathname = usePathname();
 
@@ -55,9 +53,9 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className="bg-white dark:bg-black">
-      <SidebarHeader className="bg-background">
-        <div className="flex h-14 items-center border-b px-6 font-semibold">
+    <Sidebar variant="floating" {...props}>
+      <SidebarHeader>
+        <div className="flex items-center font-semibold px-2 py-4">
           <Link href="/" className="flex items-center gap-2">
             commbank.eth
           </Link>
@@ -66,35 +64,33 @@ export function AppSidebar() {
           </Badge>
         </div>
       </SidebarHeader>
-      <SidebarContent className="bg-white dark:bg-black">
+      <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu className="px-3">
-              {items.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton
-                    asChild
-                    className={pathname === item.href ? "text-primary" : ""}
-                  >
-                    <Link href={item.href}>
-                      <item.icon
-                        className={pathname === item.href ? "text-primary" : ""}
-                      />
-                      <span
-                        className={pathname === item.href ? "text-primary" : ""}
-                      >
-                        {item.label}
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarMenu className="gap-2">
+            {items.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  className={pathname === item.href ? "text-primary" : ""}
+                >
+                  <Link href={item.href}>
+                    <item.icon
+                      className={pathname === item.href ? "text-primary" : ""}
+                    />
+                    <span
+                      className={pathname === item.href ? "text-primary" : ""}
+                    >
+                      {item.label}
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="bg-white dark:bg-black">
-        <div className="border-t w-full">
+      <SidebarFooter>
+        <div className="w-full">
           <div className="flex flex-col w-full gap-2 rounded-lg px-3 py-2 text-muted-foreground">
             {isLoadingUsername && (
               <Button className="w-full" disabled variant="outline">

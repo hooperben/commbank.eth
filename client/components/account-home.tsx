@@ -3,10 +3,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { gravatarUrl } from "@/const/gravatar";
 import { useAccountsData } from "@/hooks/use-accounts-data";
-import { useTestnet } from "@/hooks/use-testnet-mode";
 import { useAuth } from "@/lib/auth-context";
 import { getRegisteredUsername } from "@/lib/passkey";
 import { useQuery } from "@tanstack/react-query";
@@ -26,8 +24,6 @@ const AccountHome = () => {
       return { username };
     },
   });
-
-  const { testnetEnabled, setTestnetEnabled } = useTestnet();
 
   return (
     <div className="flex flex-col">
@@ -68,14 +64,6 @@ const AccountHome = () => {
                           My Account
                         </h2>
                       </div>
-                    </div>
-
-                    <div className="flex flex-col">
-                      <p>Testnet</p>
-                      <Switch
-                        checked={testnetEnabled}
-                        onCheckedChange={setTestnetEnabled}
-                      />{" "}
                     </div>
                   </CardContent>
                 </Card>

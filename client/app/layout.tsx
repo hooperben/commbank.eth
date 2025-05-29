@@ -26,7 +26,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <SidebarProvider>
+        <SidebarProvider
+          style={
+            {
+              "--sidebar-width": "19rem",
+            } as React.CSSProperties
+          }
+        >
           <AuthProvider>
             <PageHead
               title="commbank.eth"
@@ -39,7 +45,7 @@ export default function RootLayout({
                 enableSystem
               >
                 <AppSidebar />
-                <div className="flex flex-col w-full">
+                <div className="flex flex-col w-full gap-4 mt-4">
                   <SidebarTrigger />
 
                   {children}
