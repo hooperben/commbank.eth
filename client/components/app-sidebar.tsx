@@ -27,7 +27,7 @@ const items = [
     label: "Dashboard",
   },
   {
-    href: "/home/",
+    href: "/account/",
     icon: Users,
     label: "My Account",
   },
@@ -121,7 +121,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             )}
             {!isRegisteredUsername && !isSignedIn && (
               <Button asChild>
-                <Link href="/home">Register</Link>
+                <Link href="/account">Register</Link>
               </Button>
             )}
           </div>

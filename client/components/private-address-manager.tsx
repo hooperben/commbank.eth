@@ -1,7 +1,9 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTestnet } from "@/hooks/use-testnet-mode";
+import { shortenAddress } from "@/helpers";
+import { useAccountsData } from "@/hooks/use-accounts-data";
 import {
   ArrowDownToLine,
   Check,
@@ -9,15 +11,11 @@ import {
   SendHorizontal,
   Wallet,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useAccountsData } from "@/hooks/use-accounts-data";
-import { shortenAddress } from "@/helpers";
-import { Button } from "./ui/button";
 import { useState } from "react";
-import { Separator } from "./ui/separator";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const PrivateAddressManager = () => {
-  const { testnetEnabled, setTestnetEnabled } = useTestnet();
   const { data: accountsData } = useAccountsData();
 
   const [copied, setCopied] = useState(false);

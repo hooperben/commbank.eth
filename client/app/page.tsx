@@ -35,7 +35,7 @@ export default function Home() {
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground hover:cursor-pointer"
               >
-                <Link href="/home" className="hover:cursor-pointer">
+                <Link href="/account" className="hover:cursor-pointer">
                   Get Started
                   <ArrowRight className="h-4 w-4" />
                 </Link>

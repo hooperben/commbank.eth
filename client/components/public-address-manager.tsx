@@ -2,8 +2,6 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTestnet } from "@/hooks/use-testnet-mode";
-
 import {
   Dialog,
   DialogContent,
@@ -26,11 +24,10 @@ import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { SendTransactionDialog } from "./send-transaction";
-import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const PublicAddressManager = () => {
-  const { testnetEnabled, setTestnetEnabled } = useTestnet();
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
   const [receiveAddress, setReceiveAddress] = useState("");
 

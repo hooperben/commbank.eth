@@ -1,7 +1,12 @@
 import { useAuth } from "@/lib/auth-context";
 import { Fingerprint, Loader2 } from "lucide-react";
-import { Button } from "./ui/button";
-import { CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const SignIn = () => {
   const { handleSignIn, isAuthenticating } = useAuth();
