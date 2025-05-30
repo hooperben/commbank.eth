@@ -1,6 +1,7 @@
 import { Home, Settings, Users } from "lucide-react";
 import * as React from "react";
 
+import AccountManager from "@/components/account-manager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +18,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAccount } from "wagmi";
-import { CustomWalletModal } from "./custom-wallet-modal";
 
 // Menu items.
 const items = [
@@ -83,9 +83,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter>
-        <CustomWalletModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+        <AccountManager
+          open={isModalOpen}
+          onOpenChange={() => setIsModalOpen(false)}
         />
         {isConnected && (
           <Button onClick={() => setIsModalOpen(true)}>My Account</Button>
