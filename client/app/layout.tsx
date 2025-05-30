@@ -44,8 +44,8 @@ export default function RootLayout({
                   enableSystem
                 >
                   <AppSidebar />
-                  <div className="flex flex-col w-full gap-4 mt-4">
-                    <SidebarTrigger />
+                  <div className="flex flex-col w-full gap-4">
+                    <SidebarTrigger className="mt-1" />
 
                     {children}
                   </div>

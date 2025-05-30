@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -44,9 +45,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isConnected } = useAccount();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const { isMobile, toggleSidebar } = useSidebar();
+
   return (
     <Sidebar variant="floating" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="bg-white dark:bg-black -z-10">
         <div className="flex items-center font-semibold px-2 py-4">
           <Link href="/" className="flex items-center gap-2">
             commbank.eth
@@ -56,7 +59,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </Badge>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-white dark:bg-black">
         <SidebarGroup>
           <SidebarMenu className="gap-2">
             {items.map((item) => (
@@ -64,6 +67,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuButton
                   asChild
                   className={pathname === item.href ? "text-primary" : ""}
+                  onClick={() => isMobile && toggleSidebar()}
                 >
                   <Link href={item.href}>
                     <item.icon
@@ -82,7 +86,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="bg-white dark:bg-black">
         <AccountManager
           open={isModalOpen}
           onOpenChange={() => setIsModalOpen(false)}

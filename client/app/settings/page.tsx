@@ -44,10 +44,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col w-full p-6 gap-6">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-bold text-primary">Account Settings</h2>
-      </div>
+    <div className="flex flex-1 flex-col gap-4 px-6 p-2 pt-0">
+      <h1 className="text-3xl text-primary">Settings</h1>
 
       {token && (
         <div className="flex flex-col gap-2">
@@ -61,8 +59,6 @@ export default function Home() {
       )}
 
       <div className="flex flex-col gap-2">
-        <p className="text-sm">Theme Settings</p>
-
         <ThemeToggle />
       </div>
 

@@ -3,14 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { useAccount, useConnect } from "wagmi";
 import { useState } from "react";
-import { CustomWalletModal } from "./custom-wallet-modal";
-import { formatAddress } from "@/const";
 
 const ConnectWallet = () => {
   const { connect, connectors } = useConnect();
-  const { isConnected, address } = useAccount();
+  const { isConnected } = useAccount();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Filter and get specific wallet connectors
@@ -62,7 +59,7 @@ const ConnectWallet = () => {
 
   return (
     <>
-      {!isConnected ? (
+      {!isConnected && (
         <div className="space-y-3">
           {walletOptions.map((wallet) => (
             <Button
@@ -78,20 +75,7 @@ const ConnectWallet = () => {
             </Button>
           ))}
         </div>
-      ) : (
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          type="button"
-          className="flex items-center gap-2 w-full"
-        >
-          {formatAddress(address)}
-        </Button>
       )}
-
-      <CustomWalletModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </>
   );
 };
