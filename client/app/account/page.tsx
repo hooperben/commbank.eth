@@ -1,15 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useAccount } from "wagmi";
+import AccountManager from "@/components/account-manager";
 import { Button } from "@/components/ui/button";
 import { QrCodeIcon, SendIcon, WalletIcon } from "lucide-react";
-import AccountManager from "@/components/account-manager";
+import { useEffect, useState } from "react";
+import { useAccount } from "wagmi";
 
 export default function Account() {
   const { isConnected } = useAccount();
   const [isAccountManagerOpen, setIsAccountManagerOpen] = useState(false);
   const isUp = false;
+
+  useEffect(() => {
+    if (isConnected) {
+      setIsAccountManagerOpen(false);
+    }
+  }, [isConnected]);
 
   // If not connected, show connect wallet button
   if (!isConnected) {

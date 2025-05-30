@@ -7,17 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { formatAddress } from "@/const";
-import { ChevronDown, Copy, ExternalLink, Loader2, LogOut } from "lucide-react";
+import { Copy, Loader2, LogOut } from "lucide-react";
 import { useState } from "react";
-import { useAccount, useBalance, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
 
 interface CustomWalletModalProps {
   isOpen: boolean;
@@ -25,8 +19,7 @@ interface CustomWalletModalProps {
 }
 
 export function CustomWalletModal({ isOpen, onClose }: CustomWalletModalProps) {
-  const { address, chain } = useAccount();
-  const { data: balanceData } = useBalance({ address });
+  const { address } = useAccount();
   const { disconnect } = useDisconnect();
   const [isNetworkSwitching] = useState(false);
 
@@ -70,51 +63,6 @@ export function CustomWalletModal({ isOpen, onClose }: CustomWalletModalProps) {
             >
               <Copy className="h-4 w-4" />
             </Button>
-          </div>
-
-          <div className="mt-4">
-            <span className="text-sm text-muted-foreground">Balance</span>
-
-            <div className="flex flex-row gap-2 w-full justify-between items-center">
-              <p className="font-medium">
-                {balanceData?.formatted &&
-                  Number(balanceData.formatted).toFixed(4)}{" "}
-                {balanceData?.symbol}
-              </p>
-              {chain && address && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <ExternalLink className="h-3 w-1" />
-                      View on Explorers
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      key={chain.id}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        window.open(
-                          `${chain.blockExplorers?.default.url}/address/${address}`,
-                          "_blank",
-                        );
-                      }}
-                      disabled={isNetworkSwitching}
-                    >
-                      <div className="flex items-center gap-2 w-full">
-                        <ExternalLink size="15px" className="h-1 w-1" />
-                        <span>View on {chain.name} Scan</span>
-                      </div>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
           </div>
         </div>
 
