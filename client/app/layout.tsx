@@ -1,19 +1,16 @@
 "use client";
 
-import type React from "react";
-import { Inter } from "next/font/google";
-import "./globals.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type React from "react";
 import { useState } from "react";
+import "./globals.css";
 
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
-import PageHead from "@/components/page-head";
-import { AuthProvider } from "@/lib/auth-context";
 import { AppSidebar } from "@/components/app-sidebar";
+import PageHead from "@/components/page-head";
+import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-
-const inter = Inter({ subsets: ["latin"] });
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/lib/auth-context";
 
 export default function RootLayout({
   children,
@@ -25,7 +22,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body>
         <SidebarProvider
           style={
             {

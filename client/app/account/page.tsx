@@ -7,7 +7,7 @@ export default function Account() {
   const isUp = false;
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-2 pt-0 max-w-[90%]">
+    <div className="flex flex-1 flex-col gap-4 px-6 p-2 pt-0">
       <h1 className="text-3xl text-primary">Account</h1>
 
       <div className="flex flex-row w-full justify-between items-center">
