@@ -1,4 +1,4 @@
-import { Home, Loader2, Settings, Users } from "lucide-react";
+import { Home, Settings, Users } from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -13,11 +13,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/lib/auth-context";
-import { getRegisteredUsername } from "@/lib/passkey";
-import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { useAccount } from "wagmi";
+import { CustomWalletModal } from "./custom-wallet-modal";
 
 // Menu items.
 const items = [
@@ -39,18 +39,10 @@ const items = [
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { isSignedIn, signOut, handleSignIn } = useAuth();
   const pathname = usePathname();
 
-  const { data: isRegisteredUsername, isLoading: isLoadingUsername } = useQuery(
-    {
-      queryKey: ["registered-username"],
-      queryFn: async () => {
-        const username = await getRegisteredUsername();
-        return { username };
-      },
-    },
-  );
+  const { isConnected } = useAccount();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <Sidebar variant="floating" {...props}>
@@ -89,43 +81,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter>
-        <div className="w-full">
-          <div className="flex flex-col w-full gap-2 rounded-lg px-3 py-2 text-muted-foreground">
-            {isLoadingUsername && (
-              <Button className="w-full" disabled variant="outline">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              </Button>
-            )}
-
-            {isSignedIn && (
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={() => {
-                  signOut();
-                }}
-              >
-                Logout
-              </Button>
-            )}
-
-            {isRegisteredUsername?.username && !isSignedIn && (
-              <Button
-                onClick={() => {
-                  handleSignIn();
-                }}
-              >
-                Login
-              </Button>
-            )}
-            {!isRegisteredUsername && !isSignedIn && (
-              <Button asChild>
-                <Link href="/account">Register</Link>
-              </Button>
-            )}
-          </div>
-        </div>
+        <CustomWalletModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+        {isConnected && (
+          <Button onClick={() => setIsModalOpen(true)}>My Account</Button>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
