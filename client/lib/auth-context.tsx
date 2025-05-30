@@ -1,21 +1,13 @@
 "use client";
 
-import { toast } from "@/hooks/use-toast";
-import { decryptSecret, getEncryptedSecretById, initDB } from "@/lib/db";
 import React, { createContext, useContext, useState } from "react";
-import {
-  authenticateWithPasskey,
-  getRegisteredUsername,
-  retrieveMnemonic,
-} from "./passkey";
+import { getRegisteredUsername } from "./passkey";
 
 interface AuthContextType {
   isSignedIn: boolean;
   token: string | null;
   mnemonic: string | null;
   signIn: (secret: string) => void;
-  handleSignIn: () => void;
-  isAuthenticating: boolean;
   signOut: () => void;
 }
 
@@ -25,7 +17,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [mnemonic, setMnemonic] = useState<string | null>(null);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const signIn = async (secret: string) => {
     // Create payload with 1-hour expiration
@@ -70,55 +61,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsSignedIn(true);
     setMnemonic(secret);
     sessionStorage.setItem("authToken", jwt);
-  };
-
-  const handleSignIn = async () => {
-    setIsAuthenticating(true);
-
-    try {
-      await initDB();
-
-      // Use the provided username or fall back to retrieving from storage
-      const userToAuthenticate = "commbank.eth";
-
-      // Try to retrieve mnemonic using our enhanced method
-      const mnemonic = await retrieveMnemonic();
-
-      if (mnemonic) {
-        // Sign in with the retrieved mnemonic
-        signIn(mnemonic);
-        return;
-      }
-
-      // Fall back to original approach if retrieveMnemonic fails
-      const commbankSecret = await getEncryptedSecretById(userToAuthenticate);
-
-      if (!commbankSecret)
-        throw new Error(`No ${userToAuthenticate} registered`);
-
-      const authData = await authenticateWithPasskey();
-
-      if (!authData) {
-        toast({
-          title: "Authentication Failed",
-          description: "Failed to authenticate with passkey",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const decryptedSecret = await decryptSecret(commbankSecret, authData);
-      signIn(decryptedSecret);
-    } catch (err) {
-      console.log(err);
-      toast({
-        title: "Authentication Failed",
-        description: "Failed to authenticate with passkey",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAuthenticating(false);
-    }
   };
 
   // Production-ready HMAC-SHA256 implementation using Web Crypto API
@@ -177,9 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         mnemonic,
         signIn,
-        handleSignIn,
         signOut,
-        isAuthenticating,
       }}
     >
       {children}

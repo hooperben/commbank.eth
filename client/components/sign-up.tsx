@@ -12,12 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DEFAULT_PASSKEY_USERNAME } from "@/const";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
-import { initDB } from "@/lib/db";
 import { registerPasskey, storeMnemonicWithPasskey } from "@/lib/passkey";
-import {
-  generateAndStoreRSAAccount,
-  storeEVMAccountPublicKey,
-} from "@/lib/wallet";
+
 import { ethers } from "ethers";
 import { CheckCircle, Fingerprint, Loader2 } from "lucide-react";
 import type React from "react";
@@ -36,8 +32,6 @@ const SignUp = () => {
 
   const handleRegisterPasskey = async () => {
     setIsRegistering(true);
-
-    await initDB();
 
     try {
       // Register passkey
@@ -64,8 +58,6 @@ const SignUp = () => {
   const handleGenerateAccounts = async () => {
     setIsGeneratingAccount(true);
 
-    await initDB();
-
     try {
       const random = ethers.Wallet.createRandom();
 
@@ -82,14 +74,6 @@ const SignUp = () => {
       if (!storageSuccess) {
         throw new Error("Failed to securely store mnemonic");
       }
-
-      // Generate EVM and RSA keys
-      storeEVMAccountPublicKey(random.address, DEFAULT_PASSKEY_USERNAME);
-
-      await generateAndStoreRSAAccount(
-        random.mnemonic?.phrase,
-        DEFAULT_PASSKEY_USERNAME,
-      );
 
       // Sign the user in
       signIn(random.privateKey);
@@ -116,8 +100,6 @@ const SignUp = () => {
   const handleImportAccount = async () => {
     setIsImportingAccount(true);
 
-    await initDB();
-
     try {
       // Validate the mnemonic
       if (!ethers.Wallet.fromPhrase(importMnemonic.trim())) {
@@ -136,13 +118,6 @@ const SignUp = () => {
       if (!storageSuccess) {
         throw new Error("Failed to securely store mnemonic");
       }
-
-      // Generate EVM and RSA keys
-      storeEVMAccountPublicKey(wallet.address, DEFAULT_PASSKEY_USERNAME);
-      await generateAndStoreRSAAccount(
-        importMnemonic.trim(),
-        DEFAULT_PASSKEY_USERNAME,
-      );
 
       // Sign the user in
       signIn(wallet.privateKey);

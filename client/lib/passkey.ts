@@ -1,23 +1,5 @@
 "use client";
 
-import {
-  initDB,
-  storePasskeyRegistration,
-  getPasskeyRegistration,
-  storeMnemonicInDB,
-  getMnemonicFromDB,
-  getRegisteredUsername as readRegisteredUser,
-} from "./db";
-
-// Store passkey registration in IndexedDB
-async function storePasskeyData(
-  username: string,
-  credentialId: string,
-): Promise<void> {
-  await initDB();
-  return storePasskeyRegistration(username, credentialId);
-}
-
 // Function to register a new passkey
 export async function registerPasskey(username: string): Promise<boolean> {
   try {
@@ -51,7 +33,7 @@ export async function registerPasskey(username: string): Promise<boolean> {
         attestation: "none",
       };
 
-    await initDB();
+    // Remove initDB() call
 
     // Create the credential
     const credential = (await navigator.credentials.create({
@@ -62,9 +44,8 @@ export async function registerPasskey(username: string): Promise<boolean> {
       throw new Error("Failed to create credential");
     }
 
-    // Store the credential ID in IndexedDB
-    const credentialId = credential.id;
-    await storePasskeyData(username, credentialId);
+    // Store username in localStorage for reference
+    localStorage.setItem("registeredUsername", username);
 
     return true;
   } catch (error) {
@@ -76,31 +57,14 @@ export async function registerPasskey(username: string): Promise<boolean> {
 // Function to authenticate with a passkey and get authentication data
 export async function authenticateWithPasskey(): Promise<ArrayBuffer | null> {
   try {
-    // Get the registration from IndexedDB
-    const registration = await getPasskeyRegistration();
-    if (!registration) {
-      throw new Error("No passkey registered");
-    }
-
-    const credentialId = registration.credentialId;
-
     // Create a new challenge
     const challenge = new Uint8Array(32);
     crypto.getRandomValues(challenge);
 
-    // Create credential request options
+    // Try to authenticate with any registered passkey (no specific credential ID needed)
     const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions =
       {
         challenge,
-        allowCredentials: [
-          {
-            id: Uint8Array.from(
-              atob(credentialId.replace(/-/g, "+").replace(/_/g, "/")),
-              (c) => c.charCodeAt(0),
-            ),
-            type: "public-key",
-          },
-        ],
         userVerification: "required",
         timeout: 60000,
       };
@@ -117,7 +81,6 @@ export async function authenticateWithPasskey(): Promise<ArrayBuffer | null> {
     // Get the authenticator data from the response
     const response = assertion.response as AuthenticatorAssertionResponse;
 
-    // Return the authenticator data which will be used for key derivation
     return response.authenticatorData;
   } catch (error) {
     console.error("Error authenticating with passkey:", error);
@@ -168,33 +131,38 @@ export function isPasskeySupported(): boolean {
   );
 }
 
-// Check if a passkey is already registered - now using DB function
+// Check if a passkey is already registered - now using conditional UI
 export async function isPasskeyRegistered(): Promise<boolean> {
   try {
-    await initDB();
-    const registration = await getPasskeyRegistration();
-    return registration !== null;
+    // Try to use conditional UI to see if any passkeys are available
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        userVerification: "required",
+        timeout: 5000, // Short timeout for quick check
+      },
+    });
+
+    return assertion !== null;
   } catch (error) {
-    console.error("Error checking passkey registration:", error);
+    console.error(error);
+    // If authentication fails, assume no passkey is registered
     return false;
   }
 }
 
-// Get the registered username if available - now using DB function
+// Get the registered username - now using localStorage
 export async function getRegisteredUsername(): Promise<string | null> {
-  return readRegisteredUser();
+  return localStorage.getItem("registeredUsername");
 }
 
-// Check if a username is already registered with a passkey
+// Check if a username is already registered - simplified since we only support one user per device
 export async function isUsernameRegistered(username: string): Promise<boolean> {
-  try {
-    await initDB();
-    const registration = await getPasskeyRegistration(username);
-    return registration !== null;
-  } catch (error) {
-    console.error("Error checking username registration:", error);
-    return false;
-  }
+  const registeredUsername = await getRegisteredUsername();
+  return registeredUsername === username;
 }
 
 // Function to store a mnemonic phrase securely with passkey
@@ -235,17 +203,13 @@ export async function storeMnemonicWithPasskey(
       mnemonicData,
     );
 
-    // Store the encrypted mnemonic
+    // Store the encrypted mnemonic in localStorage
     const encryptedMnemonic = {
       iv: Array.from(iv),
       data: Array.from(new Uint8Array(encryptedData)),
       username,
     };
 
-    // 1. IndexedDB (most resilient against cache clearing)
-    await storeMnemonicInDB(encryptedMnemonic);
-
-    // 2. localStorage as a backup
     localStorage.setItem(
       "encryptedMnemonic",
       JSON.stringify(encryptedMnemonic),
@@ -258,13 +222,13 @@ export async function storeMnemonicWithPasskey(
   }
 }
 
-// Retrieve and decrypt the mnemonic
+// Retrieve and decrypt the mnemonic - now using localStorage only
 export async function retrieveMnemonic(): Promise<string | null> {
   try {
     // Check if there's a registered username first
     const username = await getRegisteredUsername();
 
-    // First try to authenticate with regular passkey if username exists
+    // Try to authenticate with passkey
     let authData: ArrayBuffer | null = null;
     if (username) {
       authData = await authenticateWithPasskey();
@@ -282,18 +246,13 @@ export async function retrieveMnemonic(): Promise<string | null> {
     // Derive the decryption key
     const key = await deriveKeyFromPasskey(authData);
 
-    // Try to get the encrypted mnemonic from IndexedDB first
-    let encryptedMnemonic = await getMnemonicFromDB();
-
-    // Fall back to localStorage if needed
-    if (!encryptedMnemonic) {
-      const storedData = localStorage.getItem("encryptedMnemonic");
-      if (storedData) {
-        encryptedMnemonic = JSON.parse(storedData);
-      } else {
-        throw new Error("No stored mnemonic found");
-      }
+    // Get the encrypted mnemonic from localStorage
+    const storedData = localStorage.getItem("encryptedMnemonic");
+    if (!storedData) {
+      throw new Error("No stored mnemonic found");
     }
+
+    const encryptedMnemonic = JSON.parse(storedData);
 
     // Decrypt the mnemonic
     const iv = new Uint8Array(encryptedMnemonic.iv);
@@ -337,6 +296,7 @@ async function authenticateWithConditionalUI(): Promise<ArrayBuffer | null> {
         return response.authenticatorData;
       }
     } catch (e) {
+      console.error(e);
       console.log("Conditional UI failed, falling back to standard method");
     }
 
