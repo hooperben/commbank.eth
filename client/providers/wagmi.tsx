@@ -6,14 +6,28 @@ import { http } from "wagmi";
 import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
 import "@rainbow-me/rainbowkit/styles.css";
 
-import { sepolia } from "wagmi/chains";
+import { mainnet, base, optimism, polygon, arbitrum } from "wagmi/chains";
 
 const config = getDefaultConfig({
   appName: "commbank.eth",
-  projectId: "22e282d3e8cecf32c5c231dd188cb1ba", // Get this from WalletConnect Cloud
-  chains: [sepolia],
+  projectId: "22e282d3e8cecf32c5c231dd188cb1ba",
+  chains: [mainnet, base, optimism, polygon],
   transports: {
-    [sepolia.id]: http(),
+    [mainnet.id]: http(
+      "https://eth-mainnet.g.alchemy.com/v2/pDPv-kMG3LVtM8dHSaxzynttAxnKSxRF",
+    ),
+    [base.id]: http(
+      "https://base-mainnet.g.alchemy.com/v2/pDPv-kMG3LVtM8dHSaxzynttAxnKSxRF",
+    ),
+    [optimism.id]: http(
+      "https://opt-mainnet.g.alchemy.com/v2/pDPv-kMG3LVtM8dHSaxzynttAxnKSxRF",
+    ),
+    [polygon.id]: http(
+      "https://polygon-mainnet.g.alchemy.com/v2/pDPv-kMG3LVtM8dHSaxzynttAxnKSxRF",
+    ),
+    [arbitrum.id]: http(
+      "https://arb-mainnet.g.alchemy.com/v2/pDPv-kMG3LVtM8dHSaxzynttAxnKSxRF",
+    ),
   },
 });
 

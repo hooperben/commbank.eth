@@ -1,13 +1,14 @@
 "use client";
 
 import AccountManager from "@/components/account-manager";
+import { TokenBalancesTable } from "@/components/token-balances-view";
 import { Button } from "@/components/ui/button";
 import { QrCodeIcon, SendIcon, WalletIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
 export default function Account() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [isAccountManagerOpen, setIsAccountManagerOpen] = useState(false);
   const isUp = false;
 
@@ -78,6 +79,8 @@ export default function Account() {
 
       <div className="flex flex-col">
         <h1 className="text-2xl text-primary">Assets</h1>
+
+        {address && <TokenBalancesTable walletAddress={address} />}
       </div>
 
       <AccountManager
