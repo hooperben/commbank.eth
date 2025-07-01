@@ -1,8 +1,0 @@
-[package]
-name = "transact"
-type = "bin"
-authors = [""]
-
-[dependencies]
-noir_rsa = { tag = "v0.7.0", git = "https://github.com/noir-lang/noir_rsa" }
-bignum = {tag = "v0.6.0", git = "https://github.com/noir-lang/noir-bignum"}

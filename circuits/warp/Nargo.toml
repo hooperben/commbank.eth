@@ -1,5 +1,5 @@
 [package]
-name = "transact"
+name = "warp"
 type = "bin"
 authors = [""]
 
