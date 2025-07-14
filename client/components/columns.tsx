@@ -16,7 +16,7 @@ export const columns: ColumnDef<TokenBalance>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Network
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       );
     },
@@ -39,9 +39,10 @@ export const columns: ColumnDef<TokenBalance>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="ml-[-20px]"
         >
           Token
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       );
     },
@@ -63,10 +64,10 @@ export const columns: ColumnDef<TokenBalance>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="justify-end"
+          className="ml-[-20px]"
         >
           Balance
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       );
     },
@@ -77,7 +78,7 @@ export const columns: ColumnDef<TokenBalance>[] = [
         maximumFractionDigits: 6,
       }).format(amount);
 
-      return <div className="text-right font-medium">{formatted}</div>;
+      return <div className="font-medium">{formatted}</div>;
     },
   },
   {
@@ -105,7 +106,7 @@ export const columns: ColumnDef<TokenBalance>[] = [
       const truncatedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
 
       return (
-        <div className="flex items-center justify-end">
+        <div className="flex items-center">
           <a
             href={explorerUrl}
             target="_blank"
