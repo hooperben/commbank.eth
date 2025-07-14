@@ -14,6 +14,7 @@ export const columns: ColumnDef<TokenBalance>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hidden md:inline-flex"
         >
           Network
           <ArrowUpDown className="h-4 w-4" />
@@ -25,7 +26,7 @@ export const columns: ColumnDef<TokenBalance>[] = [
       const chainName = row.getValue("chainName") as string;
 
       return (
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <Badge variant="outline">{chainId}</Badge>
           <span>{chainName}</span>
         </div>
@@ -47,11 +48,21 @@ export const columns: ColumnDef<TokenBalance>[] = [
       );
     },
     cell: ({ row }) => {
+      const chainId = row.original.chainId;
+      const chainName = row.getValue("chainName") as string;
+
       return (
         <div>
           <div className="font-medium">{row.getValue("name")}</div>
           <div className="text-sm text-muted-foreground">
             {row.original.symbol}
+          </div>
+          {/* Show network info on mobile only */}
+          <div className="md:hidden text-xs text-muted-foreground mt-1">
+            <Badge variant="outline" className="text-xs">
+              {chainId}
+            </Badge>
+            <span className="ml-1">{chainName}</span>
           </div>
         </div>
       );
@@ -83,7 +94,9 @@ export const columns: ColumnDef<TokenBalance>[] = [
   },
   {
     accessorKey: "address",
-    header: "Contract",
+    header: () => {
+      return <div className="hidden md:block">Contract</div>;
+    },
     cell: ({ row }) => {
       const address = row.original.address;
       const chainId = row.original.chainId;
@@ -106,7 +119,7 @@ export const columns: ColumnDef<TokenBalance>[] = [
       const truncatedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
 
       return (
-        <div className="flex items-center">
+        <div className="hidden md:flex items-center">
           <a
             href={explorerUrl}
             target="_blank"
