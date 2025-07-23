@@ -10,12 +10,7 @@ import { supportedAssets } from "@/const/supported-assets";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import {
-  useAccount,
-  useChainId,
-  useReadContracts,
-  useSwitchChain,
-} from "wagmi";
+import { useReadContracts } from "wagmi";
 
 export type TokenBalance = {
   id: string;
@@ -48,7 +43,7 @@ const erc20ABI = [
     stateMutability: "view",
     type: "function",
   },
-];
+] as const;
 
 export function TokenBalancesTable({
   walletAddress,
@@ -59,10 +54,6 @@ export function TokenBalancesTable({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hideZeroBalances, setHideZeroBalances] = useState(false);
-
-  const currentChainId = useChainId();
-  const { switchChain } = useSwitchChain();
-  const { address } = useAccount();
 
   // Prepare contract calls for all supported assets
   const contractCalls = supportedAssets.map(

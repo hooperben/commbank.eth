@@ -9,6 +9,8 @@ interface PageHeadProps {
 
 export default function PageHead({ title, description }: PageHeadProps) {
   useEffect(() => {
+    if (typeof document === "undefined") return;
+
     document.title = title;
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {

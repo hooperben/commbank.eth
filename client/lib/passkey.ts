@@ -13,7 +13,10 @@ export async function registerPasskey(username: string): Promise<boolean> {
         challenge,
         rp: {
           name: "commbank.eth",
-          id: window.location.hostname,
+          id:
+            typeof window !== "undefined"
+              ? window.location.hostname
+              : "localhost",
         },
         user: {
           id: new TextEncoder().encode(username),
@@ -45,7 +48,9 @@ export async function registerPasskey(username: string): Promise<boolean> {
     }
 
     // Store username in localStorage for reference
-    localStorage.setItem("registeredUsername", username);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("registeredUsername", username);
+    }
 
     return true;
   } catch (error) {
@@ -122,6 +127,7 @@ export async function deriveKeyFromPasskey(
 
 // Check if passkeys are supported in this browser
 export function isPasskeySupported(): boolean {
+  if (typeof window === "undefined") return false;
   return (
     window &&
     "PublicKeyCredential" in window &&
@@ -156,6 +162,7 @@ export async function isPasskeyRegistered(): Promise<boolean> {
 
 // Get the registered username - now using localStorage
 export async function getRegisteredUsername(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
   return localStorage.getItem("registeredUsername");
 }
 
@@ -192,9 +199,9 @@ export async function storeMnemonicWithPasskey(
     // Encrypt the mnemonic
     const encoder = new TextEncoder();
     const mnemonicData = encoder.encode(mnemonic);
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
 
-    const encryptedData = await window.crypto.subtle.encrypt(
+    const encryptedData = await crypto.subtle.encrypt(
       {
         name: "AES-GCM",
         iv,
@@ -210,10 +217,12 @@ export async function storeMnemonicWithPasskey(
       username,
     };
 
-    localStorage.setItem(
-      "encryptedMnemonic",
-      JSON.stringify(encryptedMnemonic),
-    );
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "encryptedMnemonic",
+        JSON.stringify(encryptedMnemonic),
+      );
+    }
 
     return true;
   } catch (error) {
@@ -247,6 +256,7 @@ export async function retrieveMnemonic(): Promise<string | null> {
     const key = await deriveKeyFromPasskey(authData);
 
     // Get the encrypted mnemonic from localStorage
+    if (typeof window === "undefined") return null;
     const storedData = localStorage.getItem("encryptedMnemonic");
     if (!storedData) {
       throw new Error("No stored mnemonic found");
@@ -258,7 +268,7 @@ export async function retrieveMnemonic(): Promise<string | null> {
     const iv = new Uint8Array(encryptedMnemonic.iv);
     const encryptedData = new Uint8Array(encryptedMnemonic.data);
 
-    const decryptedData = await window.crypto.subtle.decrypt(
+    const decryptedData = await crypto.subtle.decrypt(
       {
         name: "AES-GCM",
         iv,

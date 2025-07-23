@@ -76,7 +76,7 @@ const SignUp = () => {
       }
 
       // Sign the user in
-      signIn(random.privateKey);
+      await signIn(random.mnemonic.phrase);
 
       setStep("complete");
 
@@ -106,9 +106,6 @@ const SignUp = () => {
         throw new Error("Invalid mnemonic phrase");
       }
 
-      // Create wallet from mnemonic
-      const wallet = ethers.Wallet.fromPhrase(importMnemonic.trim());
-
       // Store the secret securely with passkeys
       const storageSuccess = await storeMnemonicWithPasskey(
         DEFAULT_PASSKEY_USERNAME,
@@ -120,7 +117,7 @@ const SignUp = () => {
       }
 
       // Sign the user in
-      signIn(wallet.privateKey);
+      await signIn(importMnemonic.trim());
 
       setStep("complete");
 

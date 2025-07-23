@@ -19,6 +19,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAccount } from "wagmi";
+import { useAuth } from "@/lib/auth-context";
 
 // Menu items.
 const items = [
@@ -43,6 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
 
   const { isConnected } = useAccount();
+  const { isSignedIn } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { isMobile, toggleSidebar } = useSidebar();
@@ -91,7 +93,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           open={isModalOpen}
           onOpenChange={() => setIsModalOpen(false)}
         />
-        {isConnected && (
+        {(isConnected || isSignedIn) && (
           <Button onClick={() => setIsModalOpen(true)}>My Account</Button>
         )}
       </SidebarFooter>

@@ -1,14 +1,16 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
-import { getRegisteredUsername } from "./passkey";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { getRegisteredUsername, retrieveMnemonic } from "./passkey";
+import { ethers } from "ethers";
 
 interface AuthContextType {
   isSignedIn: boolean;
   token: string | null;
-  mnemonic: string | null;
-  signIn: (secret: string) => void;
+  address: string | null;
+  signIn: (mnemonic: string) => Promise<void>;
   signOut: () => void;
+  getMnemonic: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,65 +18,88 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [token, setToken] = useState<string | null>(null);
-  const [mnemonic, setMnemonic] = useState<string | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
 
-  const signIn = async (secret: string) => {
-    // Create payload with 1-hour expiration
-    const now = Math.floor(Date.now() / 1000);
-    const expiresIn = 60 * 60; // 1 hour in seconds
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-    const payload = {
-      username: await getRegisteredUsername(),
-      iat: now,
-      exp: now + expiresIn,
-    };
+    const storedToken = sessionStorage.getItem("authToken");
+    if (storedToken) {
+      try {
+        const decoded = JSON.parse(atob(storedToken.split(".")[1]));
+        if (decoded.exp > Math.floor(Date.now() / 1000)) {
+          setToken(storedToken);
+          setIsSignedIn(true);
+          setAddress(decoded.address);
+        } else {
+          sessionStorage.removeItem("authToken");
+        }
+      } catch (error) {
+        console.error("Invalid token:", error);
+        sessionStorage.removeItem("authToken");
+      }
+    }
+  }, []);
 
-    // Convert payload to Base64Url encoded string
-    const encodedPayload = btoa(JSON.stringify(payload))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
+  const signIn = async (mnemonic: string) => {
+    try {
+      const wallet = ethers.Wallet.fromPhrase(mnemonic);
+      const walletAddress = wallet.address;
 
-    // Create JWT header
-    const header = {
-      alg: "HS256",
-      typ: "JWT",
-    };
+      const now = Math.floor(Date.now() / 1000);
+      const expiresIn = 60 * 60; // 1 hour in seconds
 
-    // Convert header to Base64Url encoded string
-    const encodedHeader = btoa(JSON.stringify(header))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
+      const payload = {
+        username: await getRegisteredUsername(),
+        address: walletAddress,
+        iat: now,
+        exp: now + expiresIn,
+      };
 
-    // Create JWT content to be signed
-    const jwtContent = `${encodedHeader}.${encodedPayload}`;
+      const encodedPayload = btoa(JSON.stringify(payload))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
 
-    // Generate signature using Web Crypto API
-    const signature = await computeHmacSha256(jwtContent, secret);
+      const header = {
+        alg: "HS256",
+        typ: "JWT",
+      };
 
-    // Assemble the JWT
-    const jwt = `${encodedHeader}.${encodedPayload}.${signature}`;
+      const encodedHeader = btoa(JSON.stringify(header))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
 
-    // Save token to state and session storage
-    setToken(jwt);
-    setIsSignedIn(true);
-    setMnemonic(secret);
-    sessionStorage.setItem("authToken", jwt);
+      const jwtContent = `${encodedHeader}.${encodedPayload}`;
+      const signature = await computeHmacSha256(jwtContent, mnemonic);
+      const jwt = `${encodedHeader}.${encodedPayload}.${signature}`;
+
+      setToken(jwt);
+      setIsSignedIn(true);
+      setAddress(walletAddress);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("authToken", jwt);
+      }
+    } catch (error) {
+      console.error("Sign in error:", error);
+      throw error;
+    }
   };
 
-  // Production-ready HMAC-SHA256 implementation using Web Crypto API
   const computeHmacSha256 = async (
     data: string,
     key: string,
   ): Promise<string> => {
-    // Convert our string data and key to Uint8Array
+    if (typeof window === "undefined") {
+      throw new Error("Crypto operations not available in server environment");
+    }
+
     const encoder = new TextEncoder();
     const encodedData = encoder.encode(data);
     const encodedKey = encoder.encode(key);
 
-    // Import the key for HMAC usage
-    const cryptoKey = await window.crypto.subtle.importKey(
+    const cryptoKey = await crypto.subtle.importKey(
       "raw",
       encodedKey,
       { name: "HMAC", hash: { name: "SHA-256" } },
@@ -82,34 +107,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ["sign"],
     );
 
-    // Generate the HMAC signature
-    const signature = await window.crypto.subtle.sign(
-      "HMAC",
-      cryptoKey,
-      encodedData,
-    );
+    const signature = await crypto.subtle.sign("HMAC", cryptoKey, encodedData);
 
-    // Convert the ArrayBuffer to a base64url string
     return arrayBufferToBase64Url(signature);
   };
 
-  // Helper function to convert ArrayBuffer to base64url
   const arrayBufferToBase64Url = (buffer: ArrayBuffer): string => {
-    // Convert ArrayBuffer to base64
     const base64 = btoa(
       Array.from(new Uint8Array(buffer))
         .map((b) => String.fromCharCode(b))
         .join(""),
     );
 
-    // Convert base64 to base64url
     return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  };
+
+  const getMnemonic = async (): Promise<string | null> => {
+    if (!isSignedIn) {
+      return null;
+    }
+
+    try {
+      return await retrieveMnemonic();
+    } catch (error) {
+      console.error("Error retrieving mnemonic:", error);
+      return null;
+    }
   };
 
   const signOut = () => {
     setToken(null);
-    setMnemonic(null);
+    setAddress(null);
     setIsSignedIn(false);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("authToken");
+    }
   };
 
   return (
@@ -117,9 +149,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         isSignedIn,
         token,
-        mnemonic,
+        address,
         signIn,
         signOut,
+        getMnemonic,
       }}
     >
       {children}
