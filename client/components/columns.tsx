@@ -5,6 +5,7 @@ import type { TokenBalance } from "./token-balances-view";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpDown, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BalanceCell } from "./balance-cell";
 
 export const columns: ColumnDef<TokenBalance>[] = [
   {
@@ -84,12 +85,9 @@ export const columns: ColumnDef<TokenBalance>[] = [
     },
     cell: ({ row }) => {
       const amount = Number.parseFloat(row.getValue("formattedBalance"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 6,
-      }).format(amount);
+      const symbol = row.original.symbol;
 
-      return <div className="font-medium">{formatted}</div>;
+      return <BalanceCell amount={amount} symbol={symbol} />;
     },
   },
   {

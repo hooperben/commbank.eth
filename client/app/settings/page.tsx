@@ -11,13 +11,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/lib/auth-context";
+import { useCurrency } from "@/lib/currency-context";
 import { retrieveMnemonic } from "@/lib/passkey";
 import { CheckIcon } from "lucide-react";
 import { useState } from "react";
 
 export default function Home() {
   const { token } = useAuth();
+  const { currency, setCurrency } = useCurrency();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mnemonic, setMnemonic] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,8 +62,35 @@ export default function Home() {
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        <ThemeToggle />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <Label className="text-sm font-medium">Currency Display</Label>
+          <RadioGroup
+            value={currency}
+            onValueChange={(value) => setCurrency(value as "USD" | "AUD")}
+            className="flex flex-row gap-6"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="USD" id="usd" />
+              <Label htmlFor="usd" className="cursor-pointer">
+                USD (US Dollar)
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="AUD" id="aud" />
+              <Label htmlFor="aud" className="cursor-pointer">
+                AUD (Australian Dollar)
+              </Label>
+            </div>
+          </RadioGroup>
+          <p className="text-xs text-muted-foreground">
+            Choose your preferred currency for displaying values
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <ThemeToggle />
+        </div>
       </div>
 
       {error && (

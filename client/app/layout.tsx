@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/lib/auth-context";
+import { CurrencyProvider } from "@/lib/currency-context";
 import WagmiProvider from "@/providers/wagmi";
 
 export default function RootLayout({
@@ -34,23 +35,25 @@ export default function RootLayout({
               }
             >
               <AuthProvider>
-                <PageHead
-                  title="commbank.eth"
-                  description="a bank you don't need to trust"
-                />
-                <ThemeProvider
-                  attribute="class"
-                  defaultTheme="system"
-                  enableSystem
-                >
-                  <AppSidebar />
-                  <div className="flex flex-col w-full gap-4">
-                    <SidebarTrigger className="mt-1" />
+                <CurrencyProvider>
+                  <PageHead
+                    title="commbank.eth"
+                    description="a bank you don't need to trust"
+                  />
+                  <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                  >
+                    <AppSidebar />
+                    <div className="flex flex-col w-full gap-4">
+                      <SidebarTrigger className="mt-1" />
 
-                    {children}
-                  </div>
-                  <Toaster />
-                </ThemeProvider>
+                      {children}
+                    </div>
+                    <Toaster />
+                  </ThemeProvider>
+                </CurrencyProvider>
               </AuthProvider>
             </SidebarProvider>
           </WagmiProvider>
