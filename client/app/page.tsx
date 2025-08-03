@@ -1,6 +1,7 @@
 "use client";
 
 import CommBankDotETHLogo from "@/components/commbankdotethlogo";
+import Hero from "@/components/hero";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -44,6 +45,8 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      <Hero />
     </main>
   );
 }

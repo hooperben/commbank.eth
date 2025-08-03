@@ -47,7 +47,9 @@ export default function RootLayout({
                   >
                     <AppSidebar />
                     <div className="flex flex-col w-full gap-4">
-                      <SidebarTrigger className="mt-1" />
+                      <div className="flex items-center p-2">
+                        <SidebarTrigger className="h-10 w-10 hover:bg-accent" />
+                      </div>
 
                       {children}
                     </div>
