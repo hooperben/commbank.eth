@@ -1,9 +1,11 @@
 "use client";
 
 import AccountManager from "@/components/account-manager";
+import ConnectWallet from "@/components/connect-wallet";
 import DepositModal from "@/components/deposit-modal";
 import SendModal from "@/components/send-modal";
 import { TokenBalancesTable } from "@/components/token-balances-view";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,22 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  QrCodeIcon,
-  SendIcon,
-  WalletIcon,
-  Copy,
-  LogOut,
-  ArrowRightLeft,
-  Wallet,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { useAccount, useDisconnect } from "wagmi";
-import { useAuth } from "@/lib/auth-context";
-import { formatAddress } from "@/const";
-import { toast } from "@/hooks/use-toast";
-import ConnectWallet from "@/components/connect-wallet";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +21,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -42,8 +30,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { WarningBanner } from "@/components/warning-banner";
+import { formatAddress } from "@/const";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
+import {
+  ArrowRightLeft,
+  Copy,
+  LogOut,
+  QrCodeIcon,
+  SendIcon,
+  Wallet,
+  WalletIcon,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useAccount, useDisconnect } from "wagmi";
 
 export default function Account() {
   const { isConnected, address, connector } = useAccount();
@@ -131,6 +132,8 @@ export default function Account() {
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 p-2 pt-0">
       <h1 className="text-3xl text-primary">Account</h1>
+
+      <WarningBanner />
 
       {/* Wallets Section */}
       <div className="">
