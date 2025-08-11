@@ -1,3 +1,5 @@
+"use client";
+
 import { Home, Settings, Users } from "lucide-react";
 import * as React from "react";
 
@@ -52,8 +54,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar variant="floating" collapsible="icon" {...props}>
-      <SidebarHeader className="bg-white dark:bg-black -z-10">
-        <div className="flex items-center font-semibold px-2 py-4">
+      <SidebarHeader className="bg-white dark:bg-black border-b border-border/50 rounded-xl">
+        <div className="flex items-center font-semibold px-2 py-6">
           <Link
             href="/"
             className="flex items-center group-data-[collapsible=icon]:justify-center"
@@ -72,40 +74,55 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </Link>
         </div>
       </SidebarHeader>
+
       <SidebarContent className="bg-white dark:bg-black">
-        <SidebarGroup>
-          <SidebarMenu className="gap-2">
-            {items.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  size="xl"
-                  className={pathname === item.href ? "text-primary" : ""}
-                  onClick={() => isMobile && toggleSidebar()}
-                  tooltip={state === "collapsed" ? item.label : undefined}
-                >
-                  <Link href={item.href}>
-                    <item.icon
-                      className={`${
-                        pathname === item.href ? "text-primary" : ""
-                      } h-14 w-14`}
-                    />
-                    <span
-                      className={`${
-                        pathname === item.href ? "text-primary" : ""
-                      } text-base font-medium`}
+        <SidebarGroup className="py-4">
+          <SidebarMenu className="gap-1">
+            {items.map((item, index) => (
+              <React.Fragment key={item.href}>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    size="xl"
+                    className={`${
+                      pathname === item.href ? "" : "hover:bg-muted/50"
+                    } transition-all duration-200 group-data-[collapsible=icon]:justify-center`}
+                    onClick={() => isMobile && toggleSidebar()}
+                    tooltip={state === "collapsed" ? item.label : undefined}
+                  >
+                    <Link
+                      href={item.href}
+                      className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center"
                     >
-                      {item.label}
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                      <item.icon
+                        className={`${
+                          pathname === item.href ? "text-primary" : ""
+                        } ${
+                          state === "collapsed" && "pl-1"
+                        } h-5 w-5 group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6`}
+                      />
+                      <span
+                        className={`${
+                          pathname === item.href
+                            ? "text-primary font-semibold"
+                            : ""
+                        } text-sm font-medium`}
+                      >
+                        {item.label}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {index < items.length - 1 && (
+                  <div className="mx-4 my-1 h-px bg-border/30 group-data-[collapsible=icon]:mx-2" />
+                )}
+              </React.Fragment>
             ))}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="bg-white dark:bg-black">
+      <SidebarFooter className="bg-white dark:bg-black border-t border-border/50 rounded-xl">
         <AccountManager
           open={isModalOpen}
           onOpenChange={() => setIsModalOpen(false)}
@@ -113,12 +130,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {(isConnected || isSignedIn) && (
           <Button
             onClick={() => setIsModalOpen(true)}
-            className="group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-10"
+            className="group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center w-full justify-start bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+            variant="ghost"
           >
+            <Users className="h-4 w-4" />
             <span className="group-data-[collapsible=icon]:hidden">
               My Account
             </span>
-            <Users className="group-data-[state=collapsed]:block hidden h-5 w-5" />
           </Button>
         )}
       </SidebarFooter>
