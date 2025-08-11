@@ -295,8 +295,8 @@ export default function Account() {
                   )}
                 </>
               ) : (
-                <div className="text-center py-4">
-                  <p className="text-muted-foreground mb-4">
+                <div className="py-4">
+                  <p className="text-muted-foreground mb-4 text-sm">
                     Connect a web3 wallet to transfer assets
                   </p>
                   <ConnectWallet />

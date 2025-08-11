@@ -38,7 +38,7 @@ export default function RootLayout({
                 <CurrencyProvider>
                   <PageHead
                     title="commbank.eth"
-                    description="a bank you don't need to trust"
+                    description="the bank you don't need to trust"
                   />
                   <ThemeProvider
                     attribute="class"

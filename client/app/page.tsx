@@ -19,7 +19,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl max-w-2xl mb-8 text-foreground/80">
-              a bank you don&apos;t need to trust
+              the bank you don&apos;t need to trust
             </p>
             <div className="flex flex-col sm:flex-row gap-4 cursor-pointer">
               <Button

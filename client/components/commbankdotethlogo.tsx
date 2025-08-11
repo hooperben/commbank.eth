@@ -14,7 +14,7 @@ const CommBankDotETHLogo = () => (
       repeatType: "loop",
       ease: "easeInOut",
     }}
-    className="cursor-pointer"
+    className="cursor-pointer pr-1"
     aria-label="Pulsating triangle. Click to toggle animation."
   >
     {/* Apply translation to center, then rotation of 40 degrees clockwise */}

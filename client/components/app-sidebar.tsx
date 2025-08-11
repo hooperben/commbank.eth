@@ -27,12 +27,12 @@ const items = [
   {
     href: "/",
     icon: Home,
-    label: "Dashboard",
+    label: "Home",
   },
   {
     href: "/account/",
     icon: Users,
-    label: "My Account",
+    label: "Account",
   },
   {
     href: "/settings/",
