@@ -58,46 +58,11 @@ const AccountBalance = ({
         {/* CommBank.eth Account */}
         <Card>
           <CardHeader>
-            <div className="flex flex-col gap-2 mb-4">
-              {isSignedIn && (
-                <div className="flex flex-row w-full justify-between items-center pt-2">
-                  <div className="flex flex-row gap-1 items-baseline">
-                    {isLoading && <Skeleton className="w-24 h-12" />}
-                    {data && <h1 className="text-3xl">${data?.toFixed(2)}</h1>}
-                  </div>
-
-                  {/* Deposit & Send Buttons */}
-                  <div className="flex flex-row gap-2">
-                    <Button
-                      className="flex flex-col h-16 text-sm w-20 text-gray-700"
-                      onClick={() => setIsDepositModalOpen(true)}
-                      disabled={!isSignedIn}
-                    >
-                      <QrCodeIcon />
-                      Deposit
-                    </Button>
-                    <Button
-                      className="flex flex-col h-16 text-sm w-20 text-gray-700"
-                      onClick={() => setIsSendModalOpen(true)}
-                      disabled={!isSignedIn}
-                    >
-                      <SendIcon />
-                      Send
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Wallet className="h-5 w-5 text-amber-500" />
                 <CardTitle>commbank.eth Account</CardTitle>
               </div>
-              {isSignedIn && (
-                <Badge variant="outline" className="text-green-600">
-                  Active
-                </Badge>
-              )}
             </div>
             <CardDescription>
               Your primary commbank.eth account secured with passkey
@@ -107,6 +72,38 @@ const AccountBalance = ({
           <CardContent className="space-y-4">
             {isSignedIn && authAddress ? (
               <>
+                <div className="flex flex-row justify-between w-full items-center space-y-4">
+                  <div className="flex flex-row items-center">
+                    {isLoading && <Skeleton className="w-24 h-12" />}
+                    {data && (
+                      <div className="flex flex-col">
+                        <h1 className="text-5xl">${data?.toFixed(2)}</h1>
+                      </div>
+                    )}
+                  </div>
+
+                  {isSignedIn && (
+                    <div className="flex flex-row gap-2 justify-center">
+                      <Button
+                        className="flex flex-col h-16 text-sm w-20 text-gray-700"
+                        onClick={() => setIsDepositModalOpen(true)}
+                        disabled={!isSignedIn}
+                      >
+                        <QrCodeIcon />
+                        Deposit
+                      </Button>
+                      <Button
+                        className="flex flex-col h-16 text-sm w-20 text-gray-700"
+                        onClick={() => setIsSendModalOpen(true)}
+                        disabled={!isSignedIn}
+                      >
+                        <SendIcon />
+                        Send
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div>
                     <p className="text-sm font-medium">Address</p>
