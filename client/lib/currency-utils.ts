@@ -27,12 +27,12 @@ export function convertCurrency(
   amount: number,
   fromCurrency: Currency,
   toCurrency: Currency,
+  exchangeRate?: number,
 ): number {
   if (fromCurrency === toCurrency) return amount;
 
-  // In a real app, you'd fetch exchange rates from an API
-  // For now, using a simple conversion rate (1 USD = 1.5 AUD approximately)
-  const USD_TO_AUD_RATE = 1.53; // TODO use coingecko?
+  // Use provided exchange rate if available, otherwise fallback to approximate rate
+  const USD_TO_AUD_RATE = exchangeRate || 1.53;
 
   if (fromCurrency === "USD" && toCurrency === "AUD") {
     return amount * USD_TO_AUD_RATE;

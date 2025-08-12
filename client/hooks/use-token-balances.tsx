@@ -74,6 +74,7 @@ export const useTokenBalances = (walletAddress?: string) => {
           symbol: asset.symbol,
           contractAddress: asset.address,
           balance: formattedBalance,
+          rawBalance: balance,
           formattedBalance,
           decimals: asset.decimals,
         };
