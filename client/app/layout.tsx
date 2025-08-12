@@ -6,6 +6,7 @@ import { useState } from "react";
 import "./globals.css";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import Footer from "@/components/footer";
 import PageHead from "@/components/page-head";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -46,12 +47,14 @@ export default function RootLayout({
                     enableSystem
                   >
                     <AppSidebar />
-                    <div className="flex flex-col w-full gap-4">
+                    <div className="flex flex-col w-full min-h-screen">
                       <div className="flex items-center p-2">
                         <SidebarTrigger className="h-10 w-10 hover:bg-accent" />
                       </div>
 
-                      {children}
+                      <main className="flex-1 p-4">{children}</main>
+
+                      <Footer />
                     </div>
                     <Toaster />
                   </ThemeProvider>
