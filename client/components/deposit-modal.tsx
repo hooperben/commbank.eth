@@ -88,6 +88,11 @@ const DepositModal = ({ open, onOpenChange }: DepositModalProps) => {
               to this address. Sending assets on unsupported networks may result
               in permanent loss.
             </p>
+
+            <p className="text-sm text-amber-800 dark:text-amber-200 mt-2">
+              commbank.eth currently supports ethereum, base, optimism and
+              arbitrum.
+            </p>
           </div>
         </div>
       </DialogContent>

@@ -79,7 +79,7 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-orange-500" />
+                <Shield className="h-5 w-5 text-primary" />
                 Account Security
               </CardTitle>
               <CardDescription>
@@ -109,7 +109,7 @@ export default function Settings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-500" />
+              <DollarSign className="h-5 w-5 text-primary" />
               Currency Display
             </CardTitle>
             <CardDescription>
@@ -147,7 +147,7 @@ export default function Settings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5 text-purple-500" />
+              <Palette className="h-5 w-5 text-primary" />
               Appearance
             </CardTitle>
             <CardDescription>

@@ -7,8 +7,9 @@ export function WarningBanner() {
       <div className="flex items-center gap-2">
         <AlertTriangle className="h-4 w-4 flex-shrink-0" />
         <AlertDescription className="font-medium">
-          commbank.eth is experimental and unaudited. Please export your account
-          secret on the settings page before depositing funds.
+          commbank.eth is experimental and unaudited. Please exercise caution
+          and export and backup your account secret on the settings page before
+          depositing funds.
         </AlertDescription>
       </div>
     </Alert>

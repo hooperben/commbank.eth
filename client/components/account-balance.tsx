@@ -8,6 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatAddress } from "@/const";
 import { useBalancesTotal } from "@/hooks/use-balances-total";
 import { toast } from "@/hooks/use-toast";
@@ -15,13 +22,13 @@ import { useAuth } from "@/lib/auth-context";
 import {
   ArrowRightLeft,
   Copy,
+  HelpCircle,
   LogOut,
   QrCodeIcon,
   SendIcon,
   Wallet,
 } from "lucide-react";
 import { useAccount, useDisconnect } from "wagmi";
-import { Skeleton } from "./ui/skeleton";
 
 const AccountBalance = ({
   setIsDepositModalOpen,
@@ -106,7 +113,24 @@ const AccountBalance = ({
 
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">Address</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-sm font-medium">EVM Address</p>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>
+                              EVM is short for 'Ethereum Virtual Machine'. This
+                              means that this is the address where you can send
+                              assets on EVM compatible chains (Ethereum, Base,
+                              Arbitrum, Optimism, etc).
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <p className="font-mono text-sm text-muted-foreground">
                       {formatAddress(authAddress)}
                     </p>
@@ -142,7 +166,7 @@ const AccountBalance = ({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-blue-500" />
+                <Wallet className="h-5 w-5 text-primary" />
                 <CardTitle>Connected Wallet</CardTitle>
               </div>
               {isConnected && (
