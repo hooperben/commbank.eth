@@ -122,24 +122,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="bg-white dark:bg-black border-t border-border/50 rounded-xl">
-        <AccountManager
-          open={isModalOpen}
-          onOpenChange={() => setIsModalOpen(false)}
-        />
-        {(isConnected || isSignedIn) && (
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center w-full justify-start bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-            variant="ghost"
-          >
-            <Users className="h-4 w-4" />
-            <span className="group-data-[collapsible=icon]:hidden">
-              My Account
-            </span>
-          </Button>
-        )}
-      </SidebarFooter>
+      {(isConnected || isSignedIn) && (
+        <SidebarFooter className="bg-white dark:bg-black border-t border-border/50 rounded-xl">
+          <AccountManager
+            open={isModalOpen}
+            onOpenChange={() => setIsModalOpen(false)}
+          />
+          {(isConnected || isSignedIn) && (
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              className="group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center w-full justify-start bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+              variant="ghost"
+            >
+              <Users className="h-4 w-4" />
+              <span className="group-data-[collapsible=icon]:hidden">
+                My Account
+              </span>
+            </Button>
+          )}
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }
