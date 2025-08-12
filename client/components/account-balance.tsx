@@ -122,10 +122,10 @@ const AccountBalance = ({
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <p>
-                              EVM is short for 'Ethereum Virtual Machine'. This
-                              means that this is the address where you can send
-                              assets on EVM compatible chains (Ethereum, Base,
-                              Arbitrum, Optimism, etc).
+                              EVM is short for &apos;Ethereum Virtual
+                              Machine&apos;. This means that this is the address
+                              where you can send assets on EVM compatible chains
+                              (Ethereum, Base, Arbitrum, Optimism, etc).
                             </p>
                           </TooltipContent>
                         </Tooltip>
