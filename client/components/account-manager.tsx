@@ -14,8 +14,10 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { getRegisteredUsername, isPasskeySupported } from "@/lib/passkey";
 import { useQuery } from "@tanstack/react-query";
-import { Copy, LogOut } from "lucide-react";
+import { Copy, LogOut, RefreshCw } from "lucide-react";
+import { useState } from "react";
 import { useAccount, useDisconnect } from "wagmi";
+import RecoveryModal from "./recovery-modal";
 import SignIn from "./sign-in";
 import SignUp from "./sign-up";
 
@@ -28,6 +30,7 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
   const { address: wagmiAddress, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { isSignedIn, address: authAddress, signOut } = useAuth();
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
 
   const { data: isRegisteredUsername, isLoading: isPageLoading } = useQuery({
     queryKey: ["registered-username", isSignedIn],
@@ -133,6 +136,20 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
         {!isPageLoading && !isSignedIn && isRegisteredUsername?.username && (
           <div className="space-y-4">
             <SignIn />
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground mb-2">
+                Lost access to your account?
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsRecoveryModalOpen(true)}
+                className="text-xs"
+              >
+                <RefreshCw className="mr-1 h-3 w-3" />
+                Restore from Recovery Phrase
+              </Button>
+            </div>
           </div>
         )}
 
@@ -142,6 +159,20 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
             <Card>
               <SignUp />
             </Card>
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground mb-2">
+                Already have an account?
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsRecoveryModalOpen(true)}
+                className="text-xs"
+              >
+                <RefreshCw className="mr-1 h-3 w-3" />
+                Restore from Recovery Phrase
+              </Button>
+            </div>
           </div>
         )}
 
@@ -151,6 +182,11 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
           </p>
         )}
       </SheetContent>
+
+      <RecoveryModal
+        open={isRecoveryModalOpen}
+        onOpenChange={setIsRecoveryModalOpen}
+      />
     </Sheet>
   );
 };

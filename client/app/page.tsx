@@ -104,7 +104,7 @@ export default function Home() {
         className="relative h-screen w-full overflow-hidden flex justify-center"
       >
         <div
-          className={`text-center p-12 transition-all duration-500 transform ${
+          className={`text-center p-28 transition-all duration-500 transform ${
             isVisible[0]
               ? "translate-y-0 opacity-100"
               : "translate-y-10 opacity-0"
@@ -188,7 +188,7 @@ export default function Home() {
       {/* Public Computing Section */}
       <section
         id="public-computing-section"
-        className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-muted/20"
+        className="min-h-screen flex flex-col items-center justify-center text-center p-6"
       >
         <div
           className={`max-w-4xl transition-all duration-1000 transform ${
@@ -197,12 +197,6 @@ export default function Home() {
               : "translate-y-10 opacity-0"
           }`}
         >
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tighter mb-12">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-              Public Computing
-            </span>
-          </h2>
-
           <div className="space-y-8 text-lg md:text-xl leading-relaxed">
             <p className="transform transition-all duration-700 delay-500">
               a public computer is exactly that, one in which{" "}
@@ -228,7 +222,8 @@ export default function Home() {
                 {" "}
                 financial technologies
               </span>
-              , i.e the reason you know what the word 'cryptocurrency' means.
+              , i.e the reason you know what the word &apos;cryptocurrency&apos;
+              means.
             </p>
           </div>
         </div>
@@ -246,12 +241,6 @@ export default function Home() {
               : "translate-y-10 opacity-0"
           }`}
         >
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tighter mb-12">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-              Privacy Technology
-            </span>
-          </h2>
-
           <div className="space-y-8 text-lg md:text-xl leading-relaxed">
             <p className="transform transition-all duration-700 delay-300">
               Up until reasonably recently, most public computers have had
@@ -279,7 +268,7 @@ export default function Home() {
       {/* Open Source Section */}
       <section
         id="open-source-section"
-        className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-muted/20"
+        className="min-h-screen flex flex-col items-center justify-center text-center p-6"
       >
         <div
           className={`max-w-4xl transition-all duration-1000 transform ${
@@ -296,7 +285,7 @@ export default function Home() {
 
           <div className="space-y-8 text-lg md:text-xl leading-relaxed mb-12">
             <p className="transform transition-all duration-700 delay-300">
-              Everything ever deployed to commbank.eth will be
+              Anything ever deployed to commbank.eth will always be
               <span className="text-primary font-semibold"> open source</span>,
               open for anyone to look at or do whatever they please with it.
             </p>
