@@ -1,25 +1,52 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
 import "dotenv/config";
 
+import { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
 import "@typechain/hardhat";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-chai-matchers";
+import "hardhat-deploy";
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.28",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 100000000,
+    compilers: [
+      {
+        version: "0.8.24",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
-    },
+      {
+        version: "0.8.21",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.8.27",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
   },
   networks: {
-    sepolia: {
-      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
-      accounts: [process.env.PRIVATE_KEY!],
+    hardhat: {
+      chainId: 31337,
+      allowUnlimitedContractSize: true,
+      mining: {
+        auto: true,
+        interval: 0,
+      },
     },
     mainnet: {
       url: `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
@@ -27,19 +54,27 @@ const config: HardhatUserConfig = {
         mnemonic: process.env.DEMO_MNEMONIC_ALICE!,
       },
     },
+    arbitrumOne: {
+      url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      accounts: [process.env.PRIVATE_KEY!],
+      saveDeployments: true,
+    },
+    base: {
+      url: `https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      accounts: [process.env.PRIVATE_KEY!],
+      saveDeployments: true,
+    },
   },
-  gasReporter: {
-    enabled: false,
-    excludeContracts: [],
-    currency: "USD",
-    L1Etherscan: process.env.ETHERSCAN_API_KEY!,
-    coinmarketcap: process.env.CMC_API_KEY,
+
+  etherscan: {
+    apiKey: {
+      mainnet: process.env.ETHERSCAN_API_KEY!,
+      base: process.env.BASESCAN_API_KEY!,
+      arbitrumOne: process.env.ARBISCAN_API_KEY!,
+    },
   },
   mocha: {
-    timeout: 100000000,
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY!,
+    timeout: 40000,
   },
 };
 
