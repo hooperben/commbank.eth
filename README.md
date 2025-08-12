@@ -6,9 +6,7 @@
 
 - `client/`: the web app deployed at https://commbank.eth.limo
 - `contracts/`: the EVM smart contracts required to facilitate private transfers
-- `keccak-circuits`: an implementation of a Multi Asset Shield Pool with `keccak256` as the merkle tree hash function
-- `poseidon2-circuits`: an (in progress, currently broken)implementation of a Multi Asset Shield Pool with `poseidon2` as the merkle tree hash function
-- `rust-rsa`: a rust RSA key pair library that's used for the note model encryption and decryption
+- `circuits`: an implementation of a Multi Asset Shield Pool with `poseidon2` as the merkle tree hash function
 
 ## Overview
 
