@@ -2,6 +2,7 @@
 
 import AccountBalance from "@/components/account-balance";
 import AccountManager from "@/components/account-manager";
+import CommBankDotETHLogo from "@/components/commbankdotethlogo";
 import TransferDialog from "@/components/connected-wallet/dialog";
 import DepositModal from "@/components/deposit-modal";
 import SendModal from "@/components/send-modal";
@@ -16,7 +17,7 @@ import { useAccount } from "wagmi";
 
 export default function Account() {
   const { isConnected, address } = useAccount();
-  const { isSignedIn, address: authAddress } = useAuth();
+  const { isSignedIn, address: authAddress, isLoading } = useAuth();
   const [isAccountManagerOpen, setIsAccountManagerOpen] = useState(false);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
@@ -28,10 +29,16 @@ export default function Account() {
     }
   }, [isConnected]);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <CommBankDotETHLogo />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 p-2 pt-12">
-      <h1 className="text-3xl text-primary">Account</h1>
-
       {isSignedIn ? (
         <>
           <WarningBanner />

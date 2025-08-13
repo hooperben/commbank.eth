@@ -5,6 +5,7 @@ import { getRegisteredUsername, retrieveMnemonic } from "./passkey";
 import { ethers } from "ethers";
 
 interface AuthContextType {
+  isLoading: boolean;
   isSignedIn: boolean;
   token: string | null;
   address: string | null;
@@ -19,6 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -39,6 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sessionStorage.removeItem("authToken");
       }
     }
+
+    setIsLoading(false);
   }, []);
 
   const signIn = async (mnemonic: string) => {
@@ -147,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
+        isLoading,
         isSignedIn,
         token,
         address,
