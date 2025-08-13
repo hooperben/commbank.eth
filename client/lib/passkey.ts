@@ -317,3 +317,63 @@ async function authenticateWithConditionalUI(): Promise<ArrayBuffer | null> {
     return null;
   }
 }
+
+// Function to restore account by replacing the existing mnemonic with a new one
+export async function restoreAccountWithMnemonic(
+  username: string,
+  newMnemonic: string,
+): Promise<boolean> {
+  try {
+    const isRegistered = await isPasskeyRegistered();
+    // First ensure the user has a registered passkey
+    if (!isRegistered) {
+      const success = await registerPasskey(username);
+      if (!success) {
+        throw new Error("Failed to register passkey");
+      }
+    }
+
+    // Authenticate to get authenticator data
+    const authData = await authenticateWithPasskey();
+    if (!authData) {
+      throw new Error("Failed to authenticate with passkey");
+    }
+
+    // Derive encryption key from the authenticator data
+    const key = await deriveKeyFromPasskey(authData);
+
+    // Encrypt the new mnemonic
+    const encoder = new TextEncoder();
+    const mnemonicData = encoder.encode(newMnemonic);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    const encryptedData = await crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv,
+      },
+      key,
+      mnemonicData,
+    );
+
+    // Replace the stored encrypted mnemonic in localStorage
+    const encryptedMnemonic = {
+      iv: Array.from(iv),
+      data: Array.from(new Uint8Array(encryptedData)),
+      username,
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "encryptedMnemonic",
+        JSON.stringify(encryptedMnemonic),
+      );
+      localStorage.setItem("registeredUsername", username);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error restoring account with mnemonic:", error);
+    return false;
+  }
+}

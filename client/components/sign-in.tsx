@@ -14,15 +14,15 @@ const SignIn = () => {
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
-    
+
     try {
       const mnemonic = await retrieveMnemonic();
       if (!mnemonic) {
         throw new Error("Failed to retrieve mnemonic from passkey");
       }
-      
+
       await signIn(mnemonic);
-      
+
       toast({
         title: "Welcome back!",
         description: "Successfully signed in to your commbank.eth account",
@@ -31,7 +31,8 @@ const SignIn = () => {
       console.error("Sign in error:", error);
       toast({
         title: "Sign In Failed",
-        description: "Failed to authenticate with your passkey. Please try again.",
+        description:
+          "Failed to authenticate with your passkey. Please try again.",
         variant: "destructive",
       });
     } finally {

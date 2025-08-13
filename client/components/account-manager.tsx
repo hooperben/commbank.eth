@@ -71,7 +71,6 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
               : "Manage your commbank.eth account and connected wallets."}
           </SheetDescription>
         </SheetHeader>
-
         {/* CommBank.eth Account Section */}
         {isSignedIn && (
           <Card className="p-4">
@@ -102,8 +101,6 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
             </div>
           </Card>
         )}
-
-        {/* 3rd Party Wallet Section */}
         {isConnected && (
           <Card className="p-4">
             <div className="flex justify-between items-center mb-2">
@@ -131,7 +128,6 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
             </div>
           </Card>
         )}
-
         {/* Authentication Flow */}
         {!isPageLoading && !isSignedIn && isRegisteredUsername?.username && (
           <div className="space-y-4">
@@ -152,7 +148,6 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
             </div>
           </div>
         )}
-
         {!isPageLoading && !isSignedIn && !isRegisteredUsername?.username && (
           <div className="space-y-4">
             <h3 className="font-medium">Create commbank.eth account</h3>
@@ -175,7 +170,6 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
             </div>
           </div>
         )}
-
         {!isPassKeySupported && (
           <p className="text-red-400 text-xs">
             This browser does not support passkey.
