@@ -9,11 +9,29 @@ import { AppSidebar } from "@/components/app-sidebar";
 import Footer from "@/components/footer";
 import PageHead from "@/components/page-head";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/lib/auth-context";
 import { CurrencyProvider } from "@/lib/currency-context";
 import WagmiProvider from "@/providers/wagmi";
+
+function SidebarTriggerFixed() {
+  const { open, isMobile } = useSidebar();
+
+  return (
+    <SidebarTrigger
+      className={`fixed top-2 z-50 h-10 w-10 hover:bg-accent transition-all duration-200 ${
+        !isMobile && open
+          ? "left-[calc(var(--sidebar-width)+0.5rem)]"
+          : "left-15"
+      }`}
+    />
+  );
+}
 
 export default function RootLayout({
   children,
@@ -48,9 +66,7 @@ export default function RootLayout({
                   >
                     <AppSidebar />
                     <div className="flex flex-col w-full min-h-screen">
-                      <div className="flex items-center p-2">
-                        <SidebarTrigger className="h-10 w-10 hover:bg-accent" />
-                      </div>
+                      <SidebarTriggerFixed />
 
                       <main className="flex-1 p-4">{children}</main>
 

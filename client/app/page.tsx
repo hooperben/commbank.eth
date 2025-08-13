@@ -86,6 +86,16 @@ export default function Home() {
             <ChevronUp className="h-4 w-4" />
           </Button>
         )}
+        {currentSection > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => scrollToSection(0)}
+            className="w-10 h-10 p-0 bg-background/80 backdrop-blur-sm"
+          >
+            top
+          </Button>
+        )}
         {currentSection < sections.length - 1 && (
           <Button
             variant="outline"
