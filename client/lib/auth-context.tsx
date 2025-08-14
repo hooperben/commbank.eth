@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { getRegisteredUsername, retrieveMnemonic } from "./passkey";
+import AccountManager from "@/components/account-manager";
 import { ethers } from "ethers";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { getRegisteredUsername, retrieveMnemonic } from "./passkey";
 
 interface AuthContextType {
   isLoading: boolean;
@@ -12,6 +13,8 @@ interface AuthContextType {
   signIn: (mnemonic: string) => Promise<void>;
   signOut: () => void;
   getMnemonic: () => Promise<string | null>;
+  isAccountManagerOpen: boolean;
+  setIsAccountManagerOpen: (input: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAccountManagerOpen, setIsAccountManagerOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -158,8 +162,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         getMnemonic,
+        isAccountManagerOpen,
+        setIsAccountManagerOpen,
       }}
     >
+      <AccountManager
+        open={isAccountManagerOpen}
+        onOpenChange={setIsAccountManagerOpen}
+      />
+
       {children}
     </AuthContext.Provider>
   );

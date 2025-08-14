@@ -1,7 +1,6 @@
 "use client";
 
 import AccountBalance from "@/components/account-balance";
-import AccountManager from "@/components/account-manager";
 import CommBankDotETHLogo from "@/components/commbankdotethlogo";
 import TransferDialog from "@/components/connected-wallet/dialog";
 import DepositModal from "@/components/deposit-modal";
@@ -12,33 +11,29 @@ import { Button } from "@/components/ui/button";
 import { WarningBanner } from "@/components/warning-banner";
 import { useAuth } from "@/lib/auth-context";
 import { WalletIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAccount } from "wagmi";
 
 export default function Account() {
-  const { isConnected, address } = useAccount();
-  const { isSignedIn, address: authAddress, isLoading } = useAuth();
-  const [isAccountManagerOpen, setIsAccountManagerOpen] = useState(false);
+  const { address } = useAccount();
+  const {
+    isSignedIn,
+    address: authAddress,
+    isLoading,
+    setIsAccountManagerOpen,
+  } = useAuth();
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (isConnected) {
-      setIsAccountManagerOpen(false);
-    }
-  }, [isConnected]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <CommBankDotETHLogo />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 p-2 pt-12">
+      {isLoading && (
+        <div className="flex flex-1 items-center justify-center min-h-screen">
+          <CommBankDotETHLogo />
+        </div>
+      )}
+
       {isSignedIn ? (
         <>
           <WarningBanner />
@@ -75,7 +70,7 @@ export default function Account() {
         <div className="flex flex-1 flex-col gap-4 px-6 p-2 pt-12">
           <div className="flex flex-col items-center justify-center flex-1 gap-4">
             <div className="text-center">
-              <h1 className="text-3xl text-primary">Sign In</h1>
+              <h1 className="text-3xl text-primary mb-6">Sign In</h1>
               <p className="text-gray-600 mb-6">
                 Sign in to view your account and manage your assets.
               </p>
@@ -92,11 +87,6 @@ export default function Account() {
           </div>
         </div>
       )}
-
-      <AccountManager
-        open={isAccountManagerOpen}
-        onOpenChange={setIsAccountManagerOpen}
-      />
     </div>
   );
 }

@@ -45,7 +45,7 @@ const AccountBalance = ({
   const { isConnected, address, connector } = useAccount();
   const { disconnect } = useDisconnect();
 
-  const { data, isLoading } = useBalancesTotal(authAddress!);
+  const { data: balancesFiatTotal, isLoading } = useBalancesTotal(authAddress!);
 
   const copyAddress = (addr: string) => {
     navigator.clipboard.writeText(addr);
@@ -82,30 +82,36 @@ const AccountBalance = ({
                 <div className="flex flex-row justify-between w-full items-center space-y-4">
                   <div className="flex flex-row items-center">
                     {isLoading && <Skeleton className="w-24 h-12" />}
-                    {data && (
+                    {!isLoading && (
                       <div className="flex flex-col">
-                        <h1 className="text-5xl">${data?.toFixed(2)}</h1>
+                        <h1 className="text-5xl">
+                          {balancesFiatTotal ? (
+                            <>${balancesFiatTotal?.toFixed(2)}</>
+                          ) : (
+                            <>$0.00</>
+                          )}
+                        </h1>
                       </div>
                     )}
                   </div>
 
                   {isSignedIn && (
-                    <div className="flex flex-row gap-2 justify-center">
+                    <div className="flex md:flex-row md:gap-2 md:justify-center flex-col gap-2 justify-center sm:flex-col sm:gap-2 sm:justify-center">
                       <Button
-                        className="flex flex-col h-16 text-sm w-20 text-gray-700"
+                        className="flex flex-row items-center h-10 text-xs w-full text-gray-700 md:flex-col md:h-16 md:text-sm md:w-20"
                         onClick={() => setIsDepositModalOpen(true)}
                         disabled={!isSignedIn}
                       >
-                        <QrCodeIcon />
-                        Deposit
+                        <QrCodeIcon className="mr-2 md:mr-0" />
+                        <span>Deposit</span>
                       </Button>
                       <Button
-                        className="flex flex-col h-16 text-sm w-20 text-gray-700"
+                        className="flex flex-row items-center h-10 text-xs w-full text-gray-700 md:flex-col md:h-16 md:text-sm md:w-20"
                         onClick={() => setIsSendModalOpen(true)}
                         disabled={!isSignedIn}
                       >
-                        <SendIcon />
-                        Send
+                        <SendIcon className="mr-2 md:mr-0" />
+                        <span>Send</span>
                       </Button>
                     </div>
                   )}

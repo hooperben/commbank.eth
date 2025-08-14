@@ -23,11 +23,12 @@ const ConnectWallet = () => {
       connector: getWalletConnector("metamask"),
       icon: "🦊",
     },
-    {
-      name: "WalletConnect",
-      connector: getWalletConnector("walletconnect"),
-      icon: "🔗",
-    },
+    // TODO fix
+    // {
+    //   name: "WalletConnect",
+    //   connector: getWalletConnector("walletconnect"),
+    //   icon: "🔗",
+    // },
     {
       name: "Rainbow",
       connector: getWalletConnector("rainbow"),

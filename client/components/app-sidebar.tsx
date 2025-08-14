@@ -53,8 +53,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isMobile, toggleSidebar, state } = useSidebar();
 
   return (
-    <Sidebar variant="floating" collapsible="icon" {...props}>
-      <SidebarHeader className="bg-white dark:bg-black border-b border-border/50 rounded-xl">
+    <Sidebar
+      className="bg-white dark:bg-black"
+      variant="floating"
+      collapsible="icon"
+      {...props}
+    >
+      <SidebarHeader className="bg-white dark:bg-black border-b border-border md:rounded-xl">
         <div className="flex items-center font-semibold px-2 py-6">
           <Link
             href="/"
@@ -114,7 +119,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 {index < items.length - 1 && (
-                  <div className="mx-4 my-1 h-px bg-border/30 group-data-[collapsible=icon]:mx-2" />
+                  <div className="mx-4 my-1 h-px bg-border group-data-[collapsible=icon]:mx-2" />
                 )}
               </React.Fragment>
             ))}
@@ -123,7 +128,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       {(isConnected || isSignedIn) && (
-        <SidebarFooter className="bg-white dark:bg-black border-t border-border/50 rounded-xl">
+        <SidebarFooter className="bg-white dark:bg-black border-t border-border md:rounded-xl">
           <AccountManager
             open={isModalOpen}
             onOpenChange={() => setIsModalOpen(false)}

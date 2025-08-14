@@ -1,16 +1,18 @@
 "use client";
 
-import { Fingerprint, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isPasskeySupported, retrieveMnemonic } from "@/lib/passkey";
-import { useAuth } from "@/lib/auth-context";
+import { useSidebar } from "@/components/ui/sidebar";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
+import { isPasskeySupported, retrieveMnemonic } from "@/lib/passkey";
+import { Fingerprint, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 const SignIn = () => {
-  const { signIn } = useAuth();
+  const { signIn, setIsAccountManagerOpen } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const isPassKeySupported = isPasskeySupported();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
@@ -22,6 +24,12 @@ const SignIn = () => {
       }
 
       await signIn(mnemonic);
+
+      // if it's mobile, close the app-sidebar
+      if (isMobile) {
+        setOpenMobile(false);
+        setIsAccountManagerOpen(false);
+      }
 
       toast({
         title: "Welcome back!",

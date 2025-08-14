@@ -10,7 +10,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/lib/auth-context";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { CurrencyProvider } from "@/lib/currency-context";
 import WagmiProvider from "@/providers/wagmi";
 
@@ -22,6 +22,9 @@ import "./globals.css";
 
 function SidebarTriggerFixed() {
   const { open, isMobile } = useSidebar();
+  const { isLoading } = useAuth();
+
+  if (isLoading) return <></>;
 
   return (
     <SidebarTrigger

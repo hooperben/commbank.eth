@@ -9,6 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useSidebar } from "@/components/ui/sidebar";
 import { formatAddress } from "@/const";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
@@ -31,6 +32,7 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
   const { disconnect } = useDisconnect();
   const { isSignedIn, address: authAddress, signOut } = useAuth();
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const { data: isRegisteredUsername, isLoading: isPageLoading } = useQuery({
     queryKey: ["registered-username", isSignedIn],
@@ -57,6 +59,12 @@ const AccountManager = ({ open, onOpenChange }: AccountManagerProps) => {
 
   const handleSignOut = () => {
     signOut();
+
+    // if it's mobile, close the app-sidebar
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+
     onOpenChange(false);
   };
 
