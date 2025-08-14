@@ -35,11 +35,13 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  headerContent?: React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  headerContent,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -64,37 +66,42 @@ export function DataTable<TData, TValue>({
   return (
     <div>
       <div className="flex items-center py-4 gap-2">
-        <Input
-          placeholder="Search tokens..."
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
-        />
-        <Select
-          value={
-            (columnFilters.find((f) => f.id === "chainName")
-              ?.value as string) || "All networks"
-          }
-          onValueChange={(value) => {
-            if (value === "All networks") {
-              table.getColumn("chainName")?.setFilterValue(undefined);
-            } else {
-              table.getColumn("chainName")?.setFilterValue(value);
-            }
-          }}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All networks" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All networks">All networks</SelectItem>
-            <SelectItem value="Ethereum">Ethereum</SelectItem>
-            <SelectItem value="Optimism">Optimism</SelectItem>
-            <SelectItem value="Polygon">Polygon</SelectItem>
-            <SelectItem value="Base">Base</SelectItem>
-            <SelectItem value="Arbitrum">Arbitrum</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-row w-full justify-between">
+          <div className="flex flex-row gap-2">
+            <Input
+              placeholder="Search tokens..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="max-w-sm"
+            />
+            <Select
+              value={
+                (columnFilters.find((f) => f.id === "chainName")
+                  ?.value as string) || "All networks"
+              }
+              onValueChange={(value) => {
+                if (value === "All networks") {
+                  table.getColumn("chainName")?.setFilterValue(undefined);
+                } else {
+                  table.getColumn("chainName")?.setFilterValue(value);
+                }
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All networks" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All networks">All networks</SelectItem>
+                <SelectItem value="Ethereum">Ethereum</SelectItem>
+                <SelectItem value="Optimism">Optimism</SelectItem>
+                <SelectItem value="Polygon">Polygon</SelectItem>
+                <SelectItem value="Base">Base</SelectItem>
+                <SelectItem value="Arbitrum">Arbitrum</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {headerContent && <>{headerContent}</>}
+        </div>
       </div>
       <Card>
         <div className="rounded-md border">

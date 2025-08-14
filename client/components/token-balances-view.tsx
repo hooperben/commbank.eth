@@ -151,15 +151,23 @@ export function TokenBalancesTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center space-x-2 mt-4">
-        <Switch
-          id="hide-zero-balances"
-          checked={hideZeroBalances}
-          onCheckedChange={setHideZeroBalances}
-        />
-        <Label htmlFor="hide-zero-balances">Hide zero balances</Label>
-      </div>
-      <DataTable columns={columns} data={filteredBalances} />
+      <DataTable
+        columns={columns}
+        data={filteredBalances}
+        headerContent={
+          <div className="flex flex-1 w-full gap-2 items-end">
+            <div className="flex w-full justify-end items-end text-right">
+              <Switch
+                id="hide-zero-balances"
+                checked={hideZeroBalances}
+                onCheckedChange={setHideZeroBalances}
+                className="mr-2"
+              />
+              <h1 className="text-sm">Hide zero balances</h1>
+            </div>
+          </div>
+        }
+      />
     </div>
   );
 }
