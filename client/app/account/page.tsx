@@ -2,7 +2,8 @@
 
 import AccountBalance from "@/components/account-balance";
 import CommBankDotETHLogo from "@/components/commbankdotethlogo";
-import TransferDialog from "@/components/connected-wallet/dialog";
+// TODO reimplement
+// import TransferDialog from "@/components/connected-wallet/dialog";
 import DepositModal from "@/components/deposit-modal";
 import SendModal from "@/components/send-modal";
 import { TokenBalancesTable } from "@/components/token-balances-view";
@@ -24,7 +25,6 @@ export default function Account() {
   } = useAuth();
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
-  const [transferModalOpen, setTransferModalOpen] = useState(false);
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 p-2 pt-12">
@@ -43,7 +43,6 @@ export default function Account() {
             setIsDepositModalOpen={setIsDepositModalOpen}
             setIsSendModalOpen={setIsSendModalOpen}
             setIsAccountManagerOpen={setIsAccountManagerOpen}
-            setTransferModalOpen={setTransferModalOpen}
           />
 
           <div className="flex flex-col">
@@ -60,11 +59,6 @@ export default function Account() {
           />
 
           <SendModal open={isSendModalOpen} onOpenChange={setIsSendModalOpen} />
-
-          <TransferDialog
-            transferModalOpen={transferModalOpen}
-            setTransferModalOpen={setTransferModalOpen}
-          />
         </>
       ) : (
         <div className="flex flex-1 flex-col gap-4 px-6 p-2 pt-12">

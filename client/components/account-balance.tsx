@@ -1,5 +1,3 @@
-import ConnectWallet from "@/components/connect-wallet";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,31 +17,18 @@ import { formatAddress } from "@/const";
 import { useBalancesTotal } from "@/hooks/use-balances-total";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
-import {
-  ArrowRightLeft,
-  Copy,
-  HelpCircle,
-  LogOut,
-  QrCodeIcon,
-  SendIcon,
-  Wallet,
-} from "lucide-react";
-import { useAccount, useDisconnect } from "wagmi";
+import { Copy, HelpCircle, QrCodeIcon, SendIcon, Wallet } from "lucide-react";
 
 const AccountBalance = ({
   setIsDepositModalOpen,
   setIsSendModalOpen,
   setIsAccountManagerOpen,
-  setTransferModalOpen,
 }: {
   setIsDepositModalOpen: (input: boolean) => void;
   setIsSendModalOpen: (input: boolean) => void;
   setIsAccountManagerOpen: (input: boolean) => void;
-  setTransferModalOpen: (input: boolean) => void;
 }) => {
   const { isSignedIn, address: authAddress } = useAuth();
-  const { isConnected, address, connector } = useAccount();
-  const { disconnect } = useDisconnect();
 
   const { data: balancesFiatTotal, isLoading } = useBalancesTotal(authAddress!);
 
@@ -53,10 +38,6 @@ const AccountBalance = ({
       title: "Address copied",
       description: "Address has been copied to clipboard",
     });
-  };
-
-  const handleDisconnect = () => {
-    disconnect();
   };
 
   return (
@@ -162,84 +143,6 @@ const AccountBalance = ({
                 >
                   Sign In
                 </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Connected Wallet */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-primary" />
-                <CardTitle>Connected Wallet</CardTitle>
-              </div>
-              {isConnected && (
-                <Badge variant="outline" className="text-green-600">
-                  Connected
-                </Badge>
-              )}
-            </div>
-            <CardDescription>
-              External web3 wallet for transferring assets to your commbank.eth
-              account
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isConnected && address ? (
-              <>
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium">
-                      {connector?.name || "Unknown Wallet"}
-                    </p>
-                    <p className="font-mono text-sm text-muted-foreground">
-                      {formatAddress(address)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyAddress(address)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setTransferModalOpen(true)}
-                    disabled={!isSignedIn}
-                    className="flex-1"
-                    size="sm"
-                  >
-                    <ArrowRightLeft className="mr-2 h-4 w-4" />
-                    Transfer to commbank.eth
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={handleDisconnect}
-                    size="sm"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Disconnect
-                  </Button>
-                </div>
-
-                {!isSignedIn && (
-                  <p className="text-xs text-amber-600">
-                    Sign in to your commbank.eth account to enable transfers
-                  </p>
-                )}
-              </>
-            ) : (
-              <div className="py-4">
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Connect a web3 wallet to transfer assets
-                </p>
-                <ConnectWallet />
               </div>
             )}
           </CardContent>
