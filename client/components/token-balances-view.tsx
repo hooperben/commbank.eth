@@ -3,7 +3,6 @@
 import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { supportedAssets } from "@/const/supported-assets";
