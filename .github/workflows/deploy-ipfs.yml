@@ -26,6 +26,7 @@ jobs:
         run: |
           curl -fsSL https://cli.pinata.cloud/install | bash
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
 
       - name: Install client dependencies
         run: |
@@ -44,6 +45,9 @@ jobs:
           PINATA_API_GATEWAY: ${{ secrets.PINATA_API_GATEWAY }}
         run: |
           cd client
+
+          # Ensure Pinata CLI is in PATH
+          export PATH="$HOME/.local/bin:$PATH"
 
           # Authenticate with Pinata CLI
           echo "$PINATA_JWT" | pinata auth
