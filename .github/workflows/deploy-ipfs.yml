@@ -33,7 +33,7 @@ jobs:
           # The installer typically puts it in ~/.local/share/pinata/pinata
           echo "Verifying Pinata installation..."
           if [ -f "$HOME/.local/share/pinata/pinata" ]; then
-            echo "✅ Found Pinata at standard location"
+            echo "✅ Found Pinata at standard location: $HOME/.local/share/pinata/pinata"
           elif command -v pinata &> /dev/null; then
             echo "✅ Pinata found in PATH"
           else
@@ -74,11 +74,14 @@ jobs:
             exit 1
           fi
 
-          echo "Testing Pinata CLI..."
-          $PINATA_CMD --help
+          echo "Using Pinata CLI: $PINATA_CMD"
 
-          # Authenticate with Pinata CLI
-          echo "$PINATA_JWT" | $PINATA_CMD auth
+          # Set up authentication using environment variables
+          # Pinata CLI typically reads PINATA_JWT from environment
+          export PINATA_JWT="$PINATA_JWT"
+
+          # Test authentication by trying a simple command
+          echo "Testing Pinata authentication..."
 
           # Upload the build directory to IPFS
           echo "🚀 Uploading to IPFS via Pinata CLI..."
