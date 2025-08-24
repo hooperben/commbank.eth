@@ -1,0 +1,121 @@
+name: Deploy to IPFS
+
+on:
+  pull_request:
+    branches: [main, dev]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy-ipfs:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write # To comment on PRs with deployment URLs
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Pinata CLI
+        run: |
+          curl -fsSL https://cli.pinata.cloud/install | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install client dependencies
+        run: |
+          cd client
+          bun install
+
+      - name: Build client app
+        run: |
+          cd client
+          bun run build
+
+      - name: Deploy to IPFS using Pinata CLI
+        id: deploy
+        env:
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+          PINATA_API_GATEWAY: ${{ secrets.PINATA_API_GATEWAY }}
+        run: |
+          cd client
+
+          # Authenticate with Pinata CLI
+          echo "$PINATA_JWT" | pinata auth
+
+          # Upload the build directory to IPFS
+          echo "🚀 Uploading to IPFS via Pinata CLI..."
+          UPLOAD_OUTPUT=$(pinata upload out --name "commbank-eth-app-$(date +%Y-%m-%d-%H%M%S)" --group-id default 2>&1)
+          echo "$UPLOAD_OUTPUT"
+
+          # Extract IPFS hash from CLI output
+          IPFS_HASH=$(echo "$UPLOAD_OUTPUT" | grep -oE 'Qm[a-zA-Z0-9]{44}|baf[a-zA-Z0-9]+' | head -1)
+
+          if [ -z "$IPFS_HASH" ]; then
+            echo "❌ Failed to extract IPFS hash from output"
+            exit 1
+          fi
+
+          # Construct public URL
+          IPFS_URL="https://${PINATA_API_GATEWAY}/ipfs/${IPFS_HASH}"
+
+          echo "✅ Deployment completed successfully!"
+          echo "🔗 IPFS Hash: $IPFS_HASH"
+          echo "🌐 Public URL: $IPFS_URL"
+
+          # Set outputs for next steps
+          echo "ipfs_hash=$IPFS_HASH" >> $GITHUB_OUTPUT
+          echo "ipfs_url=$IPFS_URL" >> $GITHUB_OUTPUT
+
+          # Add to step summary
+          echo "### 🌐 IPFS Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "**IPFS Hash:** \`$IPFS_HASH\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Public URL:** [$IPFS_URL]($IPFS_URL)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🌐 IPFS Preview Deployment')
+            );
+
+            const commentBody = `## 🌐 IPFS Preview Deployment
+
+            Your CommBank.eth app has been deployed to IPFS! 
+
+            **🔗 Preview URL:** ${{ steps.deploy.outputs.ipfs_url }}
+            **📋 IPFS Hash:** \`${{ steps.deploy.outputs.ipfs_hash }}\`
+            **📅 Deployed:** ${new Date().toISOString()}
+
+            > This deployment is automatically updated when you push new commits to this PR.
+            `;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
