@@ -27,17 +27,39 @@ jobs:
           # Download and install Pinata CLI
           curl -fsSL https://cli.pinata.cloud/install | bash
 
-          # Verify installation and show path
-          ls -la $HOME/.local/bin/
+          # Find where pinata was installed
+          echo "Searching for pinata binary..."
+          find $HOME -name "pinata" -type f 2>/dev/null || echo "No pinata binary found in home directory"
 
-          # Add to PATH for current session
+          # Check common installation locations
+          echo "Checking common locations..."
+          ls -la $HOME/.local/bin/ 2>/dev/null || echo "$HOME/.local/bin/ does not exist"
+          ls -la $HOME/bin/ 2>/dev/null || echo "$HOME/bin/ does not exist"
+          ls -la /usr/local/bin/pinata 2>/dev/null || echo "/usr/local/bin/pinata does not exist"
+
+          # Create .local/bin if it doesn't exist and try manual install
+          mkdir -p $HOME/.local/bin
+
+          # Check if pinata is available in PATH
+          if command -v pinata &> /dev/null; then
+            echo "✅ Pinata found in PATH"
+            pinata --version
+            PINATA_LOCATION=$(which pinata)
+            echo "Pinata location: $PINATA_LOCATION"
+          else
+            echo "❌ Pinata not found in PATH, searching filesystem..."
+            PINATA_LOCATION=$(find / -name "pinata" -type f -executable 2>/dev/null | head -1)
+            if [ -n "$PINATA_LOCATION" ]; then
+              echo "Found pinata at: $PINATA_LOCATION"
+              # Copy to expected location
+              cp "$PINATA_LOCATION" $HOME/.local/bin/pinata
+              chmod +x $HOME/.local/bin/pinata
+            fi
+          fi
+
+          # Add to PATH for subsequent steps
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-          # Source the installation immediately
           export PATH="$HOME/.local/bin:$PATH"
-
-          # Test the installation
-          $HOME/.local/bin/pinata --version || echo "Pinata CLI not found at expected location"
 
       - name: Install client dependencies
         run: |
@@ -60,19 +82,26 @@ jobs:
           # Ensure Pinata CLI is in PATH and test it
           export PATH="$HOME/.local/bin:$PATH"
 
-          # Verify pinata command is available
-          which pinata || echo "pinata not found in PATH"
-          pinata --version || echo "pinata version check failed"
-
-          # Check if binary exists at expected location
-          ls -la $HOME/.local/bin/pinata || echo "Binary not found at $HOME/.local/bin/pinata"
-
-          # Try direct path execution if needed
-          if ! command -v pinata &> /dev/null; then
-            echo "Using direct path to pinata binary"
-            PINATA_CMD="$HOME/.local/bin/pinata"
-          else
+          # Find the pinata binary
+          if command -v pinata &> /dev/null; then
+            echo "✅ Pinata found in PATH"
             PINATA_CMD="pinata"
+            pinata --version
+          elif [ -f "$HOME/.local/bin/pinata" ]; then
+            echo "✅ Pinata found at $HOME/.local/bin/pinata"
+            PINATA_CMD="$HOME/.local/bin/pinata"
+            $PINATA_CMD --version
+          else
+            echo "❌ Searching for pinata binary..."
+            PINATA_LOCATION=$(find $HOME -name "pinata" -type f -executable 2>/dev/null | head -1)
+            if [ -n "$PINATA_LOCATION" ]; then
+              echo "Found pinata at: $PINATA_LOCATION"
+              PINATA_CMD="$PINATA_LOCATION"
+              $PINATA_CMD --version
+            else
+              echo "❌ Pinata binary not found anywhere!"
+              exit 1
+            fi
           fi
 
           # Authenticate with Pinata CLI
