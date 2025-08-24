@@ -24,9 +24,20 @@ jobs:
 
       - name: Install Pinata CLI
         run: |
+          # Download and install Pinata CLI
           curl -fsSL https://cli.pinata.cloud/install | bash
+
+          # Verify installation and show path
+          ls -la $HOME/.local/bin/
+
+          # Add to PATH for current session
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+          # Source the installation immediately
           export PATH="$HOME/.local/bin:$PATH"
+
+          # Test the installation
+          $HOME/.local/bin/pinata --version || echo "Pinata CLI not found at expected location"
 
       - name: Install client dependencies
         run: |
@@ -46,15 +57,30 @@ jobs:
         run: |
           cd client
 
-          # Ensure Pinata CLI is in PATH
+          # Ensure Pinata CLI is in PATH and test it
           export PATH="$HOME/.local/bin:$PATH"
 
+          # Verify pinata command is available
+          which pinata || echo "pinata not found in PATH"
+          pinata --version || echo "pinata version check failed"
+
+          # Check if binary exists at expected location
+          ls -la $HOME/.local/bin/pinata || echo "Binary not found at $HOME/.local/bin/pinata"
+
+          # Try direct path execution if needed
+          if ! command -v pinata &> /dev/null; then
+            echo "Using direct path to pinata binary"
+            PINATA_CMD="$HOME/.local/bin/pinata"
+          else
+            PINATA_CMD="pinata"
+          fi
+
           # Authenticate with Pinata CLI
-          echo "$PINATA_JWT" | pinata auth
+          echo "$PINATA_JWT" | $PINATA_CMD auth
 
           # Upload the build directory to IPFS
           echo "🚀 Uploading to IPFS via Pinata CLI..."
-          UPLOAD_OUTPUT=$(pinata upload out --name "commbank-eth-app-$(date +%Y-%m-%d-%H%M%S)" --group-id default 2>&1)
+          UPLOAD_OUTPUT=$($PINATA_CMD upload out --name "commbank-eth-app-$(date +%Y-%m-%d-%H%M%S)" --group-id default 2>&1)
           echo "$UPLOAD_OUTPUT"
 
           # Extract IPFS hash from CLI output
@@ -62,6 +88,8 @@ jobs:
 
           if [ -z "$IPFS_HASH" ]; then
             echo "❌ Failed to extract IPFS hash from output"
+            echo "Upload output was:"
+            echo "$UPLOAD_OUTPUT"
             exit 1
           fi
 
