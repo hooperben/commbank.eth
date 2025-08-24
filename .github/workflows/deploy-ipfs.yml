@@ -34,6 +34,11 @@ jobs:
           cd client
           bun run build
 
+      - name: Install action dependencies
+        run: |
+          cd .github/actions/deploy-ipfs
+          bun install
+
       - name: Deploy to IPFS
         id: deploy
         uses: ./.github/actions/deploy-ipfs
