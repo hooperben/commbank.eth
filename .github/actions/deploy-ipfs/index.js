@@ -11,6 +11,19 @@ async function run() {
     const pinName = core.getInput("pin-name");
     const updateExisting = core.getInput("update-existing") === "true";
 
+    // Debug: Check if JWT is provided (without logging the actual value)
+    console.log("🔍 Debug Info:");
+    console.log(`- JWT provided: ${pinataJwt ? "Yes" : "No"}`);
+    console.log(`- JWT length: ${pinataJwt ? pinataJwt.length : 0}`);
+    console.log(
+      `- JWT starts with 'eyJ': ${
+        pinataJwt ? pinataJwt.startsWith("eyJ") : false
+      }`,
+    );
+    console.log(`- Gateway: ${pinataGateway}`);
+    console.log(`- Source directory: ${sourceDir}`);
+    console.log(`- Pin name: ${pinName}`);
+
     // Initialize Pinata SDK
     const pinata = new PinataSDK({
       pinataJwt: pinataJwt,
@@ -19,11 +32,33 @@ async function run() {
 
     // Test authentication
     try {
-      await pinata.testAuthentication();
+      console.log("🔐 Testing Pinata authentication...");
+      const authResult = await pinata.testAuthentication();
       console.log("✅ Pinata authentication successful");
+      console.log("Auth result:", authResult);
     } catch (authError) {
-      console.error("❌ Pinata authentication failed:", authError.message);
-      throw new Error("Pinata authentication failed. Check your JWT token.");
+      console.error("❌ Pinata authentication failed:");
+      console.error("Error message:", authError.message);
+      console.error("Error details:", authError);
+
+      // Provide more specific error guidance
+      if (
+        authError.message.includes("401") ||
+        authError.message.includes("Unauthorized")
+      ) {
+        throw new Error(
+          "Pinata authentication failed: Invalid JWT token. Please check your PINATA_JWT secret.",
+        );
+      } else if (
+        authError.message.includes("403") ||
+        authError.message.includes("Forbidden")
+      ) {
+        throw new Error(
+          "Pinata authentication failed: JWT token lacks required permissions.",
+        );
+      } else {
+        throw new Error(`Pinata authentication failed: ${authError.message}`);
+      }
     }
 
     // Check if source directory exists
