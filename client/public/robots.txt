@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://commbank.eth.limo/sitemap.xml
+
+# Allow all pages for better indexing
+Allow: /account
+Allow: /settings
+Allow: /wallets
+Allow: /proof-of-concept
+
+# Crawl delay (optional - helps with server load)
+Crawl-delay: 1
+
+# Host specification for commbank.eth domain
+Host: https://commbank.eth.limo
