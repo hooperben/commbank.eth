@@ -8,3 +8,7 @@
 - `contracts/`: the EVM smart contracts required to facilitate private transfers
 - `circuits`: an implementation of a Multi Asset Shield Pool with `poseidon2` as the merkle tree hash function
 - `server/`: is a backend that's used for getting price data of assets from coingecko and to relay transactions for users (still a work in progress).
+
+#### Docs
+
+[AUTH.md](./AUTH.md) describes how notes are currently implemented in the private transfer model
