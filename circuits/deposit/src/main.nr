@@ -1,7 +1,8 @@
-use std::hash::poseidon2;
+use poseidon;
 
 fn calculate_leaf(asset_id: Field, asset_amount: Field, owner: Field, secret: Field) -> Field {
-    let leaf_hash = poseidon2::Poseidon2::hash([asset_id, asset_amount, owner, secret], 4);
+    let leaf_hash =
+        poseidon::poseidon2::Poseidon2::hash([asset_id, asset_amount, owner, secret], 4);
 
     leaf_hash
 }
