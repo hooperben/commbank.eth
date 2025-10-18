@@ -1,7 +1,7 @@
 global HEIGHT: u32 = 12;
 global NOTE_COUNT: u32 = 3;
 
-use std::hash::poseidon2;
+use poseidon::poseidon2;
 
 struct InputNote {
     asset_id: Field,
@@ -136,9 +136,6 @@ fn test_main() {
 
     let bob_input_nullifier =
         4114950840897945428984428368446053738282984086981274614627600851726952485197;
-
-    let output_asset = asset_id;
-    let output_asset_amount = asset_amount;
 
     let input_notes = [bob_input_note, empty_input_note, empty_input_note];
     let nullifiers = [bob_input_nullifier, 0, 0];
