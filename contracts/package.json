@@ -6,7 +6,7 @@
     "deploy": "ts-node scripts/deploy.ts"
   },
   "devDependencies": {
-    "@aztec/bb.js": "0.84.0",
+    "@aztec/bb.js": "0.87.0",
     "@aztec/foundation": "^0.87.8",
     "@layerzerolabs/lz-evm-messagelib-v2": "^3.0.12",
     "@layerzerolabs/lz-evm-oapp-v2": "^3.0.103",
@@ -18,7 +18,7 @@
     "@layerzerolabs/test-devtools-evm-foundry": "^6.0.3",
     "@layerzerolabs/test-devtools-evm-hardhat": "^0.5.2",
     "@layerzerolabs/toolbox-hardhat": "^0.6.11",
-    "@noir-lang/noir_js": "1.0.0-beta.6",
+    "@noir-lang/noir_js": "1.0.0-beta.14",
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@openzeppelin/contracts": "^5.0.2",
