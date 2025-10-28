@@ -1,0 +1,19 @@
+{
+  "name": "commbank-dot-eth",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "contracts",
+    "shared",
+    "server"
+  ],
+  "scripts": {
+    "dev": "bun run --filter client dev",
+    "build": "bun run --filter client build",
+    "build-contracts": "bun run --filter contracts build"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

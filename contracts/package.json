@@ -42,6 +42,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "shared": "workspace:*",
     "axios": "^1.7.9",
     "clear": "^0.1.0",
     "form-data": "^4.0.0",
