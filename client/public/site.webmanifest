@@ -12,13 +12,13 @@
   "categories": ["privacy", "finance", "business", "productivity"],
   "icons": [
     {
-      "src": "/commbankdotethlogo.jpg",
+      "src": "/commbankdotethlogo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/commbankdotethlogo.jpg",
+      "src": "/commbankdotethlogo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
