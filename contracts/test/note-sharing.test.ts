@@ -2,6 +2,7 @@ import { NoteEncryption } from "@/helpers/note-sharing";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { Wallet } from "ethers";
 import { ethers } from "hardhat";
+import { expect } from "chai";
 
 describe("Testing Note Sharing functionality", () => {
   let Signers: HardhatEthersSigner[];
@@ -28,28 +29,16 @@ describe("Testing Note Sharing functionality", () => {
       asset_amount: "5",
     };
 
-    try {
-      // Alice encrypts a note for Bob
-      const encryptedNote = await NoteEncryption.createEncryptedNote(
-        originalNote,
-        bob,
-      );
-      console.log("Encrypted note:", encryptedNote);
+    // Alice encrypts a note for Bob
+    const encryptedNote = await NoteEncryption.createEncryptedNote(
+      originalNote,
+      bob,
+    );
 
-      // Bob decrypts the note
-      const decryptedNote = await NoteEncryption.decryptNote(
-        encryptedNote,
-        bob,
-      );
-      console.log("Decrypted note:", decryptedNote);
+    // Bob decrypts the note
+    const decryptedNote = await NoteEncryption.decryptNote(encryptedNote, bob);
 
-      // Verify the secret matches
-      console.log(
-        "Secrets match:",
-        originalNote.secret === decryptedNote.secret,
-      );
-    } catch (error) {
-      console.error("Encryption/Decryption failed:", error);
-    }
+    // Verify the secret matches
+    expect(originalNote.secret).equal(decryptedNote.secret);
   });
 });

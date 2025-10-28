@@ -1,12 +1,13 @@
 {
   "name": "contracts",
   "scripts": {
-    "build": "./scripts/bash/build-and-export-circuits.sh",
+    "build-bb": "./scripts/bash/build-and-export-circuits.sh",
+    "build": "bun run scripts/ts-sol-verifier-create.ts",
     "build-ipfs": "ts-node scripts/build.ts",
     "deploy": "ts-node scripts/deploy.ts"
   },
   "devDependencies": {
-    "@aztec/bb.js": "0.87.0",
+    "@aztec/bb.js": "3.0.0-nightly.20250916",
     "@aztec/foundation": "^0.87.8",
     "@layerzerolabs/lz-evm-messagelib-v2": "^3.0.12",
     "@layerzerolabs/lz-evm-oapp-v2": "^3.0.103",
