@@ -1,5 +1,3 @@
-"use client";
-
 import { AppSidebar } from "@/components/app-sidebar";
 import Footer from "@/components/footer";
 import PageHead from "@/components/page-head";
@@ -8,7 +6,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-// import { Toaster } from "sonner";
+import { Toaster } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { PageTitleProvider, usePageTitle } from "@/lib/page-title-context";
 
@@ -81,7 +79,7 @@ export function AppLayout({
         <PageTitleProvider>
           <PageHead
             title="commbank.eth"
-            description="the bank you don't need to trust"
+            description="open source, privacy enhancing financial technologies"
           />
           <AppSidebar />
           <div className="flex flex-col w-full">
@@ -89,7 +87,7 @@ export function AppLayout({
             <main className="flex-1 p-6 md:p-8 pt-24 md:pt-20">{children}</main>
             <Footer />
           </div>
-          {/* <Toaster /> */}
+          <Toaster />
         </PageTitleProvider>
       </SidebarProvider>
     </div>

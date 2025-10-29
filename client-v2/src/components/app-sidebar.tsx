@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Home, Users, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Logo } from "./logo";
 
 // Menu items
 const items = [
@@ -33,39 +32,18 @@ const items = [
   },
 ];
 
-function LogoIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M3 8L12 3L21 8V16L12 21L3 16V8Z"
-        fill="currentColor"
-        fillOpacity="0.2"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path d="M12 3V21" stroke="currentColor" strokeWidth="2" />
-      <path d="M3 8L21 16" stroke="currentColor" strokeWidth="2" />
-      <path d="M21 8L3 16" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  );
-}
-
 export function AppSidebar() {
-  const { open } = useSidebar();
+  const { open, isMobile } = useSidebar();
 
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-lg font-bold px-4 py-6">
-            {open ? (
+          <SidebarGroupLabel className="flex justify-center text-lg font-bold px-4 py-6">
+            <div className={`flex ${!open ? "display-none" : ""}`}>
+              <Logo />
+            </div>
+            {open || isMobile ? (
               <>
                 commbank.eth
                 <span className="ml-2 text-xs bg-orange-500 text-white px-2 py-0.5 rounded">
@@ -73,18 +51,49 @@ export function AppSidebar() {
                 </span>
               </>
             ) : (
-              <div className="flex items-center justify-center w-full">
-                <LogoIcon />
-              </div>
+              <></>
             )}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="">
+              {!open && !isMobile && (
+                <SidebarMenuItem className={`${open ? "mt-4" : "ml-1"}`}>
+                  <Logo />
+                </SidebarMenuItem>
+              )}
+              <div className="h-4"></div>
               {items.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild tooltip={item.label}>
+                <SidebarMenuItem key={item.href} className="py-1 px-1">
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.label}
+                    variant="ghost"
+                    className={`
+                      h-10
+                      rounded-2xl
+                      backdrop-blur-xl
+                      bg-background/40
+                      border border-border/50
+                      shadow-lg shadow-black/5
+                      hover:shadow-xl hover:shadow-black/10
+                      hover:bg-background/60
+                      hover:border-border/80
+                      hover:scale-105
+                      active:scale-95
+                      transition-all duration-300 ease-out
+                      before:absolute before:inset-0
+                      before:bg-gradient-to-br before:from-white/10 before:to-transparent
+                      before:opacity-0 before:group-hover:opacity-100
+                      before:transition-opacity before:duration-300
+                      after:absolute after:inset-0
+                      after:bg-gradient-to-tr after:from-transparent after:via-white/5 after:to-white/10
+                      after:opacity-60
+                    `}
+                  >
                     <Link to={item.href}>
-                      <item.icon className="h-4 w-4" />
+                      <item.icon
+                        className={`h-4 w-4 ${open ? "ml-3 h-10" : ""}`}
+                      />
                       <span>{item.label}</span>
                     </Link>
                   </SidebarMenuButton>

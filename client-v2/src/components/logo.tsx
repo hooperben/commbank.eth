@@ -1,12 +1,10 @@
-"use client";
-
 import { motion } from "framer-motion";
 
-const CommBankDotETHLogo = () => {
+export const Logo = () => {
   return (
     <motion.svg
-      width="300"
-      height="300"
+      width="40"
+      height="40"
       viewBox="0 0 400 400"
       animate={{
         scale: [1, 1.05, 1],
@@ -66,5 +64,3 @@ const CommBankDotETHLogo = () => {
     </motion.svg>
   );
 };
-
-export { CommBankDotETHLogo };

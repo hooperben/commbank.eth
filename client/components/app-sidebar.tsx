@@ -4,7 +4,7 @@ import { Home, Settings, Users } from "lucide-react";
 import * as React from "react";
 
 import AccountManager from "@/components/account-manager";
-import CommBankDotETHLogo from "@/components/commbankdotethlogo";
+import { CommBankDotETHLogo } from "@/components/commbankdotethlogo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
