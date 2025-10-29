@@ -1,10 +1,16 @@
 import { motion } from "framer-motion";
 
-export const Logo = () => {
+export const Logo = ({
+  height,
+  width,
+}: {
+  height?: number;
+  width?: number;
+}) => {
   return (
     <motion.svg
-      width="40"
-      height="40"
+      width={width ?? "40"}
+      height={height ?? "40"}
       viewBox="0 0 400 400"
       animate={{
         scale: [1, 1.05, 1],

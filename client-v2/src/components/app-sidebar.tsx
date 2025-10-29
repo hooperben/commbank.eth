@@ -46,7 +46,7 @@ export function AppSidebar() {
             {open || isMobile ? (
               <>
                 commbank.eth
-                <span className="ml-2 text-xs bg-orange-500 text-white px-2 py-0.5 rounded">
+                <span className="ml-2 text-xs bg-primary text-white dark:text-secondary px-2 py-0.5 rounded">
                   beta
                 </span>
               </>
