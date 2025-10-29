@@ -8,6 +8,7 @@ import { HomePage } from "./pages/home";
 import { AccountPage } from "./pages/account";
 import { SettingsPage } from "./pages/settings";
 import { ThemeProvider } from "./components/theme-provider";
+import { AboutPage } from "./pages/about";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/account" element={<AccountPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/about" element={<AboutPage />} />
               </Routes>
             </AppLayout>
           </AuthProvider>

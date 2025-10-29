@@ -5,9 +5,14 @@ export const AboutPage = () => {
   return (
     <PageContainer {...PAGE_METADATA.about}>
       <div className="flex flex-col">
-        <h3>Interested in commbank.eth?</h3>
+        <h3>commbank.eth</h3>
+        <h3>open source, privacy enhancing financial technologies</h3>
       </div>
-      {/* Your about content here */}
+
+      {/* 
+
+
+      */}
     </PageContainer>
   );
 };
