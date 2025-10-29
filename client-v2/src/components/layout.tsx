@@ -3,7 +3,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import Footer from "@/components/footer";
 import PageHead from "@/components/page-head";
-import { ThemeProvider } from "@/components/theme-provider";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -11,7 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 // import { Toaster } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import usePageTitle, { PageTitleProvider } from "@/lib/page-title-context";
+import { PageTitleProvider, usePageTitle } from "@/lib/page-title-context";
 
 import type React from "react";
 
@@ -69,36 +68,30 @@ export function AppLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
-        <SidebarProvider
-          defaultOpen={true}
-          style={
-            {
-              "--sidebar-width": "19rem",
-              "--sidebar-width-icon": "3.5rem",
-            } as React.CSSProperties
-          }
-        >
-          <PageTitleProvider>
-            <PageHead
-              title="commbank.eth"
-              description="the bank you don't need to trust"
-            />
-            <ThemeProvider>
-              <AppSidebar />
-              <div className="flex flex-col w-full min-h-screen">
-                <SidebarTriggerFixed />
-                <main className="flex-1 p-6 md:p-8 pt-24 md:pt-20">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-              {/* <Toaster /> */}
-            </ThemeProvider>
-          </PageTitleProvider>
-        </SidebarProvider>
-      </body>
-    </html>
+    <div className="antialiased">
+      <SidebarProvider
+        defaultOpen={true}
+        style={
+          {
+            "--sidebar-width": "19rem",
+            "--sidebar-width-icon": "3.5rem",
+          } as React.CSSProperties
+        }
+      >
+        <PageTitleProvider>
+          <PageHead
+            title="commbank.eth"
+            description="the bank you don't need to trust"
+          />
+          <AppSidebar />
+          <div className="flex flex-col w-full">
+            <SidebarTriggerFixed />
+            <main className="flex-1 p-6 md:p-8 pt-24 md:pt-20">{children}</main>
+            <Footer />
+          </div>
+          {/* <Toaster /> */}
+        </PageTitleProvider>
+      </SidebarProvider>
+    </div>
   );
 }

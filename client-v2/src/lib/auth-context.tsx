@@ -1,18 +1,15 @@
 "use client";
 
-// import AccountManager from "@/components/account-manager";
-import { ethers } from "ethers";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { getRegisteredUsername, retrieveMnemonic } from "./passkey";
+import { CommbankDotETHAccount } from "./commbankdoteth-account";
 
 interface AuthContextType {
   isLoading: boolean;
   isSignedIn: boolean;
   token: string | null;
   address: string | null;
-  signIn: (mnemonic: string) => Promise<void>;
+  signIn: () => Promise<void>;
   signOut: () => void;
-  getMnemonic: () => Promise<string | null>;
   isAccountManagerOpen: boolean;
   setIsAccountManagerOpen: (input: boolean) => void;
 }
@@ -25,11 +22,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAccountManagerOpen, setIsAccountManagerOpen] = useState(false);
+  const [commbankDotEthAccount, setCommbankDotEthAccount] =
+    useState<CommbankDotETHAccount>();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    setCommbankDotEthAccount(new CommbankDotETHAccount());
+
     const storedToken = sessionStorage.getItem("authToken");
+
     if (storedToken) {
       try {
         const decoded = JSON.parse(atob(storedToken.split(".")[1]));
@@ -49,16 +51,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const signIn = async (mnemonic: string) => {
+  const signIn = async () => {
     try {
-      const wallet = ethers.Wallet.fromPhrase(mnemonic);
-      const walletAddress = wallet.address;
+      if (!commbankDotEthAccount) {
+        // TODO shouldn't happen
+        setCommbankDotEthAccount(new CommbankDotETHAccount());
+      }
+
+      // Authenticate with passkey and get the wallet
+      const passkeyWallet = await commbankDotEthAccount!.getPasskeyAccount();
+      const walletAddress = passkeyWallet.address;
+
+      // TODO revise?
+      const mnemonic = passkeyWallet.mnemonic?.phrase;
+
+      if (!mnemonic) {
+        throw new Error("Failed to retrieve mnemonic from wallet");
+      }
 
       const now = Math.floor(Date.now() / 1000);
       const expiresIn = 60 * 60; // 1 hour in seconds
 
       const payload = {
-        username: await getRegisteredUsername(),
+        username: "commbank.eth",
         address: walletAddress,
         iat: now,
         exp: now + expiresIn,
@@ -130,19 +145,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
   };
 
-  const getMnemonic = async (): Promise<string | null> => {
-    if (!isSignedIn) {
-      return null;
-    }
-
-    try {
-      return await retrieveMnemonic();
-    } catch (error) {
-      console.error("Error retrieving mnemonic:", error);
-      return null;
-    }
-  };
-
   const signOut = () => {
     setToken(null);
     setAddress(null);
@@ -161,16 +163,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         address,
         signIn,
         signOut,
-        getMnemonic,
         isAccountManagerOpen,
         setIsAccountManagerOpen,
       }}
     >
-      {/* <AccountManager
-        open={isAccountManagerOpen}
-        onOpenChange={setIsAccountManagerOpen}
-      /> */}
-
       {children}
     </AuthContext.Provider>
   );

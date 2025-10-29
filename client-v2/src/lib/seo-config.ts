@@ -39,6 +39,7 @@ export const DEFAULT_SEO: SEOConfig = {
 };
 
 export interface PageMetadata {
+  header?: string;
   title: string;
   description: string;
   path: string;
@@ -61,6 +62,7 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     ],
   },
   account: {
+    header: "Account",
     title: "commbank.eth | Account",
     description: "Manage your commbank.eth accounts.",
     path: "/account",
@@ -73,6 +75,7 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     ],
   },
   about: {
+    header: "About",
     title: "commbank.eth | About",
     description:
       "Learn about commbank.eth - an open-source project building privacy-enhancing financial technologies.",
@@ -82,6 +85,22 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
       "open source finance",
       "privacy technology",
       "blockchain project",
+      "Ethereum development",
+    ],
+  },
+  settings: {
+    header: "Settings",
+    title: "commbank.eth | Settings",
+    description:
+      "Manage your commbank.eth account - export your credentials and secure your account back ups.",
+    path: "/settings",
+    keywords: [
+      "commbank.eth account",
+      "open source finance",
+      "privacy technology",
+      "blockchain project",
+      "passkey",
+      "credentials management",
       "Ethereum development",
     ],
   },

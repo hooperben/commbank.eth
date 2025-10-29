@@ -4,7 +4,7 @@ import { PAGE_METADATA } from "@/lib/seo-config";
 export const HomePage = () => {
   return (
     <PageContainer {...PAGE_METADATA.home}>
-      <h1>Home</h1>
+      <div className="flex flex-col">Home Page Coming</div>
     </PageContainer>
   );
 };
