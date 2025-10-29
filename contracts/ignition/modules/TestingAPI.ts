@@ -17,14 +17,14 @@ const TestingAPIModule = buildModule("TestingAPI", (m) => {
     "XXX",
     "XXX",
     baseEndpoint,
-    m.getAccount(0)
+    m.getAccount(0),
   ]);
 
   const lzOFTRemote = m.contract("LZOFT", [
     "YYY",
     "YYY",
     remoteEndpoint,
-    m.getAccount(0)
+    m.getAccount(0),
   ]);
 
   // Deploy Verifier contracts
@@ -37,7 +37,7 @@ const TestingAPIModule = buildModule("TestingAPI", (m) => {
   const commBankDotEth = m.contract("CommBankDotEth", [
     depositVerifier,
     transferVerifier,
-    withdrawVerifier
+    withdrawVerifier,
   ]);
 
   // // Set up LayerZero endpoint destinations (after deployment)
@@ -66,7 +66,7 @@ const TestingAPIModule = buildModule("TestingAPI", (m) => {
     depositVerifier,
     transferVerifier,
     withdrawVerifier,
-    warpVerifier
+    warpVerifier,
   };
 });
 

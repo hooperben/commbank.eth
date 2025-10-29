@@ -9,7 +9,9 @@ interface CurrencyContextType {
   setCurrency: (currency: Currency) => void;
 }
 
-const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
+const CurrencyContext = createContext<CurrencyContextType | undefined>(
+  undefined,
+);
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrencyState] = useState<Currency>("USD");
@@ -18,7 +20,10 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return;
 
     const storedCurrency = localStorage.getItem("selectedCurrency") as Currency;
-    if (storedCurrency && (storedCurrency === "USD" || storedCurrency === "AUD")) {
+    if (
+      storedCurrency &&
+      (storedCurrency === "USD" || storedCurrency === "AUD")
+    ) {
       setCurrencyState(storedCurrency);
     }
   }, []);

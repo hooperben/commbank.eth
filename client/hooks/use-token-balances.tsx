@@ -44,7 +44,7 @@ export const useTokenBalances = (walletAddress?: string) => {
         functionName: "balanceOf",
         args: [walletAddress as `0x${string}`],
         chainId: asset.chainId,
-      } as const),
+      }) as const,
   );
 
   const {

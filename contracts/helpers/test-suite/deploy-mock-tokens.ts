@@ -8,9 +8,8 @@ const setUpLZ = async () => {
   if (network.name !== "hardhat" && network.name !== "localhost")
     throw new Error("Called this one wrong");
   // DEPLOY LZ TEST SUITE
-  const EndpointV2MockFactory = await ethers.getContractFactory(
-    "EndpointV2Mock",
-  );
+  const EndpointV2MockFactory =
+    await ethers.getContractFactory("EndpointV2Mock");
 
   const baseEndpoint = await EndpointV2MockFactory.deploy(BASE_EID);
   const remoteEndpoint = await EndpointV2MockFactory.deploy(REMOTE_EID);
