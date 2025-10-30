@@ -1,6 +1,8 @@
 import { Logo } from "@/components/logo";
 import PageContainer from "@/components/page-container";
+import { Button } from "@/components/ui/button";
 import { PAGE_METADATA } from "@/lib/seo-config";
+import { Link } from "react-router-dom";
 
 export const HomePage = () => {
   return (
@@ -12,7 +14,14 @@ export const HomePage = () => {
         <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
           commbank.eth
         </span>
-      </h1>{" "}
+      </h1>
+
+      <div className="flex flex-row gap-2 justify-center">
+        <Button size="lg" variant={"outline"} asChild>
+          <Link to="/about">Learn more</Link>
+        </Button>
+        <Button size="lg">Sign In</Button>
+      </div>
     </PageContainer>
   );
 };

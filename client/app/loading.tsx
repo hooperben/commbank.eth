@@ -1,6 +1,6 @@
 "use client";
 
-import CommBankDotETHLogo from "@/components/commbankdotethlogo";
+import { CommBankDotETHLogo } from "@/components/commbankdotethlogo";
 
 export default function Loading() {
   return (

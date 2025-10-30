@@ -3,66 +3,45 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Home, Users, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Logo } from "./logo";
-
-// Menu items
-const items = [
-  {
-    href: "/",
-    icon: Home,
-    label: "Home",
-  },
-  {
-    href: "/account/",
-    icon: Users,
-    label: "Account",
-  },
-  {
-    href: "/settings/",
-    icon: Settings,
-    label: "Settings",
-  },
-];
+import { useSideBarItems } from "@/hooks/use-sidebar-item";
 
 export function AppSidebar() {
   const { open, isMobile } = useSidebar();
+
+  const menuBarItems = useSideBarItems();
 
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="flex justify-center text-lg font-bold px-4 py-6">
-            <div className={`flex ${!open ? "display-none" : ""}`}>
-              <Logo />
-            </div>
-            {open || isMobile ? (
-              <>
-                commbank.eth
-                <span className="ml-2 text-xs bg-primary text-white dark:text-secondary px-2 py-0.5 rounded">
-                  beta
-                </span>
-              </>
-            ) : (
-              <></>
-            )}
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="">
-              {!open && !isMobile && (
-                <SidebarMenuItem className={`${open ? "mt-4" : "ml-1"}`}>
+              <SidebarMenuItem
+                className={`flex flex-row justify-center items-center mt-4`}
+              >
+                <div className="ml-3">
                   <Logo />
-                </SidebarMenuItem>
-              )}
+                </div>
+
+                {(open || isMobile) && (
+                  <div className="flex flex-row items-baseline">
+                    <h1 className="font-primary">commbank.eth</h1>
+                    <span className="ml-2 text-xs bg-primary text-white dark:text-secondary px-2 py-0.5 rounded">
+                      beta
+                    </span>
+                  </div>
+                )}
+              </SidebarMenuItem>
+
               <div className="h-4"></div>
-              {items.map((item) => (
+              {menuBarItems.map((item) => (
                 <SidebarMenuItem key={item.href} className="py-1 px-1">
                   <SidebarMenuButton
                     asChild
