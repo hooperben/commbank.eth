@@ -1,0 +1,137 @@
+name: Build Check
+
+on:
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  # Detect which projects need to be built
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      client: ${{ steps.filter.outputs.client }}
+      client-v2: ${{ steps.filter.outputs.client-v2 }}
+      lockfile: ${{ steps.filter.outputs.lockfile }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+              - 'shared/**'
+            client:
+              - 'client/**'
+              - 'shared/**'
+            client-v2:
+              - 'client-v2/**'
+              - 'shared/**'
+            lockfile:
+              - 'bun.lock'
+
+  # Build server if changes detected
+  build-server:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        if: needs.changes.outputs.lockfile != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            server/node_modules
+          key: ${{ runner.os }}-bun-server-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-server-
+
+      - name: Install dependencies
+        if: needs.changes.outputs.lockfile == 'true'
+        working-directory: ./server
+        run: bun install
+
+      - name: Build server
+        working-directory: ./server
+        run: bun run build
+
+  # Build client if changes detected
+  build-client:
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        if: needs.changes.outputs.lockfile != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            client/node_modules
+          key: ${{ runner.os }}-bun-client-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-client-
+
+      - name: Install dependencies
+        if: needs.changes.outputs.lockfile == 'true'
+        working-directory: ./client
+        run: bun install
+
+      - name: Build client
+        working-directory: ./client
+        run: bun run build
+
+  # Build client-v2 if changes detected
+  build-client-v2:
+    needs: changes
+    if: needs.changes.outputs.client-v2 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        if: needs.changes.outputs.lockfile != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            client-v2/node_modules
+          key: ${{ runner.os }}-bun-client-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-client-v2-
+
+      - name: Install dependencies
+        if: needs.changes.outputs.lockfile == 'true'
+        working-directory: ./client-v2
+        run: bun install
+
+      - name: Build client-v2
+        working-directory: ./client-v2
+        run: bun run build
