@@ -31,9 +31,7 @@ The owning key is given by:
 const owningKey = poseidon2(wallet.privateKey);
 ```
 
-note: if you pass a wallet.privateKey > the field size for poseidon, poseidon2 should\* take the modulo for you
-
-TODO: confirm
+note: if you pass a wallet.privateKey > the field size for poseidon, poseidon2 should (TODO confirm) take the modulo for you
 
 The signing key is given by:
 
