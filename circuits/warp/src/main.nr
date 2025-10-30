@@ -1,8 +1,8 @@
 global HEIGHT: u32 = 12;
 global NOTE_COUNT: u32 = 3;
 
-use std::{collections::map::HashMap, hash::{BuildHasherDefault, poseidon2::Poseidon2Hasher}};
-use std::hash::poseidon2;
+use poseidon::poseidon2::{self, Poseidon2Hasher};
+use std::{collections::map::HashMap, hash::BuildHasherDefault};
 
 struct InputNote {
     asset_id: Field,
@@ -123,7 +123,6 @@ fn main(
             if stargate_amounts[i] != 0 {
                 assert(stargate_amounts[i] == output_notes[i].asset_amount);
             }
-
 
             let current_asset_amount = outputs_map.get(output_notes[i].asset_id).unwrap_or(0);
             outputs_map.insert(

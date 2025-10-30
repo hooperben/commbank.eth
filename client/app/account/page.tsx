@@ -1,7 +1,7 @@
 "use client";
 
 import AccountBalance from "@/components/account-balance";
-import CommBankDotETHLogo from "@/components/commbankdotethlogo";
+import { CommBankDotETHLogo } from "@/components/commbankdotethlogo";
 // TODO reimplement
 // import TransferDialog from "@/components/connected-wallet/dialog";
 import DepositModal from "@/components/deposit-modal";

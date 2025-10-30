@@ -1,0 +1,29 @@
+{
+  "name": "commbank-dot-eth",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "contracts",
+    "shared",
+    "server"
+  ],
+  "scripts": {
+    "dev": "bun run --filter client dev",
+    "build": "bun run --filter client build",
+    "build-contracts": "bun run --filter contracts build",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "typescript": "^5"
+  }
+}

@@ -6,3 +6,8 @@ target/
 
 private_key.pem
 public_key.pem
+
+notepad/*
+*.env
+
+node_modules

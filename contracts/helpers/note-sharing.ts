@@ -97,9 +97,8 @@ class NoteEncryption {
     },
     recipientSigner: Signer,
   ): Promise<EncryptedNote> {
-    const recipientPublicKey = await this.getPublicKeyFromAddress(
-      recipientSigner,
-    );
+    const recipientPublicKey =
+      await this.getPublicKeyFromAddress(recipientSigner);
     const encryptedSecret = await this.encryptNoteSecret(
       note.secret,
       recipientPublicKey,

@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+.next/
+**/.next/
+dist/
+**/dist/
+build/
+**/build/
+out/
+**/out/
+
+# Generated files
+typechain-types/
+**/typechain-types/
+
+# WASM files
+*.wasm
+*.wasm.d.ts
+
+# Lock files
+bun.lockb
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Cache
+.cache/
+**/.cache/
+
+# Coverage
+coverage/
+**/coverage/
+
+# Artifacts
+artifacts/
+**/artifacts/
+cache/
+**/cache/

@@ -1,8 +1,9 @@
 global HEIGHT: u32 = 12;
 global NOTE_COUNT: u32 = 3;
 
-use std::{collections::map::HashMap, hash::{BuildHasherDefault, poseidon2::Poseidon2Hasher}};
-use std::hash::poseidon2;
+use poseidon::poseidon2::{self, Poseidon2Hasher};
+
+use std::{collections::map::HashMap, hash::BuildHasherDefault};
 
 struct InputNote {
     asset_id: Field,
@@ -197,17 +198,19 @@ fn test_main() {
         owner: 10812186542955647827474372651967207045861174805371180171801345448553285386806,
         secret: 19536471094918068928039225564664574556680178861106125446000998678966251111926,
         asset_id: 1096978651789611665652906124278561787240579697095,
-        asset_amount: 3
+        asset_amount: 3,
     };
-    let alice_output_hash = 8576856452718270547402366094981334736141859948414539161051536617849336979212;
+    let alice_output_hash =
+        8576856452718270547402366094981334736141859948414539161051536617849336979212;
 
     let bob_output_note: OutputNote = OutputNote {
         owner: 6868973719921785236727144517868768664734231208097695530688003960085654392226,
         secret: 3957740128091467064337395812164919758932045173069261808814882570720300029469,
         asset_id: 1096978651789611665652906124278561787240579697095,
-        asset_amount: 2
+        asset_amount: 2,
     };
-    let bob_output_hash = 4033300113401483633011546954450009404136112133461230452107665732116532508739;
+    let bob_output_hash =
+        4033300113401483633011546954450009404136112133461230452107665732116532508739;
     let output_notes = [alice_output_note, bob_output_note, empty_output_note];
 
     let output_hashes = [alice_output_hash, bob_output_hash, 0];

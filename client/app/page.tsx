@@ -1,6 +1,6 @@
 "use client";
 
-import CommBankDotETHLogo from "@/components/commbankdotethlogo";
+import { CommBankDotETHLogo } from "@/components/commbankdotethlogo";
 import { Button } from "@/components/ui/button";
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { ArrowRight, XIcon, ChevronDown, ChevronUp } from "lucide-react";

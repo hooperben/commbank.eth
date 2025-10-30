@@ -17,16 +17,6 @@ export const getDepositDetails = async (depositNote: DepositNote) => {
 
   const noteHashN = BigInt(noteHash.toString());
 
-  console.log(noteHashN);
-
-  console.log({
-    hash: noteHashN.toString(),
-    asset_id: BigInt(assetId.toString()),
-    asset_amount: assetAmount.toString(),
-    owner: owner.toString(),
-    secret: secret.toString(),
-  });
-
   const { witness } = await depositNoir.execute({
     hash: noteHashN.toString(),
     asset_id: assetId.toString(),
