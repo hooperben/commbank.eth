@@ -6,11 +6,11 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Toaster } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { PageTitleProvider, usePageTitle } from "@/lib/page-title-context";
-
 import type React from "react";
+import { Toaster } from "sonner";
+import { SettingsDropdown } from "./profile/settings-dropdown";
 
 function SidebarTriggerFixed() {
   const { open, isMobile } = useSidebar();
@@ -82,8 +82,9 @@ export function AppLayout({
             description="open source, privacy enhancing financial technologies"
           />
           <AppSidebar />
-          <div className="flex flex-col w-full">
+          <div className="flex flex-col w-full min-h-screen">
             <SidebarTriggerFixed />
+            <SettingsDropdown />
             <main className="flex-1 p-6 md:p-8 pt-24 md:pt-20">{children}</main>
             <Footer />
           </div>

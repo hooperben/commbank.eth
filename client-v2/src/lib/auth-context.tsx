@@ -2,14 +2,16 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { CommbankDotETHAccount } from "./commbankdoteth-account";
+import { ethers } from "ethers";
 
 interface AuthContextType {
   isLoading: boolean;
   isSignedIn: boolean;
   token: string | null;
   address: string | null;
-  signIn: () => Promise<void>;
+  signIn: (mnemonic?: string) => Promise<void>;
   signOut: () => void;
+  getMnemonic: () => Promise<string | null>;
   isAccountManagerOpen: boolean;
   setIsAccountManagerOpen: (input: boolean) => void;
 }
@@ -51,30 +53,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const signIn = async () => {
+  const signIn = async (providedMnemonic?: string) => {
     try {
       if (!commbankDotEthAccount) {
         // TODO shouldn't happen
         setCommbankDotEthAccount(new CommbankDotETHAccount());
       }
 
-      // Authenticate with passkey and get the wallet
-      const passkeyWallet = await commbankDotEthAccount!.getPasskeyAccount();
-      const walletAddress = passkeyWallet.address;
-
-      // TODO revise?
-      const mnemonic = passkeyWallet.mnemonic?.phrase;
+      // Use provided mnemonic if available, otherwise retrieve from passkey
+      let mnemonic = providedMnemonic;
 
       if (!mnemonic) {
-        throw new Error("Failed to retrieve mnemonic from wallet");
+        mnemonic = await commbankDotEthAccount?.retrieveMnemonic();
       }
+
+      if (!mnemonic) {
+        throw new Error("Error Signing In.");
+      }
+
+      const wallet = ethers.Wallet.fromPhrase(mnemonic);
 
       const now = Math.floor(Date.now() / 1000);
       const expiresIn = 60 * 60; // 1 hour in seconds
 
       const payload = {
         username: "commbank.eth",
-        address: walletAddress,
+        address: wallet.address,
         iat: now,
         exp: now + expiresIn,
       };
@@ -100,7 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setToken(jwt);
       setIsSignedIn(true);
-      setAddress(walletAddress);
+      setAddress(wallet.address);
+
+      // wipe mnemonic and passkey from memory? I think
+      setCommbankDotEthAccount(new CommbankDotETHAccount());
+
       if (typeof window !== "undefined") {
         sessionStorage.setItem("authToken", jwt);
       }
@@ -145,6 +153,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
   };
 
+  const getMnemonic = async (): Promise<string | null> => {
+    if (!isSignedIn) {
+      return null;
+    }
+
+    try {
+      const account = commbankDotEthAccount || new CommbankDotETHAccount();
+      return await account.retrieveMnemonic();
+    } catch (error) {
+      console.error("Error retrieving mnemonic:", error);
+      return null;
+    }
+  };
+
   const signOut = () => {
     setToken(null);
     setAddress(null);
@@ -163,6 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         address,
         signIn,
         signOut,
+        getMnemonic,
         isAccountManagerOpen,
         setIsAccountManagerOpen,
       }}

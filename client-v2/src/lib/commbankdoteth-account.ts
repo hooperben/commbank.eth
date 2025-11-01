@@ -46,12 +46,12 @@ export class CommbankDotETHAccount {
 
   /**
    * Check if a passkey is registered for commbank.eth
-   * First checks localStorage, then optionally verifies with WebAuthn
+   * Checks localStorage for registered username and encrypted account data
    */
   async isRegistered(): Promise<boolean> {
     if (typeof window === "undefined") return false;
 
-    // Quick check: see if we have the username stored
+    // Check if we have the username and encrypted account stored
     const storedUsername = localStorage.getItem(
       CommbankDotETHAccount.STORAGE_KEY_USERNAME,
     );
@@ -59,21 +59,10 @@ export class CommbankDotETHAccount {
       CommbankDotETHAccount.STORAGE_KEY_ENCRYPTED,
     );
 
-    if (
+    return (
       storedUsername === CommbankDotETHAccount.USERNAME &&
-      hasEncryptedAccount
-    ) {
-      return true;
-    }
-
-    // If localStorage check fails, try a quick passkey availability check
-    // This is a non-intrusive way to check if passkeys exist
-    try {
-      const available = await this.checkPasskeyAvailability();
-      return available;
-    } catch {
-      return false;
-    }
+      hasEncryptedAccount !== null
+    );
   }
 
   /**
@@ -351,9 +340,49 @@ export class CommbankDotETHAccount {
   }
 
   /**
+   * Authenticate with passkey using Conditional UI
+   * This provides a seamless authentication experience without requiring explicit user action
+   */
+  private async authenticateWithConditionalUI(): Promise<ArrayBuffer | null> {
+    try {
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+
+      // Try conditional UI first (uses passkey without requiring explicit credential ID)
+      try {
+        const assertion = (await navigator.credentials.get({
+          publicKey: {
+            challenge,
+            rpId: CommbankDotETHAccount.RP_ID,
+            userVerification: "required",
+            timeout: 60000,
+          },
+          mediation: "conditional",
+        })) as PublicKeyCredential;
+
+        if (assertion) {
+          const response = assertion.response as AuthenticatorAssertionResponse;
+          return response.authenticatorData;
+        }
+      } catch (e) {
+        console.error(
+          "Conditional UI failed, falling back to standard method:",
+          e,
+        );
+      }
+
+      // Fall back to standard authentication if conditional UI fails
+      return this.authenticatePasskey();
+    } catch (error) {
+      console.error("Error with conditional UI authentication:", error);
+      return null;
+    }
+  }
+
+  /**
    * Check if passkeys are available without triggering authentication UI
    */
-  private async checkPasskeyAvailability(): Promise<boolean> {
+  // TODO this is not used
+  async checkPasskeyAvailability(): Promise<boolean> {
     try {
       // This is a quick, non-intrusive check
       // It doesn't trigger the authentication UI
@@ -538,5 +567,69 @@ export class CommbankDotETHAccount {
     }
     const base64 = btoa(binary);
     return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  }
+
+  /**
+   * Retrieve the decrypted mnemonic phrase using passkey authentication
+   * Uses conditional UI for a seamless authentication experience
+   *
+   * @returns The decrypted mnemonic phrase, or null if retrieval fails
+   */
+  public async retrieveMnemonic(): Promise<string> {
+    try {
+      // Try to authenticate with passkey first
+      let authData: ArrayBuffer | null = null;
+
+      // Check if there's a registered username first
+      const storedUsername = localStorage.getItem(
+        CommbankDotETHAccount.STORAGE_KEY_USERNAME,
+      );
+
+      if (storedUsername) {
+        authData = await this.authenticatePasskey();
+      }
+
+      // If no username or regular authentication failed, try conditional UI
+      if (!authData) {
+        authData = await this.authenticateWithConditionalUI();
+      }
+
+      if (!authData) {
+        throw new Error("Failed to authenticate with passkey");
+      }
+
+      // Derive the decryption key
+      const key = await this.deriveKeyFromAuthData(authData);
+
+      // Get the encrypted mnemonic from localStorage
+      if (typeof window === "undefined") throw new Error("Shouldn't happen");
+      const storedData = localStorage.getItem(
+        CommbankDotETHAccount.STORAGE_KEY_ENCRYPTED,
+      );
+      if (!storedData) {
+        throw new Error("No stored mnemonic found");
+      }
+
+      const encryptedMnemonic = JSON.parse(storedData);
+
+      // Decrypt the mnemonic
+      const iv = new Uint8Array(encryptedMnemonic.iv);
+      const encryptedData = new Uint8Array(encryptedMnemonic.data);
+
+      const decryptedData = await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv,
+        },
+        key,
+        encryptedData,
+      );
+
+      const decoder = new TextDecoder();
+      return decoder.decode(decryptedData);
+    } catch (error) {
+      console.error("Error retrieving mnemonic:", error);
+      throw new Error("Error Retrieving Mnemonic");
+    }
   }
 }
