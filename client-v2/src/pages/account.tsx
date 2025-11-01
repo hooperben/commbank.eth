@@ -34,18 +34,17 @@ export const AccountPage = () => {
     console.log("Open receive modal");
   };
 
-  const handleAssetBreakdownClick = () => {
-    setShowAssetBreakdown(!showAssetBreakdown);
-  };
-
   return (
     <PageContainer {...PAGE_METADATA.account}>
-      <div className="space-y-6 max-w-2xl mx-auto">
+      <div className="space-y-1 max-w-2xl mx-auto">
         <BalanceCard
           balance={balanceData?.balance || "$0.00"}
           usdValue={balanceData?.usdValue || "USD"}
           isLoading={isLoadingBalance}
-          onAssetBreakdownClick={handleAssetBreakdownClick}
+          isSwitched={showAssetBreakdown}
+          onAssetBreakdownClick={() =>
+            setShowAssetBreakdown(!showAssetBreakdown)
+          }
         />
 
         <ActionButtons

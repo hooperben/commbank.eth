@@ -1,11 +1,12 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface BalanceCardProps {
   balance: string;
   usdValue: string;
   isLoading?: boolean;
+  isSwitched?: boolean;
   onAssetBreakdownClick?: () => void;
 }
 
@@ -13,35 +14,42 @@ export function BalanceCard({
   balance,
   usdValue,
   isLoading,
+  isSwitched,
   onAssetBreakdownClick,
 }: BalanceCardProps) {
   if (isLoading) {
     return (
-      <Card className="backdrop-blur-xl bg-background/40 border-border/50">
-        <CardContent className="p-8">
-          <Skeleton className="h-12 w-48 mb-4" />
-          <Skeleton className="h-6 w-32" />
+      <Card className="bg-background border-0 shadow-none">
+        <CardContent className="p-0 pt-6">
+          <Skeleton className="h-16 w-48 mb-2" />
+          <Skeleton className="h-5 w-32" />
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="backdrop-blur-xl bg-background/40 border-border/50 shadow-lg">
-      <CardContent className="p-8">
-        <div className="space-y-2">
-          <h2 className="text-5xl font-bold tracking-tight">{balance}</h2>
-          <p className="text-muted-foreground text-lg">{usdValue}</p>
+    <Card className="flex bg-background border-0 shadow-none w-full flex-col">
+      <CardContent className="p-0">
+        <div className="space-y-4">
+          <h2 className="text-7xl font-light tracking-tight text-foreground">
+            {balance}
+          </h2>
+          <p className="text-sm text-muted-foreground font-normal">
+            {usdValue}
+          </p>
         </div>
-
-        <button
-          onClick={onAssetBreakdownClick}
-          className="mt-6 flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-        >
-          Asset Breakdown
-          <ChevronRight className="h-4 w-4" />
-        </button>
       </CardContent>
+      <CardFooter className="flex w-full justify-end">
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-xs"
+          onClick={onAssetBreakdownClick}
+        >
+          {isSwitched ? "Hide" : "Show"} Asset Balances
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

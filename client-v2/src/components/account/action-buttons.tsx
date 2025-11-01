@@ -6,40 +6,29 @@ interface ActionButtonsProps {
   onReceiveClick: () => void;
 }
 
-export function ActionButtons({ onSendClick, onReceiveClick }: ActionButtonsProps) {
+export function ActionButtons({
+  onSendClick,
+  onReceiveClick,
+}: ActionButtonsProps) {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="flex flex-row gap-2 space-x-2 w-full justify-center">
       <Button
         onClick={onSendClick}
         size="lg"
-        className="h-16 text-lg font-semibold rounded-2xl backdrop-blur-xl bg-background/40 border border-border/50 shadow-lg hover:shadow-xl hover:bg-background/60 hover:border-border/80 hover:scale-105 active:scale-95 transition-all duration-300 ease-out relative overflow-hidden
-          before:absolute before:inset-0
-          before:bg-gradient-to-br before:from-white/10 before:to-transparent
-          before:opacity-0 hover:before:opacity-100
-          before:transition-opacity before:duration-300
-          after:absolute after:inset-0
-          after:bg-gradient-to-tr after:from-transparent after:via-white/5 after:to-white/10
-          after:opacity-60"
+        className="min-w-[200px] text-sm font-medium rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors duration-200 shadow-none border-0"
       >
-        <ArrowUpFromLine className="mr-2 h-5 w-5" />
-        SEND
+        <ArrowUpFromLine className="mr-2 h-4 w-4" />
+        Send
       </Button>
 
       <Button
         onClick={onReceiveClick}
         size="lg"
         variant="outline"
-        className="h-16 text-lg font-semibold rounded-2xl backdrop-blur-xl bg-background/40 border border-border/50 shadow-lg hover:shadow-xl hover:bg-background/60 hover:border-border/80 hover:scale-105 active:scale-95 transition-all duration-300 ease-out relative overflow-hidden
-          before:absolute before:inset-0
-          before:bg-gradient-to-br before:from-white/10 before:to-transparent
-          before:opacity-0 hover:before:opacity-100
-          before:transition-opacity before:duration-300
-          after:absolute after:inset-0
-          after:bg-gradient-to-tr after:from-transparent after:via-white/5 after:to-white/10
-          after:opacity-60"
+        className="min-w-[200px] text-sm font-medium rounded-lg bg-muted border-0 text-foreground hover:bg-muted/80 transition-colors duration-200"
       >
-        <ArrowDownToLine className="mr-2 h-5 w-5" />
-        RECEIVE
+        <ArrowDownToLine className="mr-2 h-4 w-4" />
+        Receive
       </Button>
     </div>
   );

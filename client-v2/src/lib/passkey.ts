@@ -1,5 +1,3 @@
-"use client";
-
 // Function to register a new passkey
 export async function registerPasskey(username: string): Promise<boolean> {
   try {

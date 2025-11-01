@@ -1,5 +1,3 @@
-"use client";
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { CommbankDotETHAccount } from "./commbankdoteth-account";
 import { ethers } from "ethers";
