@@ -69,7 +69,7 @@ export const HomePage = () => {
       await signIn();
     },
     onSuccess: () => {
-      toast.success("Signed in successfully!");
+      toast.success("Successfully signed in.");
       navigate("/account");
     },
     onError: (error) => {

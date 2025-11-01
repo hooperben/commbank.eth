@@ -17,7 +17,9 @@ export function SettingsDropdown() {
 
   const handleLogout = () => {
     signOut();
-    toast.success("Logged out successfully");
+    toast.success("Logged out successfully", {
+      description: "Have a nice day!",
+    });
     navigate("/");
   };
 

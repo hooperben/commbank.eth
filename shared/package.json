@@ -6,7 +6,8 @@
   "types": "./classes/commbankdoteth.ts",
   "exports": {
     ".": "./classes/commbankdoteth.ts",
-    "./classes/*": "./classes/*.ts"
+    "./classes/*": "./classes/*.ts",
+    "./constants/*": "./constants/*.ts"
   },
   "dependencies": {
     "contracts": "workspace:*"

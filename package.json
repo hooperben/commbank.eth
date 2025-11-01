@@ -4,6 +4,7 @@
   "private": true,
   "workspaces": [
     "client",
+    "client-v2",
     "contracts",
     "shared",
     "server"
