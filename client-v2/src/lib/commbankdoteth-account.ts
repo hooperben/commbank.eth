@@ -91,21 +91,25 @@ export class CommbankDotETHAccount {
       }
 
       // Register the passkey
-      const credential = await this.createPasskeyCredential();
-      if (!credential) {
+      const result = await this.createPasskeyCredential();
+      if (!result) {
         throw new Error("Failed to create passkey credential");
       }
+
+      const { credential } = result;
 
       // Extract and store credential info for disaster recovery
       await this.storeCredentialInfo(credential, randomWallet.address);
 
-      // Authenticate immediately to get authenticator data for encryption
+      // Authenticate to get consistent authenticator data for encryption
+      // Note: We must authenticate (not use creation data) because the authenticator data
+      // structure differs between creation and assertion, which would cause decryption to fail
       const authData = await this.authenticatePasskey();
       if (!authData) {
         throw new Error("Failed to authenticate with new passkey");
       }
 
-      // Encrypt and store the mnemonic
+      // Encrypt and store the mnemonic using the authenticator data from authentication
       await this.encryptAndStoreAccount(authData, mnemonic);
 
       // Store the username
@@ -176,15 +180,17 @@ export class CommbankDotETHAccount {
 
       if (!isRegistered) {
         // If no passkey exists, register one first
-        const credential = await this.createPasskeyCredential();
-        if (!credential) {
+        const result = await this.createPasskeyCredential();
+        if (!result) {
           throw new Error("Failed to create passkey credential");
         }
+
+        const { credential } = result;
 
         // Store credential info for disaster recovery
         await this.storeCredentialInfo(credential, wallet.address);
 
-        // Get auth data from new passkey
+        // Authenticate to get consistent authenticator data
         const newAuthData = await this.authenticatePasskey();
         if (!newAuthData) {
           throw new Error("Failed to authenticate with new passkey");
@@ -266,9 +272,12 @@ export class CommbankDotETHAccount {
   // ========== Private Helper Methods ==========
 
   /**
-   * Create a new WebAuthn passkey credential
+   * Create a new WebAuthn passkey credential and return both credential and authenticator data
    */
-  private async createPasskeyCredential(): Promise<PublicKeyCredential | null> {
+  private async createPasskeyCredential(): Promise<{
+    credential: PublicKeyCredential;
+    authData: ArrayBuffer;
+  } | null> {
     const challenge = crypto.getRandomValues(new Uint8Array(32));
 
     const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions =
@@ -301,7 +310,15 @@ export class CommbankDotETHAccount {
         publicKey: publicKeyCredentialCreationOptions,
       })) as PublicKeyCredential;
 
-      return credential;
+      if (!credential) {
+        return null;
+      }
+
+      // Extract authenticator data from the attestation response
+      const response = credential.response as AuthenticatorAttestationResponse;
+      const authData = response.getAuthenticatorData();
+
+      return { credential, authData };
     } catch (error) {
       console.error("Failed to create passkey:", error);
       return null;
@@ -336,74 +353,6 @@ export class CommbankDotETHAccount {
     } catch (error) {
       console.error("Failed to authenticate with passkey:", error);
       return null;
-    }
-  }
-
-  /**
-   * Authenticate with passkey using Conditional UI
-   * This provides a seamless authentication experience without requiring explicit user action
-   */
-  private async authenticateWithConditionalUI(): Promise<ArrayBuffer | null> {
-    try {
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-
-      // Try conditional UI first (uses passkey without requiring explicit credential ID)
-      try {
-        const assertion = (await navigator.credentials.get({
-          publicKey: {
-            challenge,
-            rpId: CommbankDotETHAccount.RP_ID,
-            userVerification: "required",
-            timeout: 60000,
-          },
-          mediation: "conditional",
-        })) as PublicKeyCredential;
-
-        if (assertion) {
-          const response = assertion.response as AuthenticatorAssertionResponse;
-          return response.authenticatorData;
-        }
-      } catch (e) {
-        console.error(
-          "Conditional UI failed, falling back to standard method:",
-          e,
-        );
-      }
-
-      // Fall back to standard authentication if conditional UI fails
-      return this.authenticatePasskey();
-    } catch (error) {
-      console.error("Error with conditional UI authentication:", error);
-      return null;
-    }
-  }
-
-  /**
-   * Check if passkeys are available without triggering authentication UI
-   */
-  // TODO this is not used
-  async checkPasskeyAvailability(): Promise<boolean> {
-    try {
-      // This is a quick, non-intrusive check
-      // It doesn't trigger the authentication UI
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-
-      const result = await Promise.race([
-        navigator.credentials.get({
-          publicKey: {
-            challenge,
-            rpId: CommbankDotETHAccount.RP_ID,
-            userVerification: "required",
-            timeout: 3000,
-          },
-          mediation: "conditional", // This prevents the UI from showing
-        }),
-        new Promise((resolve) => setTimeout(() => resolve(null), 3000)),
-      ]);
-
-      return result !== null;
-    } catch {
-      return false;
     }
   }
 
@@ -571,28 +520,13 @@ export class CommbankDotETHAccount {
 
   /**
    * Retrieve the decrypted mnemonic phrase using passkey authentication
-   * Uses conditional UI for a seamless authentication experience
    *
    * @returns The decrypted mnemonic phrase, or null if retrieval fails
    */
   public async retrieveMnemonic(): Promise<string> {
     try {
-      // Try to authenticate with passkey first
-      let authData: ArrayBuffer | null = null;
-
-      // Check if there's a registered username first
-      const storedUsername = localStorage.getItem(
-        CommbankDotETHAccount.STORAGE_KEY_USERNAME,
-      );
-
-      if (storedUsername) {
-        authData = await this.authenticatePasskey();
-      }
-
-      // If no username or regular authentication failed, try conditional UI
-      if (!authData) {
-        authData = await this.authenticateWithConditionalUI();
-      }
+      // Authenticate with passkey
+      const authData = await this.authenticatePasskey();
 
       if (!authData) {
         throw new Error("Failed to authenticate with passkey");

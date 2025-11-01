@@ -13,9 +13,15 @@ import { Logo } from "./logo";
 import { useSideBarItems } from "@/hooks/use-sidebar-item";
 
 export function AppSidebar() {
-  const { open, isMobile } = useSidebar();
+  const { open, isMobile, setOpenMobile } = useSidebar();
 
   const menuBarItems = useSideBarItems();
+
+  const handleMenuClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -69,7 +75,7 @@ export function AppSidebar() {
                       after:opacity-60
                     `}
                   >
-                    <Link to={item.href}>
+                    <Link to={item.href} onClick={handleMenuClick}>
                       <item.icon
                         className={`h-4 w-4 ${open ? "ml-3 h-10" : ""}`}
                       />

@@ -1,0 +1,40 @@
+  <svg
+    width="500"
+    height="500"
+    viewBox="90 70 220 260"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    aria-hidden="true"
+    role="img"
+    aria-label="Pulsating triangle. Click to toggle animation."
+  >
+    <g transform="translate(200, 200) rotate(30)">
+      <path
+        d="M0,-150 L130,75 L-130,75 Z"
+        fill="#000"
+      />
+      <path
+        d="M0,-120 L104,60 L-104,60 Z"
+        stroke="#000"
+        fill="#e7e7ea"
+        strokeWidth="2"
+      />
+
+      <path
+        d="M0,-90 L78,45 L-78,45 Z"
+        fill="#8b8b8d"
+        strokeWidth="2"
+      />
+
+      <path
+        d="M0,-60 L52,30 L-52,30 Z"
+        fill="black"
+        strokeWidth="2"
+      />
+      <path
+        d="M0,-30 L26,15 L-26,15 Z"
+        strokeWidth="2"
+        fill="#fff"
+      />
+    </g>
+  </svg>

@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 export const HomePage = () => {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, isSignedIn } = useAuth();
 
   const [isPasskeySupported, setIsPassKeySupported] = useState(true);
 
@@ -39,10 +39,17 @@ export const HomePage = () => {
       if (!wallet) {
         throw new Error("Failed to register passkey");
       }
-      return wallet;
+
+      // Sign in automatically after registration
+      // Note: registerPasskey already authenticates once to encrypt the mnemonic,
+      // so we pass the mnemonic here to avoid a third authentication
+      const mnemonic = wallet.mnemonic?.phrase;
+      if (!mnemonic) {
+        throw new Error("Failed to get mnemonic from wallet");
+      }
+      await signIn(mnemonic);
     },
-    onSuccess: (account) => {
-      console.log(account);
+    onSuccess: () => {
       toast.success("Account created successfully!");
       navigate("/account");
     },
@@ -60,11 +67,8 @@ export const HomePage = () => {
   const signInMutation = useMutation({
     mutationFn: async () => {
       await signIn();
-      const account = new CommbankDotETHAccount();
-      return await account.getPasskeyAccount();
     },
-    onSuccess: (account) => {
-      console.log(account);
+    onSuccess: () => {
       toast.success("Signed in successfully!");
       navigate("/account");
     },
@@ -83,8 +87,11 @@ export const HomePage = () => {
 
     if (!isRegistered) {
       signUpMutation.mutate();
-    } else {
+    } else if (isRegistered && !isSignedIn) {
       signInMutation.mutate();
+    } else if (isSignedIn) {
+      // Already signed in, just navigate to account page
+      navigate("/account");
     }
   };
 
@@ -95,7 +102,7 @@ export const HomePage = () => {
 
   return (
     <PageContainer {...PAGE_METADATA.home}>
-      <div className="mb-8 transform transition-all duration-1000 delay-300 flex w-full justify-center">
+      <div className="transform transition-all duration-1000 delay-300 flex w-full justify-center ml-4">
         <Logo height={400} width={400} />
       </div>
       <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 transform transition-all duration-1000 delay-500">
@@ -126,13 +133,9 @@ export const HomePage = () => {
             disabled={isLoading}
             className="min-w-28"
           >
-            {isLoading ? (
-              <Loader2 className="size-5 animate-spin" />
-            ) : !isRegistered ? (
-              "Sign Up"
-            ) : (
-              "Sign In"
-            )}
+            {isLoading && <Loader2 className="size-5 animate-spin" />}
+
+            {isRegistered ? (isSignedIn ? "My Account" : "Sign In") : "Sign Up"}
           </Button>
         )}
       </div>
