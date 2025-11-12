@@ -2,6 +2,11 @@
 
 pragma solidity >=0.6.0;
 
+// THIS LIBRARY WAS PROVIDED BY THE GIGABRAINS AT:
+// https://github.com/zemse/poseidon2-evm
+
+// GO AND STAR THEM !!
+
 contract Poseidon2Yul {
   fallback() external {
     assembly {

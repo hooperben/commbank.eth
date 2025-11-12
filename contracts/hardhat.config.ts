@@ -7,9 +7,9 @@ import { configVariable, defineConfig } from "hardhat/config";
 export default defineConfig({
   plugins: [hardhatToolboxMochaEthersPlugin, HardhatIgnitionEthersPlugin],
   solidity: {
-    compilers: [
-      {
-        version: "0.8.24",
+    profiles: {
+      default: {
+        version: "0.8.28",
         settings: {
           optimizer: {
             enabled: true,
@@ -17,8 +17,8 @@ export default defineConfig({
           },
         },
       },
-      {
-        version: "0.8.21",
+      production: {
+        version: "0.8.28",
         settings: {
           optimizer: {
             enabled: true,
@@ -26,28 +26,13 @@ export default defineConfig({
           },
         },
       },
-      {
-        version: "0.8.27",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 100,
-          },
-        },
-      },
-    ],
+    },
   },
   networks: {
-    hardhat: {
-      type: "edr-simulated",
-    },
     sepolia: {
       type: "http",
       url: configVariable("SEPOLIA_RPC_URL"),
-      accounts: [configVariable("DEMO_MNEMONIC_ALICE")],
-      // accounts: {
-      //   mnemonic: process.env.DEMO_MNEMONIC_ALICE!,
-      // },
+      accounts: [configVariable("EVM_PRIVATE_KEY")],
     },
   },
 });
