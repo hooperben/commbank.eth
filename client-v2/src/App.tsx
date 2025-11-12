@@ -9,6 +9,7 @@ import { AccountPage } from "./pages/account";
 import { SettingsPage } from "./pages/settings";
 import { ThemeProvider } from "./components/theme-provider";
 import { AboutPage } from "./pages/about";
+import TestingPage from "./pages/testing";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,8 @@ function App() {
                 <Route path="/account" element={<AccountPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/about" element={<AboutPage />} />
+                {/* TODO remove once confirmed that everything works */}
+                <Route path="/testing" element={<TestingPage />} />
               </Routes>
             </AppLayout>
           </AuthProvider>
