@@ -2,18 +2,18 @@ import { Button } from "@/components/ui/button";
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
 interface ActionButtonsProps {
-  onSendClick: () => void;
+  onEncryptClick: () => void;
   onReceiveClick: () => void;
 }
 
 export function ActionButtons({
-  onSendClick,
+  onEncryptClick,
   onReceiveClick,
 }: ActionButtonsProps) {
   return (
     <div className="flex flex-row gap-2 space-x-2 w-full justify-center">
       <Button
-        onClick={onSendClick}
+        onClick={onEncryptClick}
         size="lg"
         className="min-w-[200px] text-sm font-medium rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors duration-200 shadow-none border-0"
       >

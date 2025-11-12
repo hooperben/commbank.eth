@@ -2,6 +2,7 @@ import { ActionButtons } from "@/components/account/action-buttons";
 import { AssetBreakdown } from "@/components/account/asset-breakdown";
 import { BalanceCard } from "@/components/account/balance-card";
 import { RecentTransactions } from "@/components/account/recent-transactions";
+import { EncryptModal } from "@/components/encrypt/encrypt-modal";
 import PageContainer from "@/components/page-container";
 import { useAuth } from "@/lib/auth-context";
 import { PAGE_METADATA } from "@/lib/seo-config";
@@ -10,7 +11,7 @@ import { useState } from "react";
 
 export const AccountPage = () => {
   const [showAssetBreakdown, setShowAssetBreakdown] = useState(false);
-  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [showEncryptModal, setShowEncryptModal] = useState(false);
 
   const { address, privateAddress } = useAuth();
 
@@ -27,9 +28,8 @@ export const AccountPage = () => {
     },
   });
 
-  const handleSendClick = () => {
-    setIsSendModalOpen(!isSendModalOpen);
-    console.log("handle encrypt", isSendModalOpen);
+  const handleEncryptClick = () => {
+    setShowEncryptModal(!showEncryptModal);
   };
 
   const handleReceiveClick = () => {
@@ -56,8 +56,13 @@ export const AccountPage = () => {
         )}
 
         <ActionButtons
-          onSendClick={handleSendClick}
+          onEncryptClick={handleEncryptClick}
           onReceiveClick={handleReceiveClick}
+        />
+
+        <EncryptModal
+          open={showEncryptModal}
+          onOpenChange={setShowEncryptModal}
         />
 
         {showAssetBreakdown && <AssetBreakdown />}
