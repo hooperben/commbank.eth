@@ -1,16 +1,15 @@
-import { Fr } from "@aztec/foundation/fields";
-import { poseidon2Hash } from "@aztec/foundation/crypto";
+import { poseidon2Hash } from "@zkpassport/poseidon2";
 
 export class PoseidonMerkleTree {
   private levels: number;
-  private hashMap: Map<string, Fr>;
-  private defaultNodes: Fr[];
+  private hashMap: Map<string, bigint>;
+  private defaultNodes: bigint[];
   private nextIndex: number;
   private currentRootIndex: number;
-  private filledSubtrees: Record<string, Fr | null>;
-  private roots: Record<string, Fr>;
-  private leaves: Fr[];
-  private zeros: Fr | null;
+  private filledSubtrees: Record<string, bigint | null>;
+  private roots: Record<string, bigint>;
+  private leaves: bigint[];
+  private zeros: bigint | null;
   public insertedLeaves: Set<number>;
 
   constructor(levels: number) {
@@ -30,13 +29,13 @@ export class PoseidonMerkleTree {
   private async initializeDefaultNodes() {
     // Initialize with the same zero value used in Solidity
     // ZERO_VALUE = keccak256(abi.encodePacked("TANGERINE")) % FIELD_MODULUS
-    this.defaultNodes[0] = Fr.fromString(
+    this.defaultNodes[0] = BigInt(
       "0x1e2856f9f722631c878a92dc1d84283d04b76df3e1831492bdf7098c1e65e478",
     );
 
     // Calculate default nodes for each level
     for (let i = 1; i < this.levels; i++) {
-      this.defaultNodes[i] = await poseidon2Hash([
+      this.defaultNodes[i] = poseidon2Hash([
         this.defaultNodes[i - 1],
         this.defaultNodes[i - 1],
       ]);
@@ -53,10 +52,7 @@ export class PoseidonMerkleTree {
     }
 
     // Convert input to Fr type
-    let value =
-      typeof leaf === "string"
-        ? Fr.fromString(leaf)
-        : Fr.fromString(leaf.toString());
+    let value = BigInt(leaf);
 
     // Track this leaf as inserted
     this.insertedLeaves.add(index);
@@ -79,7 +75,7 @@ export class PoseidonMerkleTree {
       }
 
       // Calculate parent hash
-      currentHash = await poseidon2Hash(
+      currentHash = poseidon2Hash(
         isLeft ? [currentHash, sibling] : [sibling, currentHash],
       );
 
@@ -89,7 +85,7 @@ export class PoseidonMerkleTree {
     }
   }
 
-  public async getRoot(): Promise<Fr> {
+  public async getRoot(): Promise<bigint> {
     const rootKey = this.getKey(this.levels - 1, 0);
     const root = this.hashMap.get(rootKey);
     return root || this.defaultNodes[this.levels - 1];
@@ -97,12 +93,12 @@ export class PoseidonMerkleTree {
 
   public async getProof(
     index: number,
-  ): Promise<{ siblings: Fr[]; indices: number[] }> {
+  ): Promise<{ siblings: bigint[]; indices: number[] }> {
     if (index < 0 || index >= 2 ** this.levels) {
       throw new Error("Leaf index out of bounds");
     }
 
-    const siblings: Fr[] = [];
+    const siblings: bigint[] = [];
     const indices: number[] = [];
     let currentIndex = index;
 
@@ -125,15 +121,11 @@ export class PoseidonMerkleTree {
   }
 
   public static async verifyProof(
-    root: Fr,
+    root: bigint,
     leaf: bigint | string,
-    proof: { siblings: Fr[]; indices: number[] },
+    proof: { siblings: bigint[]; indices: number[] },
   ): Promise<boolean> {
-    let value =
-      typeof leaf === "string"
-        ? Fr.fromString(leaf)
-        : Fr.fromString(leaf.toString());
-    let currentHash = value;
+    let currentHash = typeof leaf === "string" ? BigInt(leaf) : leaf;
 
     for (let i = 0; i < proof.siblings.length; i++) {
       currentHash = await poseidon2Hash(
@@ -143,10 +135,10 @@ export class PoseidonMerkleTree {
       );
     }
 
-    return currentHash.equals(root);
+    return currentHash == root;
   }
 
-  public async getLeafValue(leafIndex: number): Promise<Fr> {
+  public async getLeafValue(leafIndex: number): Promise<bigint> {
     if (leafIndex < 0 || leafIndex >= 2 ** this.levels) {
       throw new Error("Leaf index out of bounds");
     }
@@ -214,14 +206,14 @@ export class PoseidonMerkleTree {
     tree.hashMap.clear();
     if (data.hashMap) {
       for (const [key, valueString] of Object.entries(data.hashMap)) {
-        tree.hashMap.set(key, Fr.fromString(valueString as string));
+        tree.hashMap.set(key, BigInt(valueString as string));
       }
     }
 
     // Restore defaultNodes
     if (data.defaultNodes) {
       tree.defaultNodes = (data.defaultNodes as string[]).map((nodeString) =>
-        Fr.fromString(nodeString),
+        BigInt(nodeString),
       );
     }
 

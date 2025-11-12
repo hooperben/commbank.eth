@@ -1,5 +1,5 @@
-import { loadPoseidon } from "@/helpers/load-poseidon";
-import { DepositNote } from "..";
+import { poseidon2Hash } from "@zkpassport/poseidon2";
+import { DepositNote } from "@/types/notes";
 import { Deposit } from "shared/classes/Deposit";
 
 export const getDepositDetails = async (depositNote: DepositNote) => {
@@ -9,9 +9,7 @@ export const getDepositDetails = async (depositNote: DepositNote) => {
 
   await deposit.depositNoir.init();
 
-  const poseidonHash = await loadPoseidon();
-
-  const noteHash = await poseidonHash([
+  const noteHash = poseidon2Hash([
     BigInt(assetId),
     BigInt(assetAmount),
     BigInt(owner),

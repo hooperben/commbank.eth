@@ -1,9 +1,8 @@
 import { ERC20__factory, USDC } from "@/typechain-types";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "hardhat";
+import { ethers } from "ethers";
 
 export const approve = async (
-  account: HardhatEthersSigner,
+  account: ethers.Signer,
   erc20Address: string,
   spender: string,
   amount: bigint,

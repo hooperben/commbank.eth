@@ -15,9 +15,10 @@ import "./PoseidonMerkleTree.sol";
 import {IVerifier} from "./verifiers/DepositVerifier.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+
+import "hardhat/console.sol";
 
 contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
   IVerifier depositVerifier;
@@ -56,7 +57,8 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     bytes32[] calldata _publicInputs,
     bytes[] calldata _payload
   ) public onlyRole(DEPOSIT_ROLE) {
-    bool depositTransfer = ERC20(_erc20).transferFrom(
+    console.log(_erc20);
+    bool depositTransfer = IERC20(_erc20).transferFrom(
       msg.sender,
       address(this),
       _amount
@@ -171,7 +173,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
 
       if (exitAmount > 0) {
         // Transfer tokens to the exit address
-        bool success = ERC20(exitAsset).transfer(exitAddress, exitAmount);
+        bool success = IERC20(exitAsset).transfer(exitAddress, exitAmount);
         require(success, "Token transfer failed");
       }
     }

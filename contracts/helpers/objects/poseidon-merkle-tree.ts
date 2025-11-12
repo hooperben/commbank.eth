@@ -7,7 +7,7 @@ const ZERO_VALUE =
   BigInt("0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001");
 
 const LEVELS = 12;
-const TREE_CACHE_PATH = path.join(__dirname, "../../cache/full-tree.json");
+const TREE_CACHE_PATH = path.join("./cache/full-tree.json");
 
 export const getMerkleTree = async () => {
   // Try to load existing tree first

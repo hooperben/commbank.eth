@@ -1,5 +1,3 @@
-import { Fr } from "@aztec/foundation/fields";
-
 export const createInputNote = (
   assetId: bigint | string,
   amount: bigint | string,
@@ -7,7 +5,7 @@ export const createInputNote = (
   ownerSecret: bigint | string,
   secret: bigint | string,
   leafIndex: bigint | string,
-  path: bigint[] | string[] | Fr[],
+  path: bigint[] | string[],
   pathIndices: bigint[] | number[],
 ) => {
   return {

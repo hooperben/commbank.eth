@@ -1,35 +1,23 @@
-import { deployMockTokens } from "@/helpers/test-suite/deploy-mock-tokens";
-import { deployVerifiers } from "@/helpers/test-suite/deploy-verifiers";
-import { getNoirClasses } from "@/helpers/test-suite/get-noir-classes";
-import { getMerkleTree } from "@/helpers/test-suite/merkle";
-import { CommBankDotEth } from "@/typechain-types";
-import { ethers } from "hardhat";
-import { loadPoseidon } from "./load-poseidon";
-import { deployCommbankDotEth } from "./test-suite/deploy-commbank-dot-eth";
+import { getNoirClasses } from "@/helpers/objects/get-noir-classes";
+import { getMerkleTree } from "@/helpers/objects/poseidon-merkle-tree";
+import hre from "hardhat";
+import CommbankDotEthModule from "@/ignition/modules/CommbankDotEth";
+import TokensModule from "@/ignition/modules/Tokens";
 
 export const getTestingAPI = async () => {
-  const Signers = await ethers.getSigners();
-  const verifiers = await deployVerifiers();
+  const connection = await hre.network.connect();
+  const Signers = await connection.ethers.getSigners();
 
   const deployer1Secret =
     "0x1234567890123456789012345678901234567890123456789012345678901234";
   const deployer2Secret =
     "0x9876543210987654321098765432109876543210987654321098765432109876";
 
-  const poseidonHash = await loadPoseidon();
+  const { usdcDeployment, fourDecDeployment } =
+    await connection.ignition.deploy(TokensModule);
 
-  const {
-    usdcDeployment,
-    lzOFTDeploymentBase,
-    lzOFTDeploymentRemote,
-    fourDecDeployment,
-  } = await deployMockTokens();
-
-  const commbankDotEth = (await deployCommbankDotEth(
-    verifiers.deposit,
-    verifiers.transfer,
-    verifiers.withdraw,
-  )) as unknown as CommBankDotEth;
+  const { commbankDotEth } =
+    await connection.ignition.deploy(CommbankDotEthModule);
 
   const {
     depositNoir,
@@ -48,8 +36,6 @@ export const getTestingAPI = async () => {
     commbankDotEth,
     usdcDeployment,
     fourDecDeployment,
-    lzOFTDeploymentBase,
-    lzOFTDeploymentRemote,
     depositNoir,
     depositBackend,
     transferNoir,
@@ -59,7 +45,6 @@ export const getTestingAPI = async () => {
     warpNoir,
     warpBackend,
     Signers,
-    poseidonHash,
     tree,
     deployer1Secret,
     deployer2Secret,

@@ -1,5 +1,5 @@
-import { InputNote } from "..";
-import { loadPoseidon } from "@/helpers/load-poseidon";
+import { InputNote } from "@/types/notes";
+import { poseidon2Hash } from "@zkpassport/poseidon2";
 
 // Function overloads
 export async function getNullifier(note: InputNote): Promise<bigint>;
@@ -20,8 +20,6 @@ export async function getNullifier(
   assetId?: bigint | string,
   amount?: bigint | string,
 ): Promise<bigint> {
-  const poseidonHash = await loadPoseidon();
-
   let leafIndex: bigint | string;
   let noteOwner: bigint | string;
   let noteSecret: bigint | string;
@@ -59,7 +57,7 @@ export async function getNullifier(
     noteAmount = amount;
   }
 
-  const nullifier = await poseidonHash([
+  const nullifier = poseidon2Hash([
     BigInt(leafIndex),
     BigInt(noteOwner),
     BigInt(noteSecret),

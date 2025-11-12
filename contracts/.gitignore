@@ -8,6 +8,7 @@ node_modules
 # TypeChain files
 /typechain
 /typechain-types
+types/ethers-contracts/
 
 # solidity-coverage files
 /coverage

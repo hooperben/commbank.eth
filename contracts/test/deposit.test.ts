@@ -3,33 +3,32 @@ import { getDepositDetails } from "@/helpers/functions/deposit";
 import { createDepositPayload } from "@/helpers/functions/transfer";
 import { getTestingAPI } from "@/helpers/get-testing-api";
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
-import { CommBankDotEth, USDC } from "@/typechain-types";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { expect } from "chai";
+import { ethers } from "ethers";
 
 describe("Testing deposit functionality", () => {
-  let Signers: HardhatEthersSigner[];
-  let poseidonHash: (inputs: bigint[]) => Promise<{ toString(): string }>;
+  let Signers: [];
 
-  let commbankDotEth: CommBankDotEth;
-  let usdcDeployment: USDC;
+  let commbankDotEth: ethers.Contract;
+  let usdcDeployment: ethers.Contract;
 
   let tree: PoseidonMerkleTree;
 
-  beforeEach(async () => {
-    ({ commbankDotEth, Signers, usdcDeployment, poseidonHash, tree } =
-      await getTestingAPI());
+  before(async () => {
+    ({ commbankDotEth, Signers, usdcDeployment, tree } = await getTestingAPI());
   });
 
   it("testing note proving in typescript", async () => {
     const assetId = await usdcDeployment.getAddress();
+
     const assetAmount = 5_000_000n;
 
     const secret =
       2389312107716289199307843900794656424062350252250388738019021107824217896920n;
     const ownerSecret =
       10036677144260647934022413515521823129584317400947571241312859176539726523915n;
-    const owner = BigInt((await poseidonHash([ownerSecret])).toString());
+    const owner = BigInt(poseidon2Hash([ownerSecret]).toString());
 
     // create the ZK proof
     const { proof } = await getDepositDetails({
@@ -39,17 +38,9 @@ describe("Testing deposit functionality", () => {
       owner,
     });
 
-    // approve PSF to move the deposit token
-    await approve(
-      Signers[0],
-      await usdcDeployment.getAddress(),
+    await usdcDeployment.approve(
       await commbankDotEth.getAddress(),
       assetAmount,
-    );
-
-    // check our balances beforehand
-    const usdcBalanceBefore = await usdcDeployment.balanceOf(
-      Signers[0].address,
     );
 
     // create encrypted payload for the deposited note
@@ -62,6 +53,13 @@ describe("Testing deposit functionality", () => {
       },
       Signers[0],
     );
+
+    // check our balances beforehand
+    const usdcBalanceBefore = await usdcDeployment.balanceOf(
+      Signers[0].address,
+    );
+
+    console.log(usdcBalanceBefore);
 
     // call the deposit TX
     await commbankDotEth.deposit(
@@ -91,7 +89,7 @@ describe("Testing deposit functionality", () => {
       2389312107716289199307843900794656424062350252250388738019021107824217896920n;
     const ownerSecret =
       10036677144260647934022413515521823129584317400947571241312859176539726523915n;
-    const owner = BigInt((await poseidonHash([ownerSecret])).toString());
+    const owner = BigInt(poseidon2Hash([ownerSecret]).toString());
 
     // create the ZK proof
     const { proof } = await getDepositDetails({
