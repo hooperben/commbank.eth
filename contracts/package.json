@@ -1,8 +1,7 @@
 {
   "name": "contracts",
   "scripts": {
-    "build-bb": "./scripts/bash/build-and-export-circuits.sh",
-    "build": "bun run scripts/ts-sol-verifier-create.ts",
+    "build": "./scripts/bash/build-and-export-circuits.sh",
     "build-ipfs": "ts-node scripts/build.ts",
     "deploy": "ts-node scripts/deploy.ts"
   },
