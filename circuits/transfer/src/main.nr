@@ -62,9 +62,9 @@ fn main(
     nullifiers: pub [Field; NOTE_COUNT],
     output_hashes: pub [Field; NOTE_COUNT],
 ) {
-    let mut inputs_map: HashMap<Field, Field, 12, BuildHasherDefault<Poseidon2Hasher>> =
+    let mut inputs_map: HashMap<Field, Field, NOTE_COUNT, BuildHasherDefault<Poseidon2Hasher>> =
         HashMap::default();
-    let mut outputs_map: HashMap<Field, Field, 12, BuildHasherDefault<Poseidon2Hasher>> =
+    let mut outputs_map: HashMap<Field, Field, NOTE_COUNT, BuildHasherDefault<Poseidon2Hasher>> =
         HashMap::default();
 
     for i in 0..NOTE_COUNT - 1 {
@@ -166,7 +166,9 @@ fn test_main() {
     ];
     let path_indices = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 
-    let recon_merkle_root = compute_merkle_root(leaf, path, path_indices);
+    let recon_merkle_root: Field = compute_merkle_root(leaf, path, path_indices);
+
+    assert(recon_merkle_root == root, "Roots don't match");
 
     let input_note: InputNote = InputNote {
         asset_id,
