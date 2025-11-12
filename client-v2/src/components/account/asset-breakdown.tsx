@@ -1,20 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
+import { sepoliaAssets, type SupportedAsset } from "shared/constants/token";
+import { Balance } from "../token/balance";
 
-interface Asset {
-  symbol: string;
-  name: string;
-  balance: string;
-  usdValue: string;
-  chainName: string;
-}
-
-interface AssetBreakdownProps {
-  assets?: Asset[];
-}
-
-export function AssetBreakdown({ assets }: AssetBreakdownProps) {
+export function AssetBreakdown() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -27,22 +17,7 @@ export function AssetBreakdown({ assets }: AssetBreakdownProps) {
   }, []);
 
   // TODO: Replace with real asset data from wallet
-  const mockAssets: Asset[] = assets || [
-    {
-      symbol: "USDC",
-      name: "USD Coin",
-      balance: "5.00",
-      usdValue: "$5.00",
-      chainName: "Base",
-    },
-    {
-      symbol: "AUDD",
-      name: "Australian Digital Dollar",
-      balance: "5.00",
-      usdValue: "$5.00",
-      chainName: "Ethereum",
-    },
-  ];
+  const mockAssets: SupportedAsset[] = sepoliaAssets;
 
   if (isLoading) {
     return (
@@ -78,28 +53,8 @@ export function AssetBreakdown({ assets }: AssetBreakdownProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {mockAssets.map((asset, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between p-4 rounded-md bg-muted/40 hover:bg-muted/60 transition-colors duration-150 border-0"
-          >
-            <div className="text-left">
-              <div className="font-medium text-sm text-foreground">
-                {asset.symbol}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {asset.name}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="font-medium text-sm text-foreground">
-                {asset.balance}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {asset.usdValue}
-              </div>
-            </div>
-          </div>
+        {mockAssets.map((asset) => (
+          <Balance key={`${asset.address}${asset.chainId}`} asset={asset} />
         ))}
       </CardContent>
     </Card>

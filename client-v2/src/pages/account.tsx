@@ -1,16 +1,18 @@
-import PageContainer from "@/components/page-container";
-import { PAGE_METADATA } from "@/lib/seo-config";
-import { BalanceCard } from "@/components/account/balance-card";
 import { ActionButtons } from "@/components/account/action-buttons";
 import { AssetBreakdown } from "@/components/account/asset-breakdown";
+import { BalanceCard } from "@/components/account/balance-card";
 import { RecentTransactions } from "@/components/account/recent-transactions";
-import { SendModal } from "@/components/send/send-modal";
+import PageContainer from "@/components/page-container";
+import { useAuth } from "@/lib/auth-context";
+import { PAGE_METADATA } from "@/lib/seo-config";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 export const AccountPage = () => {
   const [showAssetBreakdown, setShowAssetBreakdown] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+
+  const { address, privateAddress } = useAuth();
 
   // TODO: Replace with real balance query from blockchain
   const { data: balanceData, isLoading: isLoadingBalance } = useQuery({
@@ -26,7 +28,8 @@ export const AccountPage = () => {
   });
 
   const handleSendClick = () => {
-    setIsSendModalOpen(true);
+    setIsSendModalOpen(!isSendModalOpen);
+    console.log("handle encrypt", isSendModalOpen);
   };
 
   const handleReceiveClick = () => {
@@ -47,6 +50,11 @@ export const AccountPage = () => {
           }
         />
 
+        {address && <div>Public Address: {address}</div>}
+        {privateAddress && (
+          <div>Private Address: 0x{BigInt(privateAddress).toString(16)}</div>
+        )}
+
         <ActionButtons
           onSendClick={handleSendClick}
           onReceiveClick={handleReceiveClick}
@@ -55,8 +63,6 @@ export const AccountPage = () => {
         {showAssetBreakdown && <AssetBreakdown />}
 
         <RecentTransactions />
-
-        <SendModal open={isSendModalOpen} onOpenChange={setIsSendModalOpen} />
       </div>
     </PageContainer>
   );

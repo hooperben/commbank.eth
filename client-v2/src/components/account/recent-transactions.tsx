@@ -14,11 +14,7 @@ interface Transaction {
   chainName: string;
 }
 
-interface RecentTransactionsProps {
-  transactions?: Transaction[];
-}
-
-export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+export function RecentTransactions() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -31,26 +27,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   }, []);
 
   // TODO: Replace with real transaction data from blockchain
-  const mockTransactions: Transaction[] = transactions || [
-    {
-      type: "receive",
-      amount: "5.00",
-      symbol: "USDC",
-      from: "0x742d...4c92",
-      timestamp: "2 hours ago",
-      txHash: "0x1234567890abcdef",
-      chainName: "Base",
-    },
-    {
-      type: "send",
-      amount: "2.50",
-      symbol: "AUDD",
-      to: "0x8a3b...2e1f",
-      timestamp: "1 day ago",
-      txHash: "0xabcdef1234567890",
-      chainName: "Ethereum",
-    },
-  ];
+  const mockTransactions: Transaction[] = [];
 
   if (isLoading) {
     return (

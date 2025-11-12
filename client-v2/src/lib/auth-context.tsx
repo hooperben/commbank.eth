@@ -1,17 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { CommbankDotETHAccount } from "./commbankdoteth-account";
 import { ethers } from "ethers";
+import { poseidon2Hash } from "@zkpassport/poseidon2";
 
 interface AuthContextType {
   isLoading: boolean;
   isSignedIn: boolean;
   token: string | null;
   address: string | null;
+  privateAddress: string | null;
   signIn: (mnemonic?: string) => Promise<void>;
   signOut: () => void;
   getMnemonic: () => Promise<string | null>;
-  isAccountManagerOpen: boolean;
-  setIsAccountManagerOpen: (input: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,9 +19,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  // evm address
   const [address, setAddress] = useState<string | null>(null);
+  // commbank.eth private address
+  const [privateAddress, setPrivateAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAccountManagerOpen, setIsAccountManagerOpen] = useState(false);
   const [commbankDotEthAccount, setCommbankDotEthAccount] =
     useState<CommbankDotETHAccount>();
 
@@ -39,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(storedToken);
           setIsSignedIn(true);
           setAddress(decoded.address);
+          setPrivateAddress(decoded.privateAddress);
         } else {
           sessionStorage.removeItem("authToken");
         }
@@ -71,12 +74,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const wallet = ethers.Wallet.fromPhrase(mnemonic);
 
+      const privateAddress = poseidon2Hash([BigInt(wallet.privateKey)]);
+      const privateAddressHex = "0x" + privateAddress.toString(16);
+
       const now = Math.floor(Date.now() / 1000);
       const expiresIn = 60 * 60; // 1 hour in seconds
 
       const payload = {
         username: "commbank.eth",
         address: wallet.address,
+        privateAddress: privateAddressHex,
         iat: now,
         exp: now + expiresIn,
       };
@@ -103,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(jwt);
       setIsSignedIn(true);
       setAddress(wallet.address);
+      setPrivateAddress(privateAddressHex);
 
       // wipe mnemonic and passkey from memory? I think
       setCommbankDotEthAccount(new CommbankDotETHAccount());
@@ -181,11 +189,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isSignedIn,
         token,
         address,
+        privateAddress,
         signIn,
         signOut,
         getMnemonic,
-        isAccountManagerOpen,
-        setIsAccountManagerOpen,
       }}
     >
       {children}

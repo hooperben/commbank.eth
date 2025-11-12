@@ -18,7 +18,7 @@ export function ActionButtons({
         className="min-w-[200px] text-sm font-medium rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors duration-200 shadow-none border-0"
       >
         <ArrowUpFromLine className="mr-2 h-4 w-4" />
-        Send
+        Encrypt
       </Button>
 
       <Button
