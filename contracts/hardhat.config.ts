@@ -28,11 +28,17 @@ export default defineConfig({
       },
     },
   },
+
   networks: {
     sepolia: {
       type: "http",
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("EVM_PRIVATE_KEY")],
+    },
+  },
+  verify: {
+    etherscan: {
+      apiKey: configVariable("ETHERSCAN_API_KEY"),
     },
   },
 });
