@@ -26,7 +26,7 @@ export const getWithdrawDetails = async (
   });
 
   const withdrawProof = await withdrawBackend.generateProof(withdrawWitness, {
-    keccak: true,
+    keccakZK: true,
   });
 
   return {

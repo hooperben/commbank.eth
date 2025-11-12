@@ -18,7 +18,7 @@ import { NoteEncryption } from "@/helpers/note-sharing";
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
 import { CommBankDotEth, USDC } from "@/typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { parseUnits, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { ethers } from "hardhat";
 
 describe("Testing Transfer functionality", () => {
@@ -47,25 +47,27 @@ describe("Testing Transfer functionality", () => {
 
   it("testing transfer functionality", async () => {
     const assetId = await usdcDeployment.getAddress();
-    const assetAmount = BigInt("5");
+    const assetAmount = 5_000_000n;
+
     const secret =
       2389312107716289199307843900794656424062350252250388738019021107824217896920n;
     const ownerSecret =
       10036677144260647934022413515521823129584317400947571241312859176539726523915n;
     const owner = BigInt((await poseidonHash([ownerSecret])).toString());
 
-    // in order to transfer we need to first deposit
+    // create the ZK proof
     const { proof: depositProof } = await getDepositDetails({
       assetId,
       assetAmount,
       secret,
       owner,
     });
+
     await approve(
       Signers[0],
       await usdcDeployment.getAddress(),
       await commbankDotEth.getAddress(),
-      parseUnits("5", 6),
+      assetAmount,
     );
 
     // create encrypted payload for the deposited note
@@ -115,7 +117,7 @@ describe("Testing Transfer functionality", () => {
 
     // ALICE CHANGE NOTE DETAILS
     const alice_owner = owner;
-    const alice_amount = 3n;
+    const alice_amount = 3_000_000n;
     const alice_note_secret =
       19536471094918068928039225564664574556680178861106125446000998678966251111926n;
 
@@ -133,7 +135,7 @@ describe("Testing Transfer functionality", () => {
     const bobOwner = (await poseidonHash([bobOwnerSecret])).toString();
     const bobNoteSecret =
       3957740128091467064337395812164919758932045173069261808814882570720300029469n;
-    const bobAmount = 2n;
+    const bobAmount = 2_000_000n;
     const bobOutputNote = createOutputNote(
       bobOwner,
       bobNoteSecret,

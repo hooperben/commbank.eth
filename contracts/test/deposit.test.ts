@@ -3,14 +3,9 @@ import { getDepositDetails } from "@/helpers/functions/deposit";
 import { createDepositPayload } from "@/helpers/functions/transfer";
 import { getTestingAPI } from "@/helpers/get-testing-api";
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
-import {
-  CommBankDotEth,
-  PrivateStargateFinance,
-  USDC,
-} from "@/typechain-types";
+import { CommBankDotEth, USDC } from "@/typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
-import { parseUnits } from "ethers";
 
 describe("Testing deposit functionality", () => {
   let Signers: HardhatEthersSigner[];
@@ -83,6 +78,10 @@ describe("Testing deposit functionality", () => {
 
     // check our merkle state matches
     await tree.insert(proof.publicInputs[0], 0);
+
+    const contractRoot = await commbankDotEth.roots(1);
+
+    console.log("TODO check this matches (it does)", contractRoot);
   });
 
   it("should log the correct hash values for noir test file", async () => {

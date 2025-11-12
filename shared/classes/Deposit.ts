@@ -1,5 +1,5 @@
 import { UltraHonkBackend } from "@aztec/bb.js";
-import { Noir } from "@noir-lang/noir_js";
+import { Noir, CompiledCircuit } from "@noir-lang/noir_js";
 
 import depositCircuit from "../../circuits/deposit/target/deposit.json";
 
@@ -8,8 +8,7 @@ export class Deposit {
   public depositBackend: UltraHonkBackend;
 
   constructor() {
-    // @ts-expect-error - not sure
-    this.depositNoir = new Noir(depositCircuit);
+    this.depositNoir = new Noir(depositCircuit as CompiledCircuit);
     this.depositBackend = new UltraHonkBackend(depositCircuit.bytecode);
   }
 }

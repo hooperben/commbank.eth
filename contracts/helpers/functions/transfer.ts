@@ -28,7 +28,7 @@ export const getTransferDetails = async (
   });
 
   const transferProof = await transferBackend.generateProof(transferWitness, {
-    keccak: true,
+    keccakZK: true,
   });
 
   return {

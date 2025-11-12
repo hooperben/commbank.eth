@@ -3,7 +3,7 @@ import { poseidon2Hash } from "@zkpassport/poseidon2";
 import type { Poseidon2Yul } from "../typechain-types";
 import { expect } from "chai";
 
-describe.only("testing the yul poseidon implementation", () => {
+describe("testing the yul poseidon implementation", () => {
   let poseidonYul: Poseidon2Yul;
 
   before(async () => {

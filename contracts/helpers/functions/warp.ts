@@ -36,7 +36,7 @@ export const getWarpDetails = async (
   });
 
   const warpProof = await warpBackend.generateProof(warpWitness, {
-    keccak: true,
+    keccakZK: true,
   });
 
   return {
