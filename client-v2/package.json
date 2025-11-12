@@ -24,6 +24,7 @@
     "@zkpassport/poseidon2": "^0.6.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "eciesjs": "^0.4.16",
     "ethers": "^6.15.0",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.548.0",

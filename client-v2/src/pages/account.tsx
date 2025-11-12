@@ -13,7 +13,7 @@ export const AccountPage = () => {
   const [showAssetBreakdown, setShowAssetBreakdown] = useState(false);
   const [showEncryptModal, setShowEncryptModal] = useState(false);
 
-  const { address, privateAddress } = useAuth();
+  const { address, privateAddress, signingKey } = useAuth();
 
   // TODO: Replace with real balance query from blockchain
   const { data: balanceData, isLoading: isLoadingBalance } = useQuery({
@@ -51,8 +51,15 @@ export const AccountPage = () => {
         />
 
         {address && <div>Public Address: {address}</div>}
-        {privateAddress && (
-          <div>Private Address: 0x{BigInt(privateAddress).toString(16)}</div>
+        {privateAddress && signingKey && (
+          <div className="flex flex-col justify-end w-full">
+            Private Address:{" "}
+            <span className="text-xs">
+              0x{BigInt(privateAddress).toString(16)}
+              <br />
+              {signingKey}
+            </span>
+          </div>
         )}
 
         <ActionButtons

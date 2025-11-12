@@ -23,6 +23,8 @@ export function ConfirmEncryptStep({
       {
         assetId: data.asset.address,
         chainId: data.asset.chainId,
+        amount: data.amount,
+        decimals: data.asset.decimals,
       },
       {
         onSuccess: (result) => {

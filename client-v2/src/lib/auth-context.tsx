@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { CommbankDotETHAccount } from "./commbankdoteth-account";
 import { ethers } from "ethers";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
+import { NoteEncryption } from "shared/classes/Note";
 
 interface AuthContextType {
   isLoading: boolean;
@@ -9,6 +10,7 @@ interface AuthContextType {
   token: string | null;
   address: string | null;
   privateAddress: string | null;
+  signingKey: string | null;
   signIn: (mnemonic?: string) => Promise<void>;
   signOut: () => void;
   getMnemonic: () => Promise<string | null>;
@@ -23,6 +25,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   // commbank.eth private address
   const [privateAddress, setPrivateAddress] = useState<string | null>(null);
+  // signing address (what's used to pass notes)
+  const [signingAddress, setSigningAddress] = useState<string | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [commbankDotEthAccount, setCommbankDotEthAccount] =
     useState<CommbankDotETHAccount>();
@@ -42,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsSignedIn(true);
           setAddress(decoded.address);
           setPrivateAddress(decoded.privateAddress);
+          setSigningAddress(decoded?.signingAddress);
         } else {
           sessionStorage.removeItem("authToken");
         }
@@ -75,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const wallet = ethers.Wallet.fromPhrase(mnemonic);
 
       const privateAddress = poseidon2Hash([BigInt(wallet.privateKey)]);
+      const signingKey = await NoteEncryption.getPublicKeyFromAddress(wallet);
       const privateAddressHex = "0x" + privateAddress.toString(16);
 
       const now = Math.floor(Date.now() / 1000);
@@ -84,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         username: "commbank.eth",
         address: wallet.address,
         privateAddress: privateAddressHex,
+        signingAddress: signingKey,
         iat: now,
         exp: now + expiresIn,
       };
@@ -111,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsSignedIn(true);
       setAddress(wallet.address);
       setPrivateAddress(privateAddressHex);
+      setSigningAddress(signingKey);
 
       // wipe mnemonic and passkey from memory? I think
       setCommbankDotEthAccount(new CommbankDotETHAccount());
@@ -190,6 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         address,
         privateAddress,
+        signingKey: signingAddress,
         signIn,
         signOut,
         getMnemonic,
