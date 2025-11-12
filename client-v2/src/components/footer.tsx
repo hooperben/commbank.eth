@@ -8,13 +8,13 @@ export default function Footer() {
         <p>open source, privacy enhancing financial technologies</p>
         <div className="flex gap-4 items-center">
           <a
-            href="https://github.com"
+            href="https://github.com/hooperben/commbank.eth"
             className="hover:text-foreground transition-colors"
           >
             GitHub
           </a>
           <a
-            href="https://twitter.com"
+            href="https://twitter.com/commbankdoteth"
             className="hover:text-foreground transition-colors"
           >
             Twitter

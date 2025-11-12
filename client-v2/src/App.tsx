@@ -10,6 +10,7 @@ import { SettingsPage } from "./pages/settings";
 import { ThemeProvider } from "./components/theme-provider";
 import { AboutPage } from "./pages/about";
 import TestingPage from "./pages/testing";
+import NotFoundPage from "./pages/not-found";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,8 @@ function App() {
                 <Route path="/about" element={<AboutPage />} />
                 {/* TODO remove once confirmed that everything works */}
                 <Route path="/testing" element={<TestingPage />} />
+                {/* Catch-all 404 route */}
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </AppLayout>
           </AuthProvider>
