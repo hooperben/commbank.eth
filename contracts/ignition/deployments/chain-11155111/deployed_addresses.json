@@ -3,5 +3,7 @@
   "commbankDotEth#DepositVerifier": "0xf90c7e5FbC840B381002279B555dc3e0290Da095",
   "commbankDotEth#TransferVerifier": "0xD1CAD1C8CEEdeD7Ad65440fd643E2d9320c2bf51",
   "commbankDotEth#WithdrawVerifier": "0x9A0E3f3d11F7bA8B92faD4533043b5994615629d",
-  "commbankDotEth#CommBankDotEth": "0xc246Abca0566848759dA29c30Fc77DC4A9962919"
+  "commbankDotEth#CommBankDotEth": "0xc246Abca0566848759dA29c30Fc77DC4A9962919",
+  "tokens#FourDEC": "0x840feC4Efbd4764edAA237E78757cE59CeA3Db26",
+  "tokens#USDC": "0x237eEeE66266c72DBb7Ee2Aa84811666cE4EB815"
 }
