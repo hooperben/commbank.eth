@@ -8,7 +8,7 @@ import { expect } from "chai";
 import { ethers } from "ethers";
 
 describe("Testing deposit functionality", () => {
-  let Signers: [];
+  let Signers: ethers.Signer[];
 
   let commbankDotEth: ethers.Contract;
   let usdcDeployment: ethers.Contract;

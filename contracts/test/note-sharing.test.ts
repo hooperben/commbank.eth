@@ -1,17 +1,9 @@
 import { NoteEncryption } from "@/helpers/note-sharing";
 import { SigningKey, Wallet } from "ethers";
-import { network } from "hardhat";
 import { expect } from "chai";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 
 describe("Testing Note Sharing functionality", () => {
-  let Signers: Wallet[];
-
-  beforeEach(async () => {
-    const { ethers } = await network.connect();
-    Signers = await ethers.getSigners();
-  });
-
   it("should let me encrypt and decrypt", async () => {
     const alicePK =
       "0x1234567890123456789012345678901234567890123456789012345678901234";
