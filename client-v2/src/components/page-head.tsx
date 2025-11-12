@@ -1,13 +1,25 @@
 import { Helmet } from "react-helmet";
-import { DEFAULT_SEO, mergeWithDefaults, type PageMetadata } from "@/lib/seo-config";
+import {
+  DEFAULT_SEO,
+  mergeWithDefaults,
+  type PageMetadata,
+} from "@/lib/seo-config";
 
 interface PageHeadProps extends Partial<PageMetadata> {
   pageTitle?: string;
 }
 
-export default function PageHead({ pageTitle, title, description, path = "/", keywords, type }: PageHeadProps) {
+export default function PageHead({
+  pageTitle,
+  title,
+  description,
+  path = "/",
+  keywords,
+  type,
+}: PageHeadProps) {
   const seoConfig = mergeWithDefaults({
-    title: title || (pageTitle ? `commbank.eth | ${pageTitle}` : DEFAULT_SEO.title),
+    title:
+      title || (pageTitle ? `commbank.eth | ${pageTitle}` : DEFAULT_SEO.title),
     description: description || DEFAULT_SEO.description,
     path,
     keywords,
@@ -52,7 +64,10 @@ export default function PageHead({ pageTitle, title, description, path = "/", ke
       <meta name="theme-color" content="#000000" />
 
       {/* Links */}
-      <link rel="me" href={DEFAULT_SEO.twitterHandle.replace("@", "https://x.com/")} />
+      <link
+        rel="me"
+        href={DEFAULT_SEO.twitterHandle.replace("@", "https://x.com/")}
+      />
       <link rel="me" href={DEFAULT_SEO.githubUrl} />
     </Helmet>
   );
