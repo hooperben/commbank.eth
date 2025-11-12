@@ -171,7 +171,6 @@ describe("Testing Withdraw functionality", () => {
     await tree.insert(transferProof.publicInputs[4], 1);
     await tree.insert(transferProof.publicInputs[5], 2);
 
-    const bobRoot = (await tree.getRoot()).toBigInt();
     const bobProof = await tree.getProof(2);
 
     const bobInputNote = createInputNote(
@@ -180,7 +179,7 @@ describe("Testing Withdraw functionality", () => {
       bobOwner,
       bobOwnerSecret,
       bobNoteSecret,
-      2_000_000n, // 2 with 6 decimals
+      2n, // leaf index in tree (not amount)
       bobProof.siblings,
       bobProof.indices,
     );
