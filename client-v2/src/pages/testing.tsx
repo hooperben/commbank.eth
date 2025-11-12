@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 
@@ -6,7 +7,12 @@ import { Transact } from "shared/classes/Transact";
 import { Withdraw } from "shared/classes/Withdraw";
 
 const TestingPage = () => {
+  const [isDepositLoading, setIsDepositLoading] = useState(false);
+  const [isTransferLoading, setIsTransferLoading] = useState(false);
+  const [isWithdrawLoading, setIsWithdrawLoading] = useState(false);
+
   const handleDepositProof = async () => {
+    setIsDepositLoading(true);
     try {
       // const hash =
       // 15877031116292595040191017675338240539290338653409019794000313907399651592164n;
@@ -45,10 +51,13 @@ const TestingPage = () => {
       console.log("Deposit Proof:", proof);
     } catch (err) {
       console.error("Deposit error: ", err);
+    } finally {
+      setIsDepositLoading(false);
     }
   };
 
   const handleTransferProof = async () => {
+    setIsTransferLoading(true);
     try {
       console.log("Starting transfer proof generation...");
 
@@ -154,10 +163,13 @@ const TestingPage = () => {
       console.log("Transfer Proof:", proof);
     } catch (err) {
       console.error("Transfer error: ", err);
+    } finally {
+      setIsTransferLoading(false);
     }
   };
 
   const handleWithdrawProof = async () => {
+    setIsWithdrawLoading(true);
     try {
       console.log("Starting withdraw proof generation...");
 
@@ -239,6 +251,8 @@ const TestingPage = () => {
       console.log("Withdraw Proof:", proof);
     } catch (err) {
       console.error("Withdraw error: ", err);
+    } finally {
+      setIsWithdrawLoading(false);
     }
   };
 
@@ -247,12 +261,28 @@ const TestingPage = () => {
       <h1 className="text-2xl font-bold mb-4">Proof Testing</h1>
 
       <div className="flex flex-col gap-2">
-        <Button onClick={handleDepositProof}>Generate Deposit Proof</Button>
-        <Button onClick={handleTransferProof} variant="secondary">
-          Generate Transfer Proof
+        <Button onClick={handleDepositProof} disabled={isDepositLoading}>
+          {isDepositLoading
+            ? "Generating Deposit Proof..."
+            : "Generate Deposit Proof"}
         </Button>
-        <Button onClick={handleWithdrawProof} variant="outline">
-          Generate Withdraw Proof
+        <Button
+          onClick={handleTransferProof}
+          variant="secondary"
+          disabled={isTransferLoading}
+        >
+          {isTransferLoading
+            ? "Generating Transfer Proof..."
+            : "Generate Transfer Proof"}
+        </Button>
+        <Button
+          onClick={handleWithdrawProof}
+          variant="outline"
+          disabled={isWithdrawLoading}
+        >
+          {isWithdrawLoading
+            ? "Generating Withdraw Proof..."
+            : "Generate Withdraw Proof"}
         </Button>
       </div>
 
