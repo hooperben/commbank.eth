@@ -3,6 +3,7 @@ import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 import prettier from "eslint-plugin-prettier";
 import prettierConfig from "eslint-config-prettier";
+import globals from "globals";
 
 export default [
   eslint.configs.recommended,
@@ -18,11 +19,22 @@ export default [
         ecmaVersion: "latest",
         sourceType: "module",
       },
+      globals: {
+        ...globals.node,
+      },
     },
     rules: {
       ...tseslint.configs.recommended.rules,
       ...prettierConfig.rules,
       "prettier/prettier": "error",
+    },
+  },
+  {
+    files: ["**/*.test.ts", "**/*.test.js", "**/*.spec.ts", "**/*.spec.js"],
+    languageOptions: {
+      globals: {
+        ...globals.mocha,
+      },
     },
   },
   {
