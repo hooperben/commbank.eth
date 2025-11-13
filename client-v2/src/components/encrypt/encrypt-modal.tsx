@@ -29,9 +29,10 @@ export function EncryptModal({
     setStep("confirm");
   };
 
-  const handleConfirmSuccess = (txHash: string, explorerUrl: string) => {
+  const handleConfirmSuccess = (txHash: string) => {
     setTxHash(txHash);
-    setExplorerUrl(explorerUrl);
+    // TODO ENVise
+    setExplorerUrl(`https://sepolia.etherscan.io/tx/${txHash}`);
     setStep("success");
   };
 

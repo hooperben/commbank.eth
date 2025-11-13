@@ -1,15 +1,31 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
+import { useState } from "react";
 
+import type { Note, Payload, TreeLeaf } from "@/_types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDBStats } from "@/hooks/use-indexed-db";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Deposit } from "shared/classes/Deposit";
 import { Transact } from "shared/classes/Transact";
 import { Withdraw } from "shared/classes/Withdraw";
+import { toast } from "sonner";
 
 const TestingPage = () => {
   const [isDepositLoading, setIsDepositLoading] = useState(false);
   const [isTransferLoading, setIsTransferLoading] = useState(false);
   const [isWithdrawLoading, setIsWithdrawLoading] = useState(false);
+
+  // Use the IndexedDB hook - it handles initialization automatically
+  const {
+    stats: dbStats,
+    allNotes,
+    allTreeLeaves,
+    allPayloads,
+    isLoading: isDBLoading,
+    refresh: refreshDBStats,
+    db,
+  } = useDBStats();
 
   const handleDepositProof = async () => {
     setIsDepositLoading(true);
@@ -256,41 +272,292 @@ const TestingPage = () => {
     }
   };
 
+  // IndexedDB test functions
+  const handleAddRandomNote = async () => {
+    try {
+      const randomId = Math.random().toString(36).substring(7);
+      const note: Note = {
+        id: `note-${randomId}`,
+        assetId: `asset-${Math.floor(Math.random() * 1000)}`,
+        assetAmount: Math.floor(Math.random() * 100).toString(),
+        nullifier: `nullifier-${randomId}`,
+        secret: `secret-${randomId}`,
+        entity_id: `entity-${Math.floor(Math.random() * 10)}`,
+        isUsed: Math.random() > 0.5,
+      };
+      await db.addNote(note);
+      toast.success("Note added successfully");
+      await refreshDBStats();
+    } catch (error) {
+      toast.error("Failed to add note");
+      console.error(error);
+    }
+  };
+
+  const handleAddRandomTreeLeaf = async () => {
+    try {
+      const randomId = Math.random().toString(36).substring(7);
+      const leaf: TreeLeaf = {
+        id: `leaf-${randomId}`,
+        leafValue: `0x${Math.random().toString(16).substring(2, 18)}`,
+        leafIndex: Math.floor(Math.random() * 1000).toString(),
+      };
+      await db.addTreeLeaf(leaf);
+      toast.success("Tree leaf added successfully");
+      await refreshDBStats();
+    } catch (error) {
+      toast.error("Failed to add tree leaf");
+      console.error(error);
+    }
+  };
+
+  const handleAddRandomPayload = async () => {
+    try {
+      const randomId = Math.random().toString(36).substring(7);
+      const payload: Payload = {
+        id: `payload-${randomId}`,
+        encryptedNote: `encrypted-${Math.random().toString(36)}`,
+      };
+      await db.addPayload(payload);
+      toast.success("Payload added successfully");
+      await refreshDBStats();
+    } catch (error) {
+      toast.error("Failed to add payload");
+      console.error(error);
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await db.clearAllData();
+      toast.success("All data cleared");
+      await refreshDBStats();
+    } catch (error) {
+      toast.error("Failed to clear data");
+      console.error(error);
+    }
+  };
+
+  const handleIncrementId = async () => {
+    try {
+      const newId = await db.incrementLastId();
+      toast.success(`Last ID incremented to ${newId}`);
+      await refreshDBStats();
+    } catch (error) {
+      toast.error("Failed to increment ID");
+      console.error(error);
+    }
+  };
+
+  // Show loading state while DB initializes
+  if (db.isInitializing) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Initializing database...</p>
+      </div>
+    );
+  }
+
+  // Show error if DB failed to initialize
+  if (db.error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <div className="text-center">
+          <p className="text-lg font-semibold">
+            Database Initialization Failed
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            {db.error.message}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-4 p-8">
-      <h1 className="text-2xl font-bold mb-4">Proof Testing</h1>
+    <div className="flex flex-col gap-6 p-8 max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold">Testing Page</h1>
 
-      <div className="flex flex-col gap-2">
-        <Button onClick={handleDepositProof} disabled={isDepositLoading}>
-          {isDepositLoading
-            ? "Generating Deposit Proof..."
-            : "Generate Deposit Proof"}
-        </Button>
-        <Button
-          onClick={handleTransferProof}
-          variant="secondary"
-          disabled={isTransferLoading}
-        >
-          {isTransferLoading
-            ? "Generating Transfer Proof..."
-            : "Generate Transfer Proof"}
-        </Button>
-        <Button
-          onClick={handleWithdrawProof}
-          variant="outline"
-          disabled={isWithdrawLoading}
-        >
-          {isWithdrawLoading
-            ? "Generating Withdraw Proof..."
-            : "Generate Withdraw Proof"}
-        </Button>
-      </div>
+      {/* Proof Testing Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Proof Testing</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          <Button onClick={handleDepositProof} disabled={isDepositLoading}>
+            {isDepositLoading
+              ? "Generating Deposit Proof..."
+              : "Generate Deposit Proof"}
+          </Button>
+          <Button
+            onClick={handleTransferProof}
+            variant="secondary"
+            disabled={isTransferLoading}
+          >
+            {isTransferLoading
+              ? "Generating Transfer Proof..."
+              : "Generate Transfer Proof"}
+          </Button>
+          <Button
+            onClick={handleWithdrawProof}
+            variant="outline"
+            disabled={isWithdrawLoading}
+          >
+            {isWithdrawLoading
+              ? "Generating Withdraw Proof..."
+              : "Generate Withdraw Proof"}
+          </Button>
+          <div className="mt-4 p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              Open the browser console to see proof generation results
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="mt-4 p-4 bg-muted rounded-lg">
-        <p className="text-sm text-muted-foreground">
-          Open the browser console to see proof generation results
-        </p>
-      </div>
+      {/* IndexedDB Testing Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>IndexedDB Testing</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Action buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            <Button onClick={handleAddRandomNote} variant="default">
+              Add Random Note
+            </Button>
+            <Button onClick={handleAddRandomTreeLeaf} variant="default">
+              Add Random Tree Leaf
+            </Button>
+            <Button onClick={handleAddRandomPayload} variant="default">
+              Add Random Payload
+            </Button>
+            <Button onClick={handleIncrementId} variant="secondary">
+              Increment Last ID
+            </Button>
+            <Button onClick={refreshDBStats} variant="secondary">
+              Refresh Stats
+            </Button>
+            <Button onClick={handleClearAll} variant="destructive">
+              Clear All Data
+            </Button>
+          </div>
+
+          {/* Stats display */}
+          {isDBLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            dbStats && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="text-xs text-muted-foreground">Total Notes</p>
+                  <p className="text-2xl font-bold">{dbStats.notes}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Unused Notes</p>
+                  <p className="text-2xl font-bold">{dbStats.unusedNotes}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Tree Leaves</p>
+                  <p className="text-2xl font-bold">{dbStats.treeLeaves}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Payloads</p>
+                  <p className="text-2xl font-bold">{dbStats.payloads}</p>
+                </div>
+              </div>
+            )
+          )}
+
+          {/* Data display */}
+          <div className="space-y-4">
+            {/* Notes */}
+            {allNotes.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-2">Notes</h3>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {allNotes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="p-3 bg-muted/50 rounded text-xs font-mono"
+                    >
+                      <p>
+                        <span className="font-bold">ID:</span> {note.id}
+                      </p>
+                      <p>
+                        <span className="font-bold">Asset:</span> {note.assetId}{" "}
+                        ({note.assetAmount})
+                      </p>
+                      <p>
+                        <span className="font-bold">Entity:</span>{" "}
+                        {note.entity_id}
+                      </p>
+                      <p>
+                        <span className="font-bold">Used:</span>{" "}
+                        {note.isUsed ? "Yes" : "No"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tree Leaves */}
+            {allTreeLeaves.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-2">Tree Leaves</h3>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {allTreeLeaves.map((leaf) => (
+                    <div
+                      key={leaf.id}
+                      className="p-3 bg-muted/50 rounded text-xs font-mono"
+                    >
+                      <p>
+                        <span className="font-bold">ID:</span> {leaf.id}
+                      </p>
+                      <p>
+                        <span className="font-bold">Index:</span>{" "}
+                        {leaf.leafIndex}
+                      </p>
+                      <p>
+                        <span className="font-bold">Value:</span>{" "}
+                        {leaf.leafValue}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Payloads */}
+            {allPayloads.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-2">Payloads</h3>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {allPayloads.map((payload) => (
+                    <div
+                      key={payload.id}
+                      className="p-3 bg-muted/50 rounded text-xs font-mono"
+                    >
+                      <p>
+                        <span className="font-bold">ID:</span> {payload.id}
+                      </p>
+                      <p className="truncate">
+                        <span className="font-bold">Note:</span>{" "}
+                        {payload.encryptedNote}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

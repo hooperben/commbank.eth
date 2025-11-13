@@ -1,4 +1,5 @@
 import { ActionButtons } from "@/components/account/action-buttons";
+import { AddressCard } from "@/components/account/address-card";
 import { AssetBreakdown } from "@/components/account/asset-breakdown";
 import { BalanceCard } from "@/components/account/balance-card";
 import { RecentTransactions } from "@/components/account/recent-transactions";
@@ -39,41 +40,41 @@ export const AccountPage = () => {
 
   return (
     <PageContainer {...PAGE_METADATA.account}>
-      <div className="space-y-1 max-w-2xl mx-auto">
-        <BalanceCard
-          balance={balanceData?.balance || "$0.00"}
-          usdValue={balanceData?.usdValue || "USD"}
-          isLoading={isLoadingBalance}
-          isSwitched={showAssetBreakdown}
-          onAssetBreakdownClick={() =>
-            setShowAssetBreakdown(!showAssetBreakdown)
-          }
-        />
+      <div className="space-y-6 max-w-2xl mx-auto">
+        {/* Balance Section */}
+        <div className="space-y-4">
+          <BalanceCard
+            balance={balanceData?.balance || "$0.00"}
+            usdValue={balanceData?.usdValue || "USD"}
+            isLoading={isLoadingBalance}
+            isSwitched={showAssetBreakdown}
+            onAssetBreakdownClick={() =>
+              setShowAssetBreakdown(!showAssetBreakdown)
+            }
+          />
 
-        {address && <div>Public Address: {address}</div>}
-        {privateAddress && signingKey && (
-          <div className="flex flex-col justify-end w-full">
-            Private Address:{" "}
-            <span className="text-xs">
-              0x{BigInt(privateAddress).toString(16)}
-              <br />
-              {signingKey}
-            </span>
-          </div>
-        )}
-
-        <ActionButtons
-          onEncryptClick={handleEncryptClick}
-          onReceiveClick={handleReceiveClick}
-        />
+          <ActionButtons
+            onEncryptClick={handleEncryptClick}
+            onReceiveClick={handleReceiveClick}
+          />
+        </div>
 
         <EncryptModal
           open={showEncryptModal}
           onOpenChange={setShowEncryptModal}
         />
 
+        {/* Asset Breakdown - conditionally shown */}
         {showAssetBreakdown && <AssetBreakdown />}
 
+        {/* Address Card */}
+        <AddressCard
+          publicAddress={address}
+          privateAddress={privateAddress}
+          signingKey={signingKey}
+        />
+
+        {/* Recent Transactions */}
         <RecentTransactions />
       </div>
     </PageContainer>

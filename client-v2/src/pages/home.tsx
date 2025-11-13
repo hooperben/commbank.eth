@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
 import { PAGE_METADATA } from "@/lib/seo-config";
+import { isIndexedDBSupported } from "@/lib/db";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -15,10 +16,13 @@ export const HomePage = () => {
   const { signIn, isSignedIn } = useAuth();
 
   const [isPasskeySupported, setIsPassKeySupported] = useState(true);
+  const [isDBSupported, setIsDBSupported] = useState(true);
 
   useEffect(() => {
-    const isSupported = CommbankDotETHAccount.isSupported();
-    setIsPassKeySupported(isSupported);
+    const passkeySupported = CommbankDotETHAccount.isSupported();
+    const dbSupported = isIndexedDBSupported();
+    setIsPassKeySupported(passkeySupported);
+    setIsDBSupported(dbSupported);
   }, []);
 
   // Check if user is registered
@@ -28,7 +32,7 @@ export const HomePage = () => {
       const account = new CommbankDotETHAccount();
       return await account.isRegistered();
     },
-    enabled: isPasskeySupported,
+    enabled: isPasskeySupported && isDBSupported,
   });
 
   // Sign up mutation
@@ -83,7 +87,7 @@ export const HomePage = () => {
   });
 
   const handleButtonClick = () => {
-    if (!isPasskeySupported) return;
+    if (!isPasskeySupported || !isDBSupported) return;
 
     if (!isRegistered) {
       signUpMutation.mutate();
@@ -94,6 +98,8 @@ export const HomePage = () => {
       navigate("/account");
     }
   };
+
+  const isBrowserSupported = isPasskeySupported && isDBSupported;
 
   const isLoading =
     signUpMutation.isPending ||
@@ -111,13 +117,27 @@ export const HomePage = () => {
         </span>
       </h1>
 
-      {!isPasskeySupported && (
-        <div className="flex items-center gap-2 mb-4 p-4 rounded-lg bg-destructive/10 text-destructive">
-          <AlertCircle className="size-5" />
-          <p className="text-sm">
-            Passkeys are not supported in this browser. Please try a modern
-            browser like Chrome, Safari, or Edge.
-          </p>
+      {!isBrowserSupported && (
+        <div className="flex items-center gap-2 mb-4 p-4 rounded-lg bg-destructive/10 text-destructive max-w-xl">
+          <AlertCircle className="size-5 shrink-0" />
+          <div className="text-sm space-y-1">
+            {!isPasskeySupported && (
+              <p>
+                <strong>Passkeys not supported:</strong> Please use a modern
+                browser like Chrome, Safari, or Edge.
+              </p>
+            )}
+            {!isDBSupported && (
+              <p>
+                <strong>IndexedDB not supported:</strong> Your browser must
+                support IndexedDB to use commbank.eth.
+              </p>
+            )}
+            <p className="text-xs opacity-90">
+              commbank.eth requires both passkey authentication and IndexedDB
+              for secure, private transactions.
+            </p>
+          </div>
         </div>
       )}
 
@@ -126,7 +146,7 @@ export const HomePage = () => {
           <Link to="/about">Learn more</Link>
         </Button>
 
-        {isPasskeySupported && (
+        {isBrowserSupported && (
           <Button
             size="lg"
             onClick={handleButtonClick}

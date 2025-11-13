@@ -1,16 +1,17 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./App.css";
 import { AppLayout } from "./components/layout";
-import { AuthProvider } from "./lib/auth-context";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HomePage } from "./pages/home";
-import { AccountPage } from "./pages/account";
-import { SettingsPage } from "./pages/settings";
+import { ProtectedRoute } from "./components/protected-route";
 import { ThemeProvider } from "./components/theme-provider";
+import { AuthProvider } from "./lib/auth-context";
 import { AboutPage } from "./pages/about";
-import TestingPage from "./pages/testing";
+import { AccountPage } from "./pages/account";
+import { HomePage } from "./pages/home";
 import NotFoundPage from "./pages/not-found";
+import { SettingsPage } from "./pages/settings";
+import TestingPage from "./pages/testing";
 
 const queryClient = new QueryClient();
 
@@ -23,11 +24,33 @@ function App() {
             <AppLayout>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/account" element={<AccountPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+                <Route
+                  path="/account"
+                  element={
+                    <ProtectedRoute>
+                      <AccountPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <SettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/about" element={<AboutPage />} />
+
                 {/* TODO remove once confirmed that everything works */}
-                <Route path="/testing" element={<TestingPage />} />
+                <Route
+                  path="/testing"
+                  element={
+                    <ProtectedRoute>
+                      <TestingPage />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* Catch-all 404 route */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
