@@ -75,7 +75,6 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     ],
   },
   about: {
-    header: "About",
     title: "commbank.eth | About",
     description:
       "Learn about commbank.eth - an open-source project building privacy-enhancing financial technologies.",
