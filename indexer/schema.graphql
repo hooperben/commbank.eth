@@ -1,0 +1,37 @@
+type Commbankdoteth_LeafInserted {
+  id: ID!
+  leafIndex: BigInt!
+  leafValue: BigInt!
+}
+
+type Commbankdoteth_NotePayload {
+  id: ID!
+  encryptedNote: String!
+}
+
+type Commbankdoteth_NullifierUsed {
+  id: ID!
+  nullifier: BigInt!
+}
+
+type Commbankdoteth_RoleAdminChanged {
+  id: ID!
+  role: String!
+  previousAdminRole: String!
+  newAdminRole: String!
+}
+
+type Commbankdoteth_RoleGranted {
+  id: ID!
+  role: String!
+  account: String!
+  sender: String!
+}
+
+type Commbankdoteth_RoleRevoked {
+  id: ID!
+  role: String!
+  account: String!
+  sender: String!
+}
+
