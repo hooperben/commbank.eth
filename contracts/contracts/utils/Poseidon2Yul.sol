@@ -2,10 +2,12 @@
 
 pragma solidity >=0.6.0;
 
-// THIS LIBRARY WAS PROVIDED BY THE GIGABRAINS AT:
+// this implementation was provided by the gigabrains at
 // https://github.com/zemse/poseidon2-evm
 
-// GO AND STAR THEM !!
+// go and give them a star
+
+// CAUTION: Audit status is unknown
 
 contract Poseidon2Yul {
   fallback() external {
