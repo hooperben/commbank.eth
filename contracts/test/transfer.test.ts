@@ -1,10 +1,3 @@
-import {
-  createInputNote,
-  createOutputNote,
-  emptyInputNote,
-  emptyOutputNote,
-} from "@/helpers/note-formatting";
-import { approve } from "@/helpers/functions/approve";
 import { getDepositDetails } from "@/helpers/functions/deposit";
 import { getNoteHash } from "@/helpers/functions/get-note-hash";
 import { getNullifier } from "@/helpers/functions/get-nullifier";
@@ -14,15 +7,20 @@ import {
   transfer,
 } from "@/helpers/functions/transfer";
 import { getTestingAPI } from "@/helpers/get-testing-api";
+import {
+  createInputNote,
+  createOutputNote,
+  emptyInputNote,
+  emptyOutputNote,
+} from "@/helpers/note-formatting";
 import { NoteEncryption } from "@/helpers/note-sharing";
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers, Wallet } from "ethers";
 import { network } from "hardhat";
 
 describe("Testing Transfer functionality", () => {
-  let Signers: HardhatEthersSigner[];
+  let Signers: ethers.Signer[];
 
   let commbankDotEth: ethers.Contract;
   let tree: PoseidonMerkleTree;

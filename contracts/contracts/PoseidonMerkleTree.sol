@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import "./utils/Poseidon2Yul.sol";
-
 contract PoseidonMerkleTree {
   // The root of a poseidon2 merkle tree with height 12 and all leaf nodes filled with:
   // EMPTY_LEAF = keccak256(abi.encodePacked("TANGERINE")) % FIELD_MODULUS
@@ -26,15 +24,19 @@ contract PoseidonMerkleTree {
 
   uint256 public MAX_LEAF_INDEX;
 
-  address public immutable poseidon2Hasher;
+  address public poseidon2Hasher;
 
   constructor(uint256 _height) {
     height = _height;
     MAX_LEAF_INDEX = 2 ** (_height - 1);
 
-    poseidon2Hasher = address(new Poseidon2Yul());
-
     roots[0] = uint256(INITIAL_ROOT);
+  }
+
+  // TODO make this better
+  function setPoseidon(address _hasher) public {
+    require(poseidon2Hasher == address(0), "Can't set it twice!");
+    poseidon2Hasher = _hasher;
   }
 
   function zeros(uint256 i) public pure returns (uint256) {
