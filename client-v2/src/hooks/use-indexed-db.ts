@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import * as db from "@/lib/db";
-import type { Note, TreeLeaf, Payload, Meta } from "@/lib/db";
+import type { Note, TreeLeaf, Payload, Meta } from "@/_types";
 
 /**
  * USAGE EXAMPLES:

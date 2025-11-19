@@ -6,10 +6,10 @@ export class PoseidonMerkleTree {
   private defaultNodes: bigint[];
   private nextIndex: number;
   private currentRootIndex: number;
-  private filledSubtrees: Record<string, bigint | null>;
-  private roots: Record<string, bigint>;
-  private leaves: bigint[];
-  private zeros: bigint | null;
+  // private filledSubtrees: Record<string, bigint | null>;
+  // private roots: Record<string, bigint>;
+  // private leaves: bigint[];
+  // private zeros: bigint | null;
   public insertedLeaves: Set<number>;
 
   constructor(levels: number) {
@@ -19,10 +19,10 @@ export class PoseidonMerkleTree {
     this.initializeDefaultNodes();
     this.nextIndex = 0;
     this.currentRootIndex = 0;
-    this.filledSubtrees = {};
-    this.roots = {};
-    this.leaves = new Array(2 ** levels);
-    this.zeros = null;
+    // this.filledSubtrees = {};
+    // this.roots = {};
+    // this.leaves = new Array(2 ** levels);
+    // this.zeros = null;
     this.insertedLeaves = new Set();
   }
 

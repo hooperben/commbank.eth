@@ -1,5 +1,5 @@
 import { UltraHonkBackend } from "@aztec/bb.js";
-import { Noir, CompiledCircuit } from "@noir-lang/noir_js";
+import { Noir, type CompiledCircuit } from "@noir-lang/noir_js";
 
 import depositCircuit from "../../circuits/deposit/target/deposit.json";
 

@@ -6,12 +6,12 @@
     "client-v2",
     "indexer",
     "contracts",
-    "shared",
-    "server"
+    "shared"
   ],
   "scripts": {
     "dev": "bun run --filter client-v2 dev",
     "build": "bun run --filter client-v2 build",
+    "build-ipfs": "bun run --filter client-v2 build-ipfs",
     "build-contracts": "bun run --filter contracts build",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",
