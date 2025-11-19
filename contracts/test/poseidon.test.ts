@@ -36,10 +36,7 @@ describe("testing the yul poseidon implementation", () => {
 
     // The result is returned as bytes32, decode it as uint256
     const hash = BigInt(result);
-
-    const expected = poseidon2Hash([0n, 0n]);
-
-    console.log(expected.toString(16));
+    const expected = poseidon2Hash([input1, input2]);
 
     expect(hash).eq(expected);
   });
@@ -72,6 +69,8 @@ describe("testing the yul poseidon implementation", () => {
       data: calldata,
     });
 
-    console.log(result);
+    const expected = poseidon2Hash([input1, input2]);
+
+    expect(BigInt(expected)).eq(BigInt(result));
   });
 });
