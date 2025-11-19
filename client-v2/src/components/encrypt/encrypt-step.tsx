@@ -1,11 +1,20 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useERC20Balance } from "@/hooks/use-erc20-balance";
+import { ethers } from "ethers";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { sepoliaAssets } from "shared/constants/token";
 import type { EncryptData } from "./encrypt-modal";
-import { Loader2 } from "lucide-react";
-import { useERC20Balance } from "@/hooks/use-erc20-balance";
-import { ethers } from "ethers";
 
 export function EncryptStep({
   onSelectAsset,
@@ -37,10 +46,10 @@ export function EncryptStep({
   };
 
   return (
-    <div className="space-y-8 py-8">
-      <div>
-        <h2 className="text-3xl font-light mb-2 font-mono">Encrypt</h2>
-        <p className="text-sm mb-4">
+    <div className="">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-3xl font-light">Encrypt</h2>
+        <p className="text-sm">
           Move assets from public to private, using commbank.eth's Private
           Unstoppable Money.
         </p>
@@ -55,41 +64,37 @@ export function EncryptStep({
         <div className="grid grid-cols-2 gap-4">
           <div className="border border-white/20 p-4 rounded">
             <label className="text-xs mb-2 block">Amount</label>
-            <input
+            <Input
               type="number"
-              value={amount}
+              placeholder="Amount"
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              className="w-full bg-transparent text-2xl font-mono outline-none placeholder-white/20"
             />
           </div>
 
           <div className="border border-white/20 p-4 rounded">
             <label className="text-xs mb-2 block">Asset</label>
-            <select
-              value={selectedAsset?.address || ""}
-              onChange={(e) => {
+
+            <Select
+              value={selectedAsset?.address}
+              // TODO make ID lookup
+              onValueChange={(value) => {
                 const asset = sepoliaAssets.find(
-                  (a) => a.address === e.target.value,
+                  (item) => item.address === value,
                 );
-                setSelectedAsset(asset || null);
-                setAmount("");
+                setSelectedAsset(asset ?? null);
               }}
-              className="w-full bg-transparent text-xl font-mono outline-none "
             >
-              <option value="" className="bg-black">
-                Select asset...
-              </option>
-              {sepoliaAssets.map((asset) => (
-                <option
-                  key={asset.address}
-                  value={asset.address}
-                  className="bg-black"
-                >
-                  {asset.symbol}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select Asset" />
+              </SelectTrigger>
+              <SelectContent>
+                {sepoliaAssets.map((asset) => (
+                  <SelectItem key={asset.address} value={asset.address}>
+                    {asset.symbol}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -107,8 +112,6 @@ export function EncryptStep({
                   {ethers.formatUnits(balance, selectedAsset.decimals)}{" "}
                   {selectedAsset.symbol} Available
                 </div>
-                {/* TODO */}
-                <div className="text">0 {selectedAsset.symbol} already PUM</div>
               </>
             )}
           </div>
@@ -122,13 +125,9 @@ export function EncryptStep({
 
       {/* Proceed Button */}
       <div className="flex justify-end">
-        <button
-          onClick={handleProceed}
-          disabled={!isValid}
-          className="border border-white/20 px-12 py-3 rounded font-mono disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/5 transition-colors"
-        >
-          Proceed
-        </button>
+        <Button variant="ghost" onClick={handleProceed} disabled={!isValid}>
+          Next
+        </Button>
       </div>
     </div>
   );

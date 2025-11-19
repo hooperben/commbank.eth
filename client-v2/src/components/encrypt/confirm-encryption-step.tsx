@@ -1,8 +1,9 @@
 "use client";
 
-import type { EncryptData } from "./encrypt-modal";
+import { Button } from "@/components/ui/button";
 import { useEncryptMutation } from "@/hooks/use-encrypt-mutation";
 import { Loader2 } from "lucide-react";
+import type { EncryptData } from "./encrypt-modal";
 
 export function ConfirmEncryptStep({
   data,
@@ -34,31 +35,29 @@ export function ConfirmEncryptStep({
     );
   };
   return (
-    <div className="space-y-8 py-8">
-      <h2 className="text-3xl font-light font-mono">Confirm Encryption</h2>
-
+    <div className="">
       <div className="space-y-6 text-center">
         <p className="">You're about to encrypt</p>
 
         {/* Asset Display */}
         <div className="flex items-center justify-center gap-4">
-          <div className="text-3xl font-mono font-light">{data.amount}</div>
+          <div className="text-3xl  font-light">{data.amount}</div>
           <div className="w-12 h-12 border border-white/20 rounded-full flex items-center justify-center">
             <span className="">◎</span>
           </div>
-          <div className="text-xl font-mono">
+          <div className="text-xl ">
             {data.asset.name} ({data.asset.symbol})
           </div>
         </div>
 
         {/* Outcome Info */}
         <div className="bg-white/5 border border-white/10 p-6 rounded space-y-2 text-sm">
-          <p className="">Once this is complete, you'll have:</p>
-          <p className="font-mono">
+          <p className="text-xl">Once this is complete, you'll have:</p>
+          <p className="">
             {99 - data.amount} {data.asset.symbol} Publicly Available
           </p>
-          <p className="font-mono">
-            {data.amount} {data.asset.symbol} that is PUM
+          <p className="">
+            {data.amount} {data.asset.symbol} Encrypted
           </p>
         </div>
 
@@ -75,21 +74,13 @@ export function ConfirmEncryptStep({
 
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-4 pt-4">
-        <button
-          onClick={onBack}
-          disabled={isPending}
-          className="border border-white/20 px-6 py-3 rounded font-mono disabled:opacity-50 hover:bg-white/5 transition-colors"
-        >
+        <Button onClick={onBack} disabled={isPending} variant="secondary">
           Back
-        </button>
-        <button
-          onClick={handleConfirm}
-          disabled={isPending}
-          className="border border-white/20 px-6 py-3 rounded font-mono disabled:opacity-50 hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
-        >
+        </Button>
+        <Button onClick={handleConfirm} disabled={isPending}>
           {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
           {isPending ? "Confirming..." : "Confirm"}
-        </button>
+        </Button>
       </div>
     </div>
   );
