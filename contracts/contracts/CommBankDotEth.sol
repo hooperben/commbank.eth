@@ -18,8 +18,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
-import "hardhat/console.sol";
-
 contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
   IVerifier depositVerifier;
   IVerifier transferVerifier;
@@ -37,6 +35,9 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
   uint256 constant EXIT_AMOUNT_START_INDEX = 7;
   uint256 constant EXIT_ADDRESSES_START_INDEX = 10;
 
+  address public immutable ETH_ADDRESS =
+    0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
   constructor(
     address _noteVerifier,
     address _transactVerifier,
@@ -52,12 +53,11 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
 
   function deposit(
     address _erc20,
-    uint64 _amount, // with decimals !!
+    uint256 _amount, // with decimals !!
     bytes calldata _proof,
     bytes32[] calldata _publicInputs,
     bytes[] calldata _payload
   ) public onlyRole(DEPOSIT_ROLE) {
-    console.log(_erc20);
     bool depositTransfer = IERC20(_erc20).transferFrom(
       msg.sender,
       address(this),
@@ -82,6 +82,34 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     // INSERT NOTE INTO TREE
     _insert(uint256(_publicInputs[0]));
 
+    for (uint256 i = 0; i < 3 && i < _payload.length; i++) {
+      if (_payload[i].length != 0) {
+        emit NotePayload(_payload[i]);
+      }
+    }
+  }
+
+  function depositNative(
+    bytes calldata _proof,
+    bytes32[] calldata _publicInputs,
+    bytes[] calldata _payload
+  ) public payable onlyRole(DEPOSIT_ROLE) {
+    // VERIFY PROOF
+    bool isValidProof = depositVerifier.verify(_proof, _publicInputs);
+    require(isValidProof, "Invalid deposit proof!");
+
+    // check that input address is 0xEee address
+    require(
+      ETH_ADDRESS == address(uint160(uint256(_publicInputs[1]))),
+      "Address mismatch"
+    );
+    // check that msg.value matches amount in proof
+    require(msg.value == uint64(uint256(_publicInputs[2])), "Amount incorrect");
+
+    // Insert note into tree
+    _insert(uint256(_publicInputs[0]));
+
+    // Emit encrypted payloads
     for (uint256 i = 0; i < 3 && i < _payload.length; i++) {
       if (_payload[i].length != 0) {
         emit NotePayload(_payload[i]);
@@ -172,9 +200,19 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
       );
 
       if (exitAmount > 0) {
-        // Transfer tokens to the exit address
-        bool success = IERC20(exitAsset).transfer(exitAddress, exitAmount);
-        require(success, "Token transfer failed");
+        if (exitAsset == ETH_ADDRESS) {
+          // if it's eth, send the amount of eth to them
+          require(
+            address(this).balance >= exitAmount,
+            "Insufficient ETH balance"
+          );
+          (bool success, ) = exitAddress.call{value: exitAmount}("");
+          require(success, "ETH transfer failed");
+        } else {
+          // Transfer tokens to the exit address
+          bool success = IERC20(exitAsset).transfer(exitAddress, exitAmount);
+          require(success, "Token transfer failed");
+        }
       }
     }
   }

@@ -1,9 +1,3 @@
-import {
-  createInputNote,
-  createOutputNote,
-  emptyInputNote,
-  emptyOutputNote,
-} from "@/helpers/note-formatting";
 import { approve } from "@/helpers/functions/approve";
 import { getDepositDetails } from "@/helpers/functions/deposit";
 import { getNoteHash } from "@/helpers/functions/get-note-hash";
@@ -15,11 +9,17 @@ import {
 } from "@/helpers/functions/transfer";
 import { getWithdrawDetails } from "@/helpers/functions/withdraw";
 import { getTestingAPI } from "@/helpers/get-testing-api";
+import {
+  createInputNote,
+  createOutputNote,
+  emptyInputNote,
+  emptyOutputNote,
+} from "@/helpers/note-formatting";
 import { NoteEncryption } from "@/helpers/note-sharing";
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { expect } from "chai";
-import { ethers, parseUnits } from "ethers";
+import { ethers, parseEther, parseUnits } from "ethers";
 
 describe("Testing Withdraw functionality", () => {
   let Signers: ethers.Signer[];
@@ -32,7 +32,13 @@ describe("Testing Withdraw functionality", () => {
   let deployer1Secret: string;
   let deployer2Secret: string;
 
-  before(async () => {
+  const secret =
+    2389312107716289199307843900794656424062350252250388738019021107824217896920n;
+  const ownerSecret =
+    10036677144260647934022413515521823129584317400947571241312859176539726523915n;
+  const owner = BigInt(poseidon2Hash([ownerSecret]).toString());
+
+  beforeEach(async () => {
     ({
       Signers,
       usdcDeployment,
@@ -43,15 +49,9 @@ describe("Testing Withdraw functionality", () => {
     } = await getTestingAPI());
   });
 
-  it("Withdraw test case", async () => {
+  it("Withdraw ERC20 test case", async () => {
     const assetId = await usdcDeployment.getAddress();
     const assetAmount = BigInt("5");
-    const secret =
-      2389312107716289199307843900794656424062350252250388738019021107824217896920n;
-    const ownerSecret =
-      10036677144260647934022413515521823129584317400947571241312859176539726523915n;
-    const owner = BigInt(poseidon2Hash([ownerSecret]).toString());
-
     // in order to transfer we need to first deposit
     const { proof: depositProof } = await getDepositDetails({
       assetId,
@@ -224,6 +224,82 @@ describe("Testing Withdraw functionality", () => {
 
     expect(usdcBalanceAfter).eq(
       usdcBalanceBefore + bobInputNote.asset_amount.toString(),
+    );
+  });
+
+  it("Testing Native withdrawal", async () => {
+    const assetAmount = parseEther("1");
+    const ethAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+
+    const { proof: depositProof } = await getDepositDetails({
+      assetId: ethAddress,
+      assetAmount,
+      secret,
+      owner,
+    });
+
+    // create encrypted payload for the deposited note
+    const depositPayload = await createDepositPayload(
+      {
+        secret,
+        owner: owner.toString(),
+        asset_id: ethAddress,
+        asset_amount: assetAmount.toString(),
+      },
+      Signers[0],
+    );
+
+    await commbankDotEth.depositNative(
+      depositProof.proof,
+      depositProof.publicInputs,
+      depositPayload,
+      {
+        value: assetAmount,
+      },
+    );
+
+    await tree.insert(depositProof.publicInputs[0], 0);
+
+    const merkleProof = await tree.getProof(0);
+    const leafIndex = 0n;
+
+    const inputNote = createInputNote(
+      ethAddress,
+      assetAmount,
+      owner,
+      ownerSecret,
+      secret,
+      leafIndex,
+      merkleProof.siblings,
+      merkleProof.indices,
+    );
+    const aliceInputNullifier = await getNullifier(inputNote);
+
+    const inputNotes = [inputNote, emptyInputNote, emptyInputNote];
+    const nullifiers = ["0x" + aliceInputNullifier.toString(16), "0", "0"];
+    const exitAddresses = [Signers[9].address, "0", "0"];
+    const exitAddressHahes = [
+      poseidon2Hash([BigInt(Signers[9].address)]).toString(),
+      "0",
+      "0",
+    ];
+
+    const exitAssets = [ethAddress, "0", "0"];
+    const exitAmounts = ["0x" + BigInt(assetAmount).toString(16), "0", "0"];
+
+    const { proof: withdrawProof } = await getWithdrawDetails(
+      tree,
+      inputNotes,
+      nullifiers,
+      exitAssets,
+      exitAmounts,
+      exitAddresses,
+      exitAddressHahes,
+    );
+
+    await commbankDotEth.withdraw(
+      withdrawProof.proof,
+      withdrawProof.publicInputs,
     );
   });
 });

@@ -1,7 +1,6 @@
 import { NoteEncryption } from "@/helpers/note-sharing";
-import { SigningKey, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { expect } from "chai";
-import { poseidon2Hash } from "@zkpassport/poseidon2";
 
 describe("Testing Note Sharing functionality", () => {
   it("should let me encrypt and decrypt", async () => {
@@ -9,17 +8,10 @@ describe("Testing Note Sharing functionality", () => {
       "0x1234567890123456789012345678901234567890123456789012345678901234";
     // Create wallets (signers)
     const alice = new Wallet(alicePK);
-    const aliceSigning = new SigningKey(alicePK);
-    console.log(aliceSigning.publicKey);
 
     const bobPk =
       "0x9876543210987654321098765432109876543210987654321098765432109876";
     const bob = new Wallet(bobPk);
-    const bobSigning = new SigningKey(bobPk);
-    console.log(bobSigning.publicKey);
-
-    const poseidonPub = poseidon2Hash([BigInt(bobPk)]);
-    console.log("0x", poseidonPub.toString(16));
 
     // Create a note with secret
     const originalNote = {
