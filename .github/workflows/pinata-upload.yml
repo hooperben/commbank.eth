@@ -36,9 +36,9 @@ jobs:
           bun-version: "latest"
 
       - name: Install dependencies and build client-v2
-        working-directory: client-v2
         run: |
           bun install
+          cd client-v2
           bun run build
 
       - name: Upload dist/ to Pinata
