@@ -36,11 +36,8 @@ jobs:
           bun-version: "latest"
 
       - name: Install dependencies and build client-v2
-        env:
-          BUN_INSTALL_CACHE_DIR: ${{ runner.temp }}/.bun-cache
         run: |
-          mkdir -p "$BUN_INSTALL_CACHE_DIR"
-          bun install --frozen-lockfile
+          bun install --no-cache
           cd client-v2
           bun run build
 
