@@ -16,11 +16,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.23.4"
 
-      - name: Install Pinata CLI
+      - name: Build and Install Pinata CLI
         run: |
-          go install github.com/hooperben/ipfs-cli@main
+          go build -o ipfs-cli
+          sudo mv ipfs-cli /usr/local/bin/
 
       - name: Authenticate Pinata CLI
         env:
