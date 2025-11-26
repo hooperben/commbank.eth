@@ -13,13 +13,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.23.4"
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies and build client-v2
+        run: |
+          export PATH="$HOME/.bun/bin:$PATH"
+          bun install
+          cd client-v2
+          bun run build
+
+      - name: Install Go
+        run: |
+          wget https://go.dev/dl/go1.23.4.linux-amd64.tar.gz
+          sudo tar -C /usr/local -xzf go1.23.4.linux-amd64.tar.gz
+          echo "/usr/local/go/bin" >> $GITHUB_PATH
 
       - name: Build and Install Pinata CLI
         run: |
+          export PATH="/usr/local/go/bin:$PATH"
           git clone https://github.com/hooperben/ipfs-cli.git /tmp/ipfs-cli
           cd /tmp/ipfs-cli
           go build -o ipfs-cli
@@ -29,19 +43,6 @@ jobs:
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: ipfs-cli auth --token "$PINATA_JWT" --default
-
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: "latest"
-
-      - name: Install dependencies and build client-v2
-        run: |
-          mkdir -p ~/.bun/install/cache/package/version
-          chmod -R 777 ~/.bun/install/cache
-          bun install
-          cd client-v2
-          bun run build
 
       - name: Upload dist/ to Pinata
         working-directory: client-v2
