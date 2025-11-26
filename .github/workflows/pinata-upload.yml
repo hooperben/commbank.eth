@@ -20,8 +20,10 @@ jobs:
 
       - name: Build and Install Pinata CLI
         run: |
-          go install github.com/hooperben/ipfs-cli@main
-          sudo mv $(go env GOPATH)/bin/ipfs-cli /usr/local/bin/
+          git clone https://github.com/hooperben/ipfs-cli.git /tmp/ipfs-cli
+          cd /tmp/ipfs-cli
+          go build -o ipfs-cli
+          sudo mv ipfs-cli /usr/local/bin/
 
       - name: Authenticate Pinata CLI
         env:
