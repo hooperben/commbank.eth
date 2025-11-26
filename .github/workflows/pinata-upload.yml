@@ -1,0 +1,43 @@
+name: Upload client-v2 build to Pinata
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+  pinata-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Install Pinata CLI
+        run: |
+          go install github.com/hooperben/ipfs-cli@main
+
+      - name: Authenticate Pinata CLI
+        env:
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+        run: ipfs-cli auth --token "$PINATA_JWT" --default
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Install dependencies and build client-v2
+        working-directory: client-v2
+        run: |
+          bun install
+          bun run build
+
+      - name: Upload dist/ to Pinata
+        working-directory: client-v2
+        run: ipfs-cli upload dist
