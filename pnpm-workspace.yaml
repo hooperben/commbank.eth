@@ -1,0 +1,5 @@
+packages:
+  - "client-v2"
+  - "indexer"
+  - "contracts"
+  - "shared"

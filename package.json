@@ -2,17 +2,11 @@
   "name": "commbank-dot-eth",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "client-v2",
-    "indexer",
-    "contracts",
-    "shared"
-  ],
   "scripts": {
-    "dev": "bun run --filter client-v2 dev",
-    "build": "bun run --filter client-v2 build",
-    "build-ipfs": "bun run --filter client-v2 build-ipfs",
-    "build-contracts": "bun run --filter contracts build",
+    "dev": "pnpm --filter client-v2 dev",
+    "build": "pnpm --filter client-v2 build",
+    "build-ipfs": "pnpm --filter client-v2 build-ipfs",
+    "build-contracts": "pnpm --filter contracts build",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",
     "lint": "eslint .",
