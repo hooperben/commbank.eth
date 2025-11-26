@@ -37,7 +37,9 @@ jobs:
 
       - name: Install dependencies and build client-v2
         run: |
-          bun install --no-cache
+          mkdir -p ~/.bun/install/cache/package/version
+          chmod -R 777 ~/.bun/install/cache
+          bun install
           cd client-v2
           bun run build
 
