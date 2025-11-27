@@ -1,4 +1,4 @@
-name: Upload client-v2 build to Pinata
+name: Upload client build to Pinata
 
 on:
   push:
@@ -39,11 +39,11 @@ jobs:
           cd contracts
           pnpm run build
 
-      - name: Build client-v2
+      - name: Build client
         run: |
           export PNPM_HOME="$HOME/.local/share/pnpm"
           export PATH="$PNPM_HOME:$PATH"
-          cd client-v2
+          cd client
           pnpm run build
 
       - name: Install Go
@@ -66,5 +66,5 @@ jobs:
         run: ipfs-cli auth --token "$PINATA_JWT" --default
 
       - name: Upload dist/ to Pinata
-        working-directory: client-v2
+        working-directory: client
         run: ipfs-cli upload dist

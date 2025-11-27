@@ -4,10 +4,31 @@
 
 ## Components
 
-- `client/`: the web app deployed at https://commbank.eth.limo
+- `client*/`: the commbank.eth web app (currently 2 versions)
 - `contracts/`: the EVM smart contracts required to facilitate private transfers
-- `circuits`: an implementation of a Multi Asset Shield Pool with `poseidon2` as the merkle tree hash function
-- `server/`: is a backend that's used for getting price data of assets from coingecko and to relay transactions for users (still a work in progress).
+- `circuits/`: an implementation of a Multi Asset Shield Pool with `poseidon2` as the merkle tree hash function
+- `indexer/`: the indexer that makes the merkle tree data available easier
+
+## Development
+
+To install dependencies:
+
+```
+pnpm run dev
+```
+
+To start the indexer and client, from root:
+
+```
+pnpm run dev
+```
+
+To run just the client:
+
+```
+cd client
+pnpm run dev
+```
 
 #### Docs
 

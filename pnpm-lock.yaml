@@ -33,7 +33,7 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  client-v2:
+  client:
     dependencies:
       '@aztec/bb.js':
         specifier: 3.0.0-nightly.20251104

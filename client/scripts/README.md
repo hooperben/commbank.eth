@@ -1,8 +1,8 @@
-# Client-V2 Scripts
+# client Scripts
 
 ## Deploy to IPFS
 
-This script builds the client-v2 application and uploads it to a local IPFS node.
+This script builds the client application and uploads it to a local IPFS node.
 
 ### Prerequisites
 
@@ -17,10 +17,10 @@ From the project root:
 bun run build-ipfs
 ```
 
-Or from the client-v2 directory:
+Or from the client directory:
 
 ```bash
-cd client-v2
+cd client
 bun run build-ipfs    # Build and upload
 bun run deploy-ipfs   # Upload only (requires existing build)
 ```

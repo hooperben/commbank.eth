@@ -75,7 +75,7 @@ async function addDirectoryToIPFS(dirPath: string): Promise<string> {
 
 async function main() {
   try {
-    console.log("🚀 Starting client-v2 deployment to IPFS...");
+    console.log("🚀 Starting client deployment to IPFS...");
 
     const distDir = path.join(process.cwd(), "dist");
 

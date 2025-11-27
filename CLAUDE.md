@@ -34,7 +34,7 @@ This is a Bun workspace monorepo with the following packages:
   - Dark mode theme support with next-themes
   - Data fetching with TanStack React Query
 
-### `client-v2/` - Vite + React Frontend (In Development)
+### `client/` - Vite + React Frontend (In Development)
 
 - **Status:** Active development/migration target
 - **Tech Stack:** Vite, React 19, Vite + Tailwind CSS, React Router v7
@@ -158,10 +158,10 @@ bun run start    # Run production build
 bun run lint     # Next.js linting
 ```
 
-### Client-v2 (Vite + React Router)
+### client (Vite + React Router)
 
 ```bash
-cd client-v2
+cd client
 bun run dev      # Start Vite dev server
 bun run build    # Build with TypeScript + Vite
 bun run preview  # Preview production build
@@ -264,7 +264,7 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 - Zustand for global state (likely in newer versions)
 - Theme support via next-themes
 
-**Client-v2 (Vite):**
+**client (Vite):**
 
 - React Router for navigation
 - Form handling with react-hook-form
@@ -301,7 +301,7 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 - Incremental builds
 - Path aliases: `@/*` → project root
 
-**Client-v2:**
+**client:**
 
 - Dual tsconfig: app (src) and node configs
 - Path aliases: `@/*` → `src/*`
@@ -353,7 +353,7 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 ### Frontend Development
 
 - Client uses Next.js 14 with wagmi/rainbowkit
-- Client-v2 uses Vite with React Router
+- client uses Vite with React Router
 - Both use Tailwind CSS and Radix UI components
 - Shared utilities via `shared-package` imports
 - State management via wagmi (contracts) + TanStack Query (data)
@@ -371,7 +371,7 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 
 - **Web3:** wagmi, viem, ethers, @rainbow-me/rainbowkit
 - **UI:** @radix-ui/\*, lucide-react, framer-motion, sonner (toast)
-- **Forms:** react-hook-form (client-v2)
+- **Forms:** react-hook-form (client)
 - **Utilities:** TanStack React Query, zustand, class-variance-authority
 - **Styling:** Tailwind CSS, tailwind-merge
 - **Crypto:** @noir-lang/noir_js (proof generation)
@@ -434,9 +434,9 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 
 ## Development Tips
 
-### Running Client-V2 Locally
+### Running client Locally
 
-1. `cd client-v2`
+1. `cd client`
 2. `bun install` (if dependencies changed)
 3. `bun run dev` - Opens at http://localhost:5173
 4. Changes auto-reload (Vite HMR)
@@ -475,5 +475,5 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 - Server backend (price data, tx relay) is work-in-progress
 - Note class placeholders pending full implementation
 - Frontend tests not yet configured
-- Disaster recovery documentation in client-v2 (see DISASTER_RECOVERY.md)
+- Disaster recovery documentation in client (see DISASTER_RECOVERY.md)
 - Circuit optimization ongoing (runs: 100 hardhat setting is conservative)

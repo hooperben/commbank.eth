@@ -1,9 +1,9 @@
-name: Test client-v2 build
+name: Test client build
 
 on:
   pull_request:
     branches:
-      - '**'
+      - "**"
 
 jobs:
   test-build:
@@ -38,9 +38,9 @@ jobs:
           cd contracts
           pnpm run build
 
-      - name: Build client-v2
+      - name: Build client
         run: |
           export PNPM_HOME="$HOME/.local/share/pnpm"
           export PATH="$PNPM_HOME:$PATH"
-          cd client-v2
+          cd client
           pnpm run build
