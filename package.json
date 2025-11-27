@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter client dev",
+    "dev": "VITE_RUNNING_LOCAL_INDEXER=true pnpm --filter envio-indexer dev & pnpm --filter client dev",
     "build": "pnpm --filter client build",
     "build-ipfs": "pnpm --filter client build-ipfs",
     "build-contracts": "pnpm --filter contracts build",
@@ -21,5 +21,11 @@
     "globals": "^16.5.0",
     "prettier": "^3.6.2",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19.1.16",
+      "@types/react-dom": "^19.1.9"
+    }
   }
 }
