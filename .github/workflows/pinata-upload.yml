@@ -28,8 +28,8 @@ jobs:
       - name: Install bb (Barretenberg)
         run: |
           curl -L https://raw.githubusercontent.com/AztecProtocol/aztec-packages/refs/heads/next/barretenberg/bbup/install | bash
-          export PATH="$HOME/.bb/bin:$PATH"
-          bbup
+          export PATH="$HOME/.bbup/bin:$PATH"
+          $HOME/.bbup/bin/bbup
           echo "$HOME/.bb/bin" >> $GITHUB_PATH
 
       - name: Install dependencies and build circuits
