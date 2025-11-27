@@ -10,7 +10,7 @@ import { PAGE_METADATA } from "@/lib/seo-config";
 import { useState } from "react";
 
 export const AccountPage = () => {
-  const [showAssetBreakdown, setShowAssetBreakdown] = useState(false);
+  const [showAssetBreakdown, setShowAssetBreakdown] = useState(true);
   const [showEncryptModal, setShowEncryptModal] = useState(false);
 
   const { address, privateAddress, signingKey } = useAuth();
@@ -26,13 +26,14 @@ export const AccountPage = () => {
 
   return (
     <PageContainer {...PAGE_METADATA.account}>
-      <div className="space-y-6 max-w-2xl mx-auto">
+      <div className="space-y-6">
         {/* Address Card */}
         <AddressCard
           publicAddress={address}
           privateAddress={privateAddress}
           signingKey={signingKey}
         />
+
         <div className="space-y-4">
           <ActionButtons
             onEncryptClick={handleEncryptClick}

@@ -85,7 +85,11 @@ export function AppLayout({
           <div className="flex flex-col w-full min-h-screen">
             <SidebarTriggerFixed />
             <SettingsDropdown />
-            <main className="flex-1 p-6 md:p-8 pt-24 md:pt-20">{children}</main>
+            <main className="flex-1 p-6 md:p-8 pt-24 md:pt-20">
+              <div className="mx-auto w-full max-w-5xl lg:mx-0 lg:max-w-none">
+                {children}
+              </div>
+            </main>
             <Footer />
           </div>
           <Toaster />
