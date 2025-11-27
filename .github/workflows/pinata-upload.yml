@@ -31,7 +31,7 @@ jobs:
           export PATH="$PNPM_HOME:$PATH"
           pnpm install --frozen-lockfile
           cd contracts
-          bun run build
+          pnpm run build
 
       - name: Build client-v2
         run: |
