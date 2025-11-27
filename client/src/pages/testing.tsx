@@ -1,15 +1,148 @@
 import { Button } from "@/components/ui/button";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import type { Note, Payload, TreeLeaf } from "@/_types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDBStats } from "@/hooks/use-indexed-db";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { useIndexerNotes } from "@/hooks/use-indexer-notes";
+import { useIndexerLeafs } from "@/hooks/use-indexer-leafs";
+import { AlertCircle, Loader2, Database, DatabaseZap } from "lucide-react";
 import { Deposit } from "shared/classes/Deposit";
 import { Transact } from "shared/classes/Transact";
 import { Withdraw } from "shared/classes/Withdraw";
 import { toast } from "sonner";
+
+// Component for indexer payload row
+const IndexerPayloadRow = ({
+  note,
+  checkInDB,
+  onWriteToDB,
+}: {
+  note: { id: string; encryptedNote: string };
+  checkInDB: (id: string) => Promise<boolean>;
+  onWriteToDB: (id: string, encryptedNote: string) => Promise<void>;
+}) => {
+  const [isInDB, setIsInDB] = useState<boolean | null>(null);
+  const [isWriting, setIsWriting] = useState(false);
+
+  useEffect(() => {
+    checkInDB(note.id).then(setIsInDB);
+  }, [note.id, checkInDB]);
+
+  const handleWrite = async () => {
+    setIsWriting(true);
+    try {
+      await onWriteToDB(note.id, note.encryptedNote);
+      setIsInDB(true);
+    } finally {
+      setIsWriting(false);
+    }
+  };
+
+  return (
+    <tr className="border-b hover:bg-muted/50">
+      <td className="p-2 font-mono text-xs">{note.id}</td>
+      <td className="p-2 font-mono text-xs truncate max-w-md">
+        {note.encryptedNote}
+      </td>
+      <td className="p-2">
+        {isInDB === null ? (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : isInDB ? (
+          <div className="flex items-center gap-1 text-green-600">
+            <Database className="h-4 w-4" />
+            <span className="text-xs font-medium">In DB</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <DatabaseZap className="h-4 w-4" />
+            <span className="text-xs">Not in DB</span>
+          </div>
+        )}
+      </td>
+      <td className="p-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleWrite}
+          disabled={isInDB === true || isWriting}
+          className="h-7 text-xs"
+        >
+          {isWriting ? "Writing..." : "Write to DB"}
+        </Button>
+      </td>
+    </tr>
+  );
+};
+
+// Component for indexer leaf row
+const IndexerLeafRow = ({
+  leaf,
+  checkInDB,
+  onWriteToDB,
+}: {
+  leaf: { id: string; leafIndex: string; leafValue: string };
+  checkInDB: (id: string) => Promise<boolean>;
+  onWriteToDB: (
+    id: string,
+    leafIndex: string,
+    leafValue: string,
+  ) => Promise<void>;
+}) => {
+  const [isInDB, setIsInDB] = useState<boolean | null>(null);
+  const [isWriting, setIsWriting] = useState(false);
+
+  useEffect(() => {
+    checkInDB(leaf.id).then(setIsInDB);
+  }, [leaf.id, checkInDB]);
+
+  const handleWrite = async () => {
+    setIsWriting(true);
+    try {
+      await onWriteToDB(leaf.id, leaf.leafIndex, leaf.leafValue);
+      setIsInDB(true);
+    } finally {
+      setIsWriting(false);
+    }
+  };
+
+  return (
+    <tr className="border-b hover:bg-muted/50">
+      <td className="p-2 font-mono text-xs">{leaf.id}</td>
+      <td className="p-2 font-mono text-xs">{leaf.leafIndex}</td>
+      <td className="p-2 font-mono text-xs truncate max-w-md">
+        {leaf.leafValue}
+      </td>
+      <td className="p-2">
+        {isInDB === null ? (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : isInDB ? (
+          <div className="flex items-center gap-1 text-green-600">
+            <Database className="h-4 w-4" />
+            <span className="text-xs font-medium">In DB</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <DatabaseZap className="h-4 w-4" />
+            <span className="text-xs">Not in DB</span>
+          </div>
+        )}
+      </td>
+      <td className="p-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleWrite}
+          disabled={isInDB === true || isWriting}
+          className="h-7 text-xs"
+        >
+          {isWriting ? "Writing..." : "Write to DB"}
+        </Button>
+      </td>
+    </tr>
+  );
+};
 
 const TestingPage = () => {
   const [isDepositLoading, setIsDepositLoading] = useState(false);
@@ -26,6 +159,65 @@ const TestingPage = () => {
     refresh: refreshDBStats,
     db,
   } = useDBStats();
+
+  // Use indexer hooks
+  const {
+    data: indexerNotes,
+    isLoading: isNotesLoading,
+    error: notesError,
+  } = useIndexerNotes(50, 0);
+
+  const {
+    data: indexerLeafs,
+    isLoading: isLeafsLoading,
+    error: leafsError,
+  } = useIndexerLeafs(50, 0);
+
+  // Check if indexer records exist in IndexedDB
+  const checkPayloadInDB = async (id: string): Promise<boolean> => {
+    try {
+      const payload = await db.getPayload(id);
+      return !!payload;
+    } catch {
+      return false;
+    }
+  };
+
+  const checkLeafInDB = async (id: string): Promise<boolean> => {
+    try {
+      const leaf = await db.getTreeLeaf(id);
+      return !!leaf;
+    } catch {
+      return false;
+    }
+  };
+
+  // Write indexer records to IndexedDB
+  const handleWritePayloadToDB = async (id: string, encryptedNote: string) => {
+    try {
+      await db.addPayload({ id, encryptedNote });
+      toast.success("Payload written to IndexedDB");
+      await refreshDBStats();
+    } catch (error) {
+      toast.error("Failed to write payload");
+      console.error(error);
+    }
+  };
+
+  const handleWriteLeafToDB = async (
+    id: string,
+    leafIndex: string,
+    leafValue: string,
+  ) => {
+    try {
+      await db.addTreeLeaf({ id, leafIndex, leafValue });
+      toast.success("Tree leaf written to IndexedDB");
+      await refreshDBStats();
+    } catch (error) {
+      toast.error("Failed to write tree leaf");
+      console.error(error);
+    }
+  };
 
   const handleDepositProof = async () => {
     setIsDepositLoading(true);
@@ -554,6 +746,103 @@ const TestingPage = () => {
                   ))}
                 </div>
               </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Indexer Data Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Indexer Data</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Indexer Notes Table */}
+          <div>
+            <h3 className="font-semibold mb-3 text-lg">
+              Note Payloads ({indexerNotes?.length || 0})
+            </h3>
+            {isNotesLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : notesError ? (
+              <div className="flex items-center gap-2 p-4 bg-destructive/10 rounded text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                <span>Error loading notes: {notesError.message}</span>
+              </div>
+            ) : indexerNotes && indexerNotes.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="border-b">
+                    <tr className="text-left">
+                      <th className="p-2 font-semibold">ID</th>
+                      <th className="p-2 font-semibold">Encrypted Note</th>
+                      <th className="p-2 font-semibold">Status</th>
+                      <th className="p-2 font-semibold">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {indexerNotes.map((note) => (
+                      <IndexerPayloadRow
+                        key={note.id}
+                        note={note}
+                        checkInDB={checkPayloadInDB}
+                        onWriteToDB={handleWritePayloadToDB}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                No note payloads found
+              </p>
+            )}
+          </div>
+
+          {/* Indexer Leafs Table */}
+          <div>
+            <h3 className="font-semibold mb-3 text-lg">
+              Tree Leaves ({indexerLeafs?.length || 0})
+            </h3>
+            {isLeafsLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : leafsError ? (
+              <div className="flex items-center gap-2 p-4 bg-destructive/10 rounded text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                <span>Error loading leafs: {leafsError.message}</span>
+              </div>
+            ) : indexerLeafs && indexerLeafs.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="border-b">
+                    <tr className="text-left">
+                      <th className="p-2 font-semibold">ID</th>
+                      <th className="p-2 font-semibold">Leaf Index</th>
+                      <th className="p-2 font-semibold">Leaf Value</th>
+                      <th className="p-2 font-semibold">Status</th>
+                      <th className="p-2 font-semibold">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {indexerLeafs.map((leaf) => (
+                      <IndexerLeafRow
+                        key={leaf.id}
+                        leaf={leaf}
+                        checkInDB={checkLeafInDB}
+                        onWriteToDB={handleWriteLeafToDB}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                No tree leaves found
+              </p>
             )}
           </div>
         </CardContent>

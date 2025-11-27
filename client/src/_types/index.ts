@@ -24,3 +24,15 @@ export interface Meta {
   encryptedMnemonic?: string;
   last_id: number;
 }
+
+// Indexer types
+export interface IndexerNotePayload {
+  id: string;
+  encryptedNote: string;
+}
+
+export interface IndexerLeafInserted {
+  id: string;
+  leafIndex: string;
+  leafValue: string;
+}
