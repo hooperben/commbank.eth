@@ -40,6 +40,8 @@ jobs:
           pnpm run build
 
       - name: Build client
+        env:
+          VITE_GITHUB_ACTION_BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           export PNPM_HOME="$HOME/.local/share/pnpm"
           export PATH="$PNPM_HOME:$PATH"
