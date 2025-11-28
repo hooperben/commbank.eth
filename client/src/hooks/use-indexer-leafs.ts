@@ -4,7 +4,7 @@ import type { IndexerLeafInserted } from "@/_types";
 import { getIndexerUrl } from "@/lib/indexer";
 
 interface LeafInsertedResponse {
-  Commbankdoteth_LeafInserted: IndexerLeafInserted[];
+  envio_Commbankdoteth_LeafInserted: IndexerLeafInserted[];
 }
 
 const fetchIndexerLeafs = async (
@@ -13,7 +13,7 @@ const fetchIndexerLeafs = async (
 ): Promise<IndexerLeafInserted[]> => {
   const query = `
     query GetLeafInserted($limit: Int!, $offset: Int!) {
-      Commbankdoteth_LeafInserted(limit: $limit, offset: $offset, order_by: {id: desc}) {
+      envio_Commbankdoteth_LeafInserted(limit: $limit, offset: $offset, order_by: {id: desc}) {
         id
         leafIndex
         leafValue
@@ -30,11 +30,12 @@ const fetchIndexerLeafs = async (
     {
       headers: {
         "Content-Type": "application/json",
+        "x-hasura-admin-secret": import.meta.env.VITE_INDEXER_KEY,
       },
     },
   );
 
-  return response.data.data.Commbankdoteth_LeafInserted;
+  return response.data.data.envio_Commbankdoteth_LeafInserted;
 };
 
 export const useIndexerLeafs = (limit: number = 50, offset: number = 0) => {

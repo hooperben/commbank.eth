@@ -1,5 +1,4 @@
 export const getIndexerUrl = () => {
-  const URL = import.meta.env.VITE_INDEXER_URL;
-  if (!URL) throw new Error("Config missing");
-  return URL;
+  // TODO env ise this
+  return "https://hasura-production-0b6a.up.railway.app/v1/graphql";
 };

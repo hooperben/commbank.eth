@@ -4,7 +4,7 @@ import type { IndexerNotePayload } from "@/_types";
 import { getIndexerUrl } from "@/lib/indexer";
 
 interface NotePayloadResponse {
-  Commbankdoteth_NotePayload: IndexerNotePayload[];
+  envio_Commbankdoteth_NotePayload: IndexerNotePayload[];
 }
 
 const fetchIndexerNotes = async (
@@ -13,7 +13,7 @@ const fetchIndexerNotes = async (
 ): Promise<IndexerNotePayload[]> => {
   const query = `
     query GetNotePayloads($limit: Int!, $offset: Int!) {
-      Commbankdoteth_NotePayload(limit: $limit, offset: $offset, order_by: {id: desc}) {
+      envio_Commbankdoteth_NotePayload(limit: $limit, offset: $offset, order_by: {id: desc}) {
         id
         encryptedNote
       }
@@ -29,11 +29,12 @@ const fetchIndexerNotes = async (
     {
       headers: {
         "Content-Type": "application/json",
+        "x-hasura-admin-secret": import.meta.env.VITE_INDEXER_KEY,
       },
     },
   );
 
-  return response.data.data.Commbankdoteth_NotePayload;
+  return response.data.data.envio_Commbankdoteth_NotePayload;
 };
 
 export const useIndexerNotes = (limit: number = 50, offset: number = 0) => {
