@@ -14,6 +14,11 @@ export const useERC20Balance = (asset?: SupportedAsset | null) => {
       if (!chain) return 0n;
 
       const provider = new JsonRpcProvider(chain.rpc);
+
+      if (asset.isNative) {
+        return provider.getBalance(address!);
+      }
+
       const contract = new Contract(
         asset.address,
         [

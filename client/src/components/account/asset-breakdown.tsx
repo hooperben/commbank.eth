@@ -1,62 +1,65 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
 import { sepoliaAssets, type SupportedAsset } from "shared/constants/token";
-import { Balance } from "../token/balance";
+import { BalanceRow } from "../token/balance";
 
 export function AssetBreakdown() {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Fake loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   // TODO: Replace with real asset data from wallet
   const mockAssets: SupportedAsset[] = sepoliaAssets;
 
-  if (isLoading) {
-    return (
-      <Card className="bg-background border-0 shadow-none">
-        <CardHeader className="pb-4">
-          <Skeleton className="h-6 w-32" />
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold">Accounts</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {[1, 2].map((i) => (
-            <div key={i} className="flex items-center justify-between">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-3 w-32" />
-              </div>
-              <div className="text-right space-y-2">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-3 w-12" />
-              </div>
-            </div>
-          ))}
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3 font-semibold">Asset</th>
+                  <th className="text-center p-3 font-semibold">Public</th>
+                  <th className="text-center p-3 font-semibold">Private</th>
+                  <th className="text-right p-3 font-semibold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mockAssets.map((asset) => (
+                  <tr
+                    key={asset.symbol}
+                    className="border-b hover:bg-muted/50 transition-colors"
+                  >
+                    <td className="p-3 font-semibold text-left">
+                      {asset.symbol}
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <BalanceRow
+                          key={`${asset.address}${asset.chainId}`}
+                          asset={asset}
+                        />
+                      </div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        0{/* TODO */}
+                      </div>
+                    </td>
+                    <td className="p-3 text-right font-medium">
+                      <BalanceRow
+                        key={`${asset.address}${asset.chainId}`}
+                        asset={asset}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
-    );
-  }
-
-  return (
-    <Card className="bg-background border-0 shadow-none">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold tracking-tight">
-            Asset Breakdown
-          </CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {mockAssets.map((asset) => (
-          <Balance key={`${asset.address}${asset.chainId}`} asset={asset} />
-        ))}
-      </CardContent>
-    </Card>
+    </>
   );
 }

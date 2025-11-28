@@ -21,7 +21,7 @@ export default function StatusPage() {
     message: "Checking indexer status...",
   });
 
-  const githubBuildUrl = import.meta.env.VITE_GITHUB_ACTION_BUILD_URL ?? "TODO";
+  const githubBuildUrl = import.meta.env.VITE_GITHUB_ACTION_BUILD_URL;
 
   const versionStatus: SystemStatus = {
     type: "success",
@@ -56,18 +56,24 @@ export default function StatusPage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           <StatusCard title="Web App Version" status={versionStatus}>
-            {githubBuildUrl && (
-              <Button variant="outline" asChild className="w-full gap-2">
-                <a
-                  href={githubBuildUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  View Deployment on GitHub
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              </Button>
-            )}
+            <Button
+              disabled={!!githubBuildUrl}
+              variant="outline"
+              asChild
+              className="w-full gap-2"
+            >
+              <a
+                href={githubBuildUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View Deployment on GitHub
+                <ExternalLink className="h-4 w-4" />
+              </a>
+              {!githubBuildUrl && (
+                <p>The actions URL is missing. This is a bug.</p>
+              )}
+            </Button>
           </StatusCard>
           <StatusCard title="RPC Status" status={rpcStatus} />
           <StatusCard title="Indexer Status" status={indexerStatus} />

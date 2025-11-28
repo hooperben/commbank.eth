@@ -5,6 +5,8 @@ export interface SupportedAsset {
   lzEndpointId: number; // v2 by default
   address: string;
   decimals: number;
+  isNative?: boolean;
+  roundTo?: number;
 }
 
 const mainnetAssets: SupportedAsset[] = [
@@ -19,10 +21,12 @@ const mainnetAssets: SupportedAsset[] = [
   {
     chainId: 1,
     lzEndpointId: 30101,
-    name: "USD Coin",
-    symbol: "USDC",
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    decimals: 6,
+    name: "Ethereum",
+    symbol: "ETH",
+    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    decimals: 18,
+    isNative: true,
+    roundTo: 8,
   },
 ];
 
@@ -67,14 +71,17 @@ export const sepoliaAssets: SupportedAsset[] = [
     symbol: "USDC",
     address: "0x237eEeE66266c72DBb7Ee2Aa84811666cE4EB815",
     decimals: 6,
+    roundTo: 2,
   },
   {
     chainId: 11155111,
     lzEndpointId: 40101,
-    name: "Four Dec",
-    symbol: "FOURDEC",
-    address: "0x840feC4Efbd4764edAA237E78757cE59CeA3Db26",
-    decimals: 4,
+    name: "Ethereum",
+    symbol: "ETH",
+    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    decimals: 18,
+    isNative: true,
+    roundTo: 8,
   },
 ];
 
