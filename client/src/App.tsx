@@ -7,10 +7,11 @@ import { ProtectedRoute } from "./components/protected-route";
 import { ThemeProvider } from "./components/theme-provider";
 import { AuthProvider } from "./lib/auth-context";
 import { AboutPage } from "./pages/about";
-import { AccountPage } from "./pages/account";
+import AccountPage from "./pages/account";
 import { HomePage } from "./pages/home";
 import NotFoundPage from "./pages/not-found";
 import { SettingsPage } from "./pages/settings";
+import SharePage from "./pages/share";
 import TestingPage from "./pages/testing";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ function App() {
                   }
                 />
                 <Route path="/about" element={<AboutPage />} />
+                <Route path="/share" element={<SharePage />} />
 
                 {/* TODO remove once confirmed that everything works */}
                 <Route

@@ -36,3 +36,18 @@ export interface IndexerLeafInserted {
   leafIndex: string;
   leafValue: string;
 }
+
+// Share profile types
+export interface ShareProfileParams {
+  address?: string;
+  privateAddress?: string;
+  envelope?: string;
+  nickname?: string;
+}
+
+export interface ContactInfo {
+  address?: string;
+  privateAddress?: string;
+  envelope?: string;
+  nickname: string;
+}
