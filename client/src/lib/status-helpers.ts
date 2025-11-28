@@ -4,6 +4,7 @@ import { defaultNetwork } from "shared/constants/token";
 import { CommbankDotETHAccount } from "./commbankdoteth-account";
 import { isIndexedDBSupported } from "./db";
 import { SUPPORTED_NETWORKS } from "./networks";
+import { getIndexerUrl } from "./indexer";
 
 /**
  * Get the app version from environment or build info
@@ -56,7 +57,7 @@ export async function checkRPCStatus(): Promise<SystemStatus> {
  */
 export async function checkIndexerStatus(): Promise<SystemStatus> {
   try {
-    const indexerUrl = import.meta.env.VITE_INDEXER_URL;
+    const indexerUrl = getIndexerUrl();
     if (!indexerUrl) {
       return {
         type: "warning",
