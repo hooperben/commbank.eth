@@ -48,7 +48,7 @@ export function AddressCard({
             <div className="flex justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground mb-1">
-                  EVM Address
+                  Ethereum Address
                 </p>
                 <p className="font-mono text-sm break-all">{publicAddress}</p>
               </div>
@@ -74,7 +74,7 @@ export function AddressCard({
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground mb-1">
-                  Encrypted Address
+                  Private Addresses
                 </p>
                 <div className="space-y-4 font-mono text-sm break-all">
                   <div className="flex flex-row items-center gap-2">
@@ -85,7 +85,7 @@ export function AddressCard({
                       variant="secondary"
                       className="bg-blue-500 text-xs font-semibold text-white"
                     >
-                      poseidon
+                      Owner Address
                     </Badge>
                   </div>
 
@@ -96,7 +96,7 @@ export function AddressCard({
                       variant="secondary"
                       className="bg-green-500 text-xs font-semibold text-primary-foreground"
                     >
-                      signing key
+                      Envelope Address
                     </Badge>
                   </div>
                 </div>

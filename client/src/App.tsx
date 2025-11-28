@@ -1,6 +1,5 @@
-import { HashRouter, Route, Routes } from "react-router-dom";
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HashRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
 import { AppLayout } from "./components/layout";
 import { ProtectedRoute } from "./components/protected-route";
@@ -12,6 +11,7 @@ import { HomePage } from "./pages/home";
 import NotFoundPage from "./pages/not-found";
 import { SettingsPage } from "./pages/settings";
 import SharePage from "./pages/share";
+import StatusPage from "./pages/status";
 import TestingPage from "./pages/testing";
 
 const queryClient = new QueryClient();
@@ -43,6 +43,7 @@ function App() {
                 />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/share" element={<SharePage />} />
+                <Route path="/status" element={<StatusPage />} />
 
                 {/* TODO remove once confirmed that everything works */}
                 <Route

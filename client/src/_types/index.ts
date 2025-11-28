@@ -51,3 +51,30 @@ export interface ContactInfo {
   envelope?: string;
   nickname: string;
 }
+
+// Restore account types
+export interface BackupFileEncrypted {
+  encryptedMnemonic: string;
+}
+
+export interface BackupFilePlain {
+  mnemonic: string;
+}
+
+export type BackupFile = BackupFileEncrypted | BackupFilePlain;
+
+export interface DerivedAddresses {
+  address: string;
+  privateAddress: string;
+  envelope: string;
+}
+
+// System status types
+export type StatusType = "success" | "warning" | "error" | "loading";
+
+export interface SystemStatus {
+  type: StatusType;
+  message: string;
+  info?: string;
+  link?: string;
+}

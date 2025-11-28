@@ -1,6 +1,7 @@
 import { Logo } from "@/components/logo";
 import PageContainer from "@/components/page-container";
 import { Button } from "@/components/ui/button";
+import { SignupModal } from "@/components/signup/signup-modal";
 import { useAuth } from "@/lib/auth-context";
 import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
 import { PAGE_METADATA } from "@/lib/seo-config";
@@ -17,6 +18,7 @@ export const HomePage = () => {
 
   const [isPasskeySupported, setIsPassKeySupported] = useState(true);
   const [isDBSupported, setIsDBSupported] = useState(true);
+  const [showSignupModal, setShowSignupModal] = useState(false);
 
   useEffect(() => {
     const passkeySupported = CommbankDotETHAccount.isSupported();
@@ -86,11 +88,15 @@ export const HomePage = () => {
     },
   });
 
+  const handleCreateAccount = () => {
+    signUpMutation.mutate();
+  };
+
   const handleButtonClick = () => {
     if (!isPasskeySupported || !isDBSupported) return;
 
     if (!isRegistered) {
-      signUpMutation.mutate();
+      setShowSignupModal(true);
     } else if (isRegistered && !isSignedIn) {
       signInMutation.mutate();
     } else if (isSignedIn) {
@@ -108,6 +114,12 @@ export const HomePage = () => {
 
   return (
     <PageContainer {...PAGE_METADATA.home}>
+      <SignupModal
+        isOpen={showSignupModal}
+        onClose={() => setShowSignupModal(false)}
+        onCreateAccount={handleCreateAccount}
+      />
+
       <div className="transform transition-all duration-1000 delay-300 flex w-full justify-center ml-4">
         <Logo height={400} width={400} />
       </div>
@@ -155,7 +167,11 @@ export const HomePage = () => {
           >
             {isLoading && <Loader2 className="size-5 animate-spin" />}
 
-            {isRegistered ? (isSignedIn ? "My Account" : "Sign In") : "Sign Up"}
+            {isRegistered
+              ? isSignedIn
+                ? "My Account"
+                : "Sign In"
+              : "Get Started"}
           </Button>
         )}
       </div>
