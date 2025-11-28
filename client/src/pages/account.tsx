@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { PAGE_METADATA } from "@/lib/seo-config";
 import { ArrowDownLeft, ArrowUpRight, Users } from "lucide-react";
 import { useState } from "react";
+import { defaultNetwork } from "shared/constants/token";
 // import { EncryptModal } from "@/components/encrypt/encrypt-modal";
 
 export default function AccountPage() {
@@ -33,9 +34,16 @@ export default function AccountPage() {
                 ${totalAvailable.toFixed(2)}
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-sm">
-                  available
-                </Badge>
+                {defaultNetwork !== 1 ? (
+                  <Badge variant="outline" className="text-sm bg-green-400">
+                    testnet
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-sm">
+                    available
+                  </Badge>
+                )}
+
                 <ShareProfile
                   isShareDialogOpen={isShareDialogOpen}
                   setIsShareDialogOpen={() =>
@@ -62,7 +70,7 @@ export default function AccountPage() {
             disabled={!isSignedIn}
           >
             <Users className="mr-2 h-5 w-5" />
-            CONTACTS
+            contacts
           </Button>
           <Button
             variant="outline"
@@ -70,7 +78,7 @@ export default function AccountPage() {
             disabled={!isSignedIn}
           >
             <ArrowUpRight className="mr-2 h-5 w-5" />
-            SEND
+            send
           </Button>
           <Button
             variant="outline"
@@ -78,7 +86,7 @@ export default function AccountPage() {
             disabled={!isSignedIn}
           >
             <ArrowDownLeft className="mr-2 h-5 w-5" />
-            RECEIVE
+            receive
           </Button>
         </div>
 

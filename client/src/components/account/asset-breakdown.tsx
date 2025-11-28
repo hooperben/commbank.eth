@@ -1,10 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { sepoliaAssets, type SupportedAsset } from "shared/constants/token";
+import {
+  defaultNetwork,
+  mainnetAssets,
+  sepoliaAssets,
+  type SupportedAsset,
+} from "shared/constants/token";
 import { BalanceRow } from "../token/balance";
 
 export function AssetBreakdown() {
-  // TODO: Replace with real asset data from wallet
-  const mockAssets: SupportedAsset[] = sepoliaAssets;
+  const assets: SupportedAsset[] =
+    defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
 
   return (
     <>
@@ -26,7 +31,7 @@ export function AssetBreakdown() {
                 </tr>
               </thead>
               <tbody>
-                {mockAssets.map((asset) => (
+                {assets.map((asset) => (
                   <tr
                     key={asset.symbol}
                     className="border-b hover:bg-muted/50 transition-colors"
