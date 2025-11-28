@@ -61,6 +61,21 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
       "DeFi platform",
     ],
   },
+  share: {
+    header: "Add a new contact",
+    title: "commbank.eth | Add new contact",
+    description: "Add a new commbank.eth contact",
+    path: "/account",
+    keywords: [
+      "account management",
+      "contacts",
+      "private address",
+      "user dashboard",
+      "crypto wallet",
+      "DeFi account",
+      "privacy account",
+    ],
+  },
   account: {
     header: "Account",
     title: "commbank.eth | Account",

@@ -1,92 +1,30 @@
 import { Logo } from "@/components/logo";
 import PageContainer from "@/components/page-container";
-import { Button } from "@/components/ui/button";
 import { SignupModal } from "@/components/signup/signup-modal";
+import { Button } from "@/components/ui/button";
+import { useDeviceCompatible } from "@/hooks/use-device-compatible";
+import { useIsRegistered } from "@/hooks/use-is-registered";
+import { useSignIn } from "@/hooks/use-sign-in";
+import { useSignUp } from "@/hooks/use-sign-up";
 import { useAuth } from "@/lib/auth-context";
-import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
 import { PAGE_METADATA } from "@/lib/seo-config";
-import { isIndexedDBSupported } from "@/lib/db";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 export const HomePage = () => {
   const navigate = useNavigate();
-  const { signIn, isSignedIn } = useAuth();
+  const { isSignedIn } = useAuth();
 
-  const [isPasskeySupported, setIsPassKeySupported] = useState(true);
-  const [isDBSupported, setIsDBSupported] = useState(true);
   const [showSignupModal, setShowSignupModal] = useState(false);
 
-  useEffect(() => {
-    const passkeySupported = CommbankDotETHAccount.isSupported();
-    const dbSupported = isIndexedDBSupported();
-    setIsPassKeySupported(passkeySupported);
-    setIsDBSupported(dbSupported);
-  }, []);
+  const { data: isRegistered, isLoading: checkingRegistration } =
+    useIsRegistered();
 
-  // Check if user is registered
-  const { data: isRegistered, isLoading: checkingRegistration } = useQuery({
-    queryKey: ["isRegistered"],
-    queryFn: async () => {
-      const account = new CommbankDotETHAccount();
-      return await account.isRegistered();
-    },
-    enabled: isPasskeySupported && isDBSupported,
-  });
+  const { isPasskeySupported, isDBSupported } = useDeviceCompatible();
 
-  // Sign up mutation
-  const signUpMutation = useMutation({
-    mutationFn: async () => {
-      const account = new CommbankDotETHAccount();
-      const wallet = await account.registerPasskey();
-      if (!wallet) {
-        throw new Error("Failed to register passkey");
-      }
-
-      // Sign in automatically after registration
-      // Note: registerPasskey already authenticates once to encrypt the mnemonic,
-      // so we pass the mnemonic here to avoid a third authentication
-      const mnemonic = wallet.mnemonic?.phrase;
-      if (!mnemonic) {
-        throw new Error("Failed to get mnemonic from wallet");
-      }
-      await signIn(mnemonic);
-    },
-    onSuccess: () => {
-      toast.success("Account created successfully!");
-      navigate("/account");
-    },
-    onError: (error) => {
-      console.error("Sign up error:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to sign up. Please try again.",
-      );
-    },
-  });
-
-  // Sign in mutation
-  const signInMutation = useMutation({
-    mutationFn: async () => {
-      await signIn();
-    },
-    onSuccess: () => {
-      toast.success("Successfully signed in.");
-      navigate("/account");
-    },
-    onError: (error) => {
-      console.error("Sign in error:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to sign in. Please try again.",
-      );
-    },
-  });
+  const signUpMutation = useSignUp();
+  const signInMutation = useSignIn();
 
   const handleCreateAccount = () => {
     signUpMutation.mutate();

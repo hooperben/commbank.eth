@@ -102,7 +102,8 @@ export const ShareProfile = ({
         params.append("nickname", nicknameWithHash);
       }
 
-      const url = `https://localhost:5173/#/share?${params.toString()}`;
+      // TODO env-ise
+      const url = `http://localhost:5173/#/share?${params.toString()}`;
       await navigator.clipboard.writeText(url);
       toast.success("Profile URL copied to clipboard!");
     } catch (error) {
