@@ -1,6 +1,9 @@
+import type { SystemStatus } from "@/_types";
+import { JsonRpcProvider } from "ethers";
+import { defaultNetwork } from "shared/constants/token";
 import { CommbankDotETHAccount } from "./commbankdoteth-account";
 import { isIndexedDBSupported } from "./db";
-import type { SystemStatus } from "@/_types";
+import { SUPPORTED_NETWORKS } from "./networks";
 
 /**
  * Get the app version from environment or build info
@@ -26,10 +29,12 @@ export function getGitHubActionLink(): string | undefined {
  */
 export async function checkRPCStatus(): Promise<SystemStatus> {
   try {
-    // TODO: Implement actual RPC ping
-    // For now, return success
-    // Simulate ping
     await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const chain = SUPPORTED_NETWORKS[defaultNetwork];
+    const provider = new JsonRpcProvider(chain.rpc);
+
+    await provider.getBlockNumber();
 
     return {
       type: "success",
