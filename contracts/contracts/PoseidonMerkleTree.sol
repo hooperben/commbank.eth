@@ -25,17 +25,21 @@ contract PoseidonMerkleTree {
   uint256 public MAX_LEAF_INDEX;
 
   address public poseidon2Hasher;
+  address public deployer;
 
   constructor(uint256 _height) {
     height = _height;
     MAX_LEAF_INDEX = 2 ** (_height - 1);
 
     roots[0] = uint256(INITIAL_ROOT);
+
+    deployer = msg.sender;
   }
 
   // TODO make this better
   function setPoseidon(address _hasher) public {
     require(poseidon2Hasher == address(0), "Can't set it twice!");
+    require(msg.sender == deployer, "only deployer can set poseidon");
     poseidon2Hasher = _hasher;
   }
 

@@ -3,22 +3,33 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 
 const CommbankDotEthModule = buildModule("commbankDotEth", (m) => {
-  const zkTranscriptLib = m.library(
+  const depositVerifierZKTL = m.library(
     "contracts/verifiers/DepositVerifier.sol:ZKTranscriptLib",
+    { id: "DepositVerifierLib" },
   );
   const depositVerifier = m.contract("DepositVerifier", [], {
     libraries: {
-      ZKTranscriptLib: zkTranscriptLib,
+      ZKTranscriptLib: depositVerifierZKTL,
     },
   });
+
+  const transferVerifierZKTL = m.library(
+    "contracts/verifiers/TransferVerifier.sol:ZKTranscriptLib",
+    { id: "TransferVerifierLib" },
+  );
   const transferVerifier = m.contract("TransferVerifier", [], {
     libraries: {
-      ZKTranscriptLib: zkTranscriptLib,
+      ZKTranscriptLib: transferVerifierZKTL,
     },
   });
+
+  const withdrawVerifierZKTL = m.library(
+    "contracts/verifiers/WithdrawVerifier.sol:ZKTranscriptLib",
+    { id: "WithdrawVerifierLib" },
+  );
   const withdrawVerifier = m.contract("WithdrawVerifier", [], {
     libraries: {
-      ZKTranscriptLib: zkTranscriptLib,
+      ZKTranscriptLib: withdrawVerifierZKTL,
     },
   });
 

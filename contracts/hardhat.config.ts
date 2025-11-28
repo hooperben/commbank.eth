@@ -6,6 +6,9 @@ import { configVariable, defineConfig } from "hardhat/config";
 
 export default defineConfig({
   plugins: [hardhatToolboxMochaEthersPlugin, HardhatIgnitionEthersPlugin],
+  paths: {
+    sources: "./contracts",
+  },
   solidity: {
     profiles: {
       default: {
@@ -32,13 +35,13 @@ export default defineConfig({
   networks: {
     sepolia: {
       type: "http",
-      url: configVariable("SEPOLIA_RPC_URL"),
-      accounts: [configVariable("EVM_PRIVATE_KEY")],
+      url: process.env.SEPOLIA_RPC_URL!,
+      accounts: [process.env.EVM_PRIVATE_KEY!],
     },
   },
   verify: {
     etherscan: {
-      apiKey: configVariable("ETHERSCAN_API_KEY"),
+      apiKey: process.env.ETHERSCAN_API_KEY,
     },
   },
 });

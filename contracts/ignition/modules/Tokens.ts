@@ -6,7 +6,10 @@ const TokensModule = buildModule("tokens", (m) => {
   const usdcDeployment = m.contract("USDC");
   const fourDecDeployment = m.contract("FourDEC");
 
+  const auddDeployment = m.contract("AUDD");
+
   return {
+    auddDeployment,
     usdcDeployment,
     fourDecDeployment,
   };
