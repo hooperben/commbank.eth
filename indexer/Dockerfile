@@ -9,7 +9,7 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies at root
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 # Change to indexer directory
 WORKDIR /app/indexer
