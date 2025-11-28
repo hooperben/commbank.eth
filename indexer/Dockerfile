@@ -26,10 +26,11 @@ COPY indexer ./indexer
 WORKDIR /app/indexer
 RUN pnpm run codegen
 
-# Install generated dependencies
-RUN cd generated && pnpm install --frozen-lockfile
+# Install generated dependencies and build
+WORKDIR /app/indexer/generated
+RUN pnpm install --frozen-lockfile
 
-# Build indexer
+WORKDIR /app/indexer
 RUN pnpm run build
 
 # Production stage
