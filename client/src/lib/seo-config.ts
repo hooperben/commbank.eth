@@ -10,6 +10,8 @@ export interface SEOConfig {
   locale: string;
   type: string;
   keywords?: string[];
+  ogImage?: string;
+  ogImageAlt?: string;
 }
 
 export const DEFAULT_SEO: SEOConfig = {
@@ -45,7 +47,12 @@ export interface PageMetadata {
   path: string;
   keywords?: string[];
   type?: string;
+  ogImage?: string;
+  ogImageAlt?: string;
 }
+
+const OG_IMAGE = "https://dev.commbank.eth.limo/opengraph-test.png";
+const OG_IMAGE_ALT = "commbank.eth - Privacy-Enhancing Financial Technologies";
 
 export const PAGE_METADATA: Record<string, PageMetadata> = {
   home: {
@@ -53,6 +60,8 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     description:
       "commbank.eth - Open Source, Privacy Enhancing Financial Technologies.",
     path: "/",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
     keywords: [
       "commbank.eth",
       "decentralized banking",
@@ -66,6 +75,8 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     title: "commbank.eth | Add new contact",
     description: "Add a new commbank.eth contact",
     path: "/account",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
     keywords: [
       "account management",
       "contacts",
@@ -81,6 +92,8 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     title: "commbank.eth | My Contacts",
     description: "View your commbank.eth contacts",
     path: "/account",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
     keywords: [
       "account management",
       "contacts",
@@ -96,6 +109,8 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     title: "commbank.eth | Account",
     description: "Manage your commbank.eth accounts.",
     path: "/account",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
     keywords: [
       "account management",
       "user dashboard",
@@ -109,6 +124,8 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     description:
       "Learn about commbank.eth - an open-source project building privacy-enhancing financial technologies.",
     path: "/about",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
     keywords: [
       "about commbank.eth",
       "open source finance",
@@ -123,6 +140,8 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
     description:
       "Manage your commbank.eth account - export your credentials and secure your account back ups.",
     path: "/settings",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
     keywords: [
       "commbank.eth account",
       "open source finance",
@@ -151,5 +170,7 @@ export function mergeWithDefaults(metadata: Partial<PageMetadata>): SEOConfig {
     url: getPageUrl(metadata.path || "/"),
     keywords: metadata.keywords || DEFAULT_SEO.keywords,
     type: metadata.type || DEFAULT_SEO.type,
+    ogImage: metadata.ogImage || DEFAULT_SEO.ogImage,
+    ogImageAlt: metadata.ogImageAlt || DEFAULT_SEO.ogImageAlt,
   };
 }

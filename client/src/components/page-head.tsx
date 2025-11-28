@@ -16,6 +16,8 @@ export default function PageHead({
   path = "/",
   keywords,
   type,
+  ogImage,
+  ogImageAlt,
 }: PageHeadProps) {
   const seoConfig = mergeWithDefaults({
     title:
@@ -24,6 +26,8 @@ export default function PageHead({
     path,
     keywords,
     type,
+    ogImage,
+    ogImageAlt,
   });
 
   const canonicalUrl = seoConfig.url;
@@ -42,8 +46,14 @@ export default function PageHead({
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:title" content={seoConfig.title} />
       <meta property="og:description" content={seoConfig.description} />
-      <meta property="og:image" content={seoConfig.imageUrl} />
-      <meta property="og:image:alt" content={seoConfig.imageAlt} />
+      <meta
+        property="og:image"
+        content={seoConfig.ogImage || seoConfig.imageUrl}
+      />
+      <meta
+        property="og:image:alt"
+        content={seoConfig.ogImageAlt || seoConfig.imageAlt}
+      />
       <meta property="og:site_name" content={seoConfig.siteName} />
       <meta property="og:locale" content={seoConfig.locale} />
 
@@ -52,8 +62,14 @@ export default function PageHead({
       <meta name="twitter:url" content={canonicalUrl} />
       <meta name="twitter:title" content={seoConfig.title} />
       <meta name="twitter:description" content={seoConfig.description} />
-      <meta name="twitter:image" content={seoConfig.imageUrl} />
-      <meta name="twitter:image:alt" content={seoConfig.imageAlt} />
+      <meta
+        name="twitter:image"
+        content={seoConfig.ogImage || seoConfig.imageUrl}
+      />
+      <meta
+        name="twitter:image:alt"
+        content={seoConfig.ogImageAlt || seoConfig.imageAlt}
+      />
       <meta name="twitter:site" content={seoConfig.twitterHandle} />
       <meta name="twitter:creator" content={seoConfig.twitterHandle} />
 

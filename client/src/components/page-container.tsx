@@ -17,6 +17,8 @@ const PageContainer = ({
   path,
   keywords,
   type,
+  ogImage,
+  ogImageAlt,
 }: PageContainerProps) => {
   const { setTitle } = usePageTitle();
 
@@ -34,6 +36,8 @@ const PageContainer = ({
         path={path}
         keywords={keywords}
         type={type}
+        ogImage={ogImage}
+        ogImageAlt={ogImageAlt}
       />
       {children}
     </>
