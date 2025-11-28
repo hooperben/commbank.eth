@@ -1,13 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import type { Note, Payload, TreeLeaf } from "@/_types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDBStats } from "@/hooks/use-indexed-db";
-import { useIndexerNotes } from "@/hooks/use-indexer-notes";
 import { useIndexerLeafs } from "@/hooks/use-indexer-leafs";
-import { AlertCircle, Loader2, Database, DatabaseZap } from "lucide-react";
+import { useIndexerNotes } from "@/hooks/use-indexer-notes";
+import { useAuth } from "@/lib/auth-context";
+import { NoteDecryption } from "@/lib/note-decryption";
+import {
+  AlertCircle,
+  Database,
+  DatabaseZap,
+  Loader2,
+  Lock,
+} from "lucide-react";
 import { Deposit } from "shared/classes/Deposit";
 import { Transact } from "shared/classes/Transact";
 import { Withdraw } from "shared/classes/Withdraw";
@@ -18,13 +26,16 @@ const IndexerPayloadRow = ({
   note,
   checkInDB,
   onWriteToDB,
+  getEnvelopeKey,
 }: {
   note: { id: string; encryptedNote: string };
   checkInDB: (id: string) => Promise<boolean>;
   onWriteToDB: (id: string, encryptedNote: string) => Promise<void>;
+  getEnvelopeKey: () => Promise<string | null>;
 }) => {
   const [isInDB, setIsInDB] = useState<boolean | null>(null);
   const [isWriting, setIsWriting] = useState(false);
+  const [isDecrypting, setIsDecrypting] = useState(false);
 
   useEffect(() => {
     checkInDB(note.id).then(setIsInDB);
@@ -37,6 +48,30 @@ const IndexerPayloadRow = ({
       setIsInDB(true);
     } finally {
       setIsWriting(false);
+    }
+  };
+
+  const handleDecrypt = async () => {
+    setIsDecrypting(true);
+    try {
+      const envelopeKey = await getEnvelopeKey();
+      if (!envelopeKey) {
+        toast.error("Please sign in to decrypt notes");
+        return;
+      }
+
+      const decrypted = await NoteDecryption.decryptEncryptedNote(
+        note.encryptedNote,
+        envelopeKey,
+      );
+
+      console.log("Decrypted note:", decrypted);
+      toast.success("Note decrypted! Check console for details");
+    } catch (error) {
+      console.error("Decryption error:", error);
+      toast.error("Failed to decrypt note");
+    } finally {
+      setIsDecrypting(false);
     }
   };
 
@@ -62,15 +97,33 @@ const IndexerPayloadRow = ({
         )}
       </td>
       <td className="p-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleWrite}
-          disabled={isInDB === true || isWriting}
-          className="h-7 text-xs"
-        >
-          {isWriting ? "Writing..." : "Write to DB"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleWrite}
+            disabled={isInDB === true || isWriting}
+            className="h-7 text-xs"
+          >
+            {isWriting ? "Writing..." : "Write to DB"}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleDecrypt}
+            disabled={isDecrypting}
+            className="h-7 text-xs"
+          >
+            {isDecrypting ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <>
+                <Lock className="h-3 w-3 mr-1" />
+                Decrypt
+              </>
+            )}
+          </Button>
+        </div>
       </td>
     </tr>
   );
@@ -148,6 +201,9 @@ const TestingPage = () => {
   const [isDepositLoading, setIsDepositLoading] = useState(false);
   const [isTransferLoading, setIsTransferLoading] = useState(false);
   const [isWithdrawLoading, setIsWithdrawLoading] = useState(false);
+
+  // Get auth context
+  const { getEnvelopeKey } = useAuth();
 
   // Use the IndexedDB hook - it handles initialization automatically
   const {
@@ -789,6 +845,7 @@ const TestingPage = () => {
                         note={note}
                         checkInDB={checkPayloadInDB}
                         onWriteToDB={handleWritePayloadToDB}
+                        getEnvelopeKey={getEnvelopeKey}
                       />
                     ))}
                   </tbody>

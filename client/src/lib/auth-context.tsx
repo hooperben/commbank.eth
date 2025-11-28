@@ -14,6 +14,7 @@ interface AuthContextType {
   signIn: (mnemonic?: string) => Promise<void>;
   signOut: () => void;
   getMnemonic: () => Promise<string | null>;
+  getEnvelopeKey: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -182,6 +183,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const getEnvelopeKey = async (): Promise<string | null> => {
+    if (!isSignedIn) {
+      return null;
+    }
+
+    try {
+      const mnemonic = await getMnemonic();
+      if (!mnemonic) {
+        return null;
+      }
+
+      const wallet = ethers.Wallet.fromPhrase(mnemonic);
+      return wallet.privateKey;
+    } catch (error) {
+      console.error("Error retrieving envelope key:", error);
+      return null;
+    }
+  };
+
   const signOut = () => {
     setToken(null);
     setAddress(null);
@@ -203,6 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         getMnemonic,
+        getEnvelopeKey,
       }}
     >
       {children}
