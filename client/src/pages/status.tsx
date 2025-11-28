@@ -23,6 +23,8 @@ export default function StatusPage() {
 
   const githubBuildUrl = import.meta.env.VITE_GITHUB_ACTION_BUILD_URL;
 
+  console.log(githubBuildUrl);
+
   const versionStatus: SystemStatus = {
     type: "success",
     message: "",
@@ -56,24 +58,22 @@ export default function StatusPage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           <StatusCard title="Web App Version" status={versionStatus}>
-            <Button
-              disabled={!!githubBuildUrl}
-              variant="outline"
-              asChild
-              className="w-full gap-2"
-            >
-              <a
-                href={githubBuildUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View Deployment on GitHub
-                <ExternalLink className="h-4 w-4" />
-              </a>
-              {!githubBuildUrl && (
-                <p>The actions URL is missing. This is a bug.</p>
-              )}
-            </Button>
+            {githubBuildUrl ? (
+              <Button variant="outline" asChild className="w-full gap-2">
+                <a
+                  href={githubBuildUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View Deployment on GitHub
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                The actions URL is missing. This is a bug.
+              </p>
+            )}
           </StatusCard>
           <StatusCard title="RPC Status" status={rpcStatus} />
           <StatusCard title="Indexer Status" status={indexerStatus} />
