@@ -67,30 +67,30 @@ export default function AccountPage() {
         <div className="grid grid-cols-3 gap-4">
           <Button
             variant="outline"
-            className="h-16 text-lg font-semibold"
+            className="h-16 text-lg font-semibold flex-col gap-1"
             disabled={!isSignedIn}
             asChild
           >
             <Link to="/contacts">
-              <Users className="mr-2 h-5 w-5" />
-              contacts
+              <Users className="h-5 w-5" />
+              <span className="text-sm">contacts</span>
             </Link>
           </Button>
           <Button
             variant="outline"
-            className="h-16 text-lg font-semibold"
+            className="h-16 text-lg font-semibold flex-col gap-1"
             disabled
           >
-            <ArrowUpRight className="mr-2 h-5 w-5" />
-            send
+            <ArrowUpRight className="h-5 w-5" />
+            <span className="text-sm">send</span>
           </Button>
           <Button
             variant="outline"
-            className="h-16 text-lg font-semibold"
+            className="h-16 text-lg font-semibold flex-col gap-1"
             disabled
           >
-            <ArrowDownLeft className="mr-2 h-5 w-5" />
-            receive
+            <ArrowDownLeft className="h-5 w-5" />
+            <span className="text-sm">receive</span>
           </Button>
         </div>
 

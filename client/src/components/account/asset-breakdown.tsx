@@ -19,7 +19,7 @@ export function AssetBreakdown() {
             <CardTitle className="text-2xl font-bold">Accounts</CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 md:px-6">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

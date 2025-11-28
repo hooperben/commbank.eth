@@ -23,12 +23,10 @@ export default function StatusPage() {
 
   const githubBuildUrl = import.meta.env.VITE_GITHUB_ACTION_BUILD_URL;
 
-  console.log(githubBuildUrl);
-
   const versionStatus: SystemStatus = {
     type: "success",
     message: "",
-    info: "This GitHub action built the web app.",
+    info: "This GitHub action built this website and uploaded it to IPFS.",
   };
 
   const passkeyStatus = checkPasskeySupport();
