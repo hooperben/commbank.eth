@@ -181,6 +181,6 @@
       }
     ]
   },
-  "inputSourceName": "project/contracts/verifiers/TransferVerifier.sol",
+  "inputSourceName": "contracts/verifiers/TransferVerifier.sol",
   "buildInfoId": "solc-0_8_28-8972d3a7f8108de5db8b67a6d475ea02713d2285"
 }

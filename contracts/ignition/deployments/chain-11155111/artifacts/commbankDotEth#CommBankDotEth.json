@@ -697,6 +697,6 @@
       }
     ]
   },
-  "inputSourceName": "project/contracts/CommBankDotEth.sol",
+  "inputSourceName": "contracts/CommBankDotEth.sol",
   "buildInfoId": "solc-0_8_28-7d1badb67ee783fff8e1c9a5d2c3864f412907cc"
 }
