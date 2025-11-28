@@ -52,6 +52,16 @@ export interface ContactInfo {
   nickname: string;
 }
 
+// Contact management types
+export interface Contact {
+  id: string; // Auto-generated UUID
+  nickname?: string;
+  address?: string; // EVM address
+  privateAddress?: string;
+  envelopeAddress?: string;
+  createdAt: number;
+}
+
 // Restore account types
 export interface BackupFileEncrypted {
   encryptedMnemonic: string;

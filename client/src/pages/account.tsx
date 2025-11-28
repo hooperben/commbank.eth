@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { PAGE_METADATA } from "@/lib/seo-config";
 import { ArrowDownLeft, ArrowUpRight, Users } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { defaultNetwork } from "shared/constants/token";
 // import { EncryptModal } from "@/components/encrypt/encrypt-modal";
 
@@ -68,14 +69,17 @@ export default function AccountPage() {
             variant="outline"
             className="h-16 text-lg font-semibold"
             disabled={!isSignedIn}
+            asChild
           >
-            <Users className="mr-2 h-5 w-5" />
-            contacts
+            <Link to="/contacts">
+              <Users className="mr-2 h-5 w-5" />
+              contacts
+            </Link>
           </Button>
           <Button
             variant="outline"
             className="h-16 text-lg font-semibold"
-            disabled={!isSignedIn}
+            disabled
           >
             <ArrowUpRight className="mr-2 h-5 w-5" />
             send
@@ -83,7 +87,7 @@ export default function AccountPage() {
           <Button
             variant="outline"
             className="h-16 text-lg font-semibold"
-            disabled={!isSignedIn}
+            disabled
           >
             <ArrowDownLeft className="mr-2 h-5 w-5" />
             receive

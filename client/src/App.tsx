@@ -7,6 +7,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import { AuthProvider } from "./lib/auth-context";
 import { AboutPage } from "./pages/about";
 import AccountPage from "./pages/account";
+import ContactsPage from "./pages/contacts";
 import { HomePage } from "./pages/home";
 import NotFoundPage from "./pages/not-found";
 import { SettingsPage } from "./pages/settings";
@@ -38,6 +39,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <SettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/contacts"
+                  element={
+                    <ProtectedRoute>
+                      <ContactsPage />
                     </ProtectedRoute>
                   }
                 />

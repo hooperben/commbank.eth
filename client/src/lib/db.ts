@@ -3,16 +3,17 @@
  * Stores notes, merkle tree leaves, encrypted payloads, and metadata
  */
 
-import type { Note, TreeLeaf, Payload, Meta } from "@/_types";
+import type { Note, TreeLeaf, Payload, Meta, Contact } from "@/_types";
 
 const DB_NAME = "commbankdotethdb";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Store names
 const NOTES_STORE = "notes";
 const TREE_STORE = "tree";
 const PAYLOAD_STORE = "payload";
 const META_STORE = "meta";
+const CONTACTS_STORE = "contacts";
 
 /**
  * Check if IndexedDB is supported in the current browser
@@ -69,6 +70,15 @@ export function initDB(): Promise<IDBDatabase> {
       // Create Meta store
       if (!db.objectStoreNames.contains(META_STORE)) {
         db.createObjectStore(META_STORE, { keyPath: "id" });
+      }
+
+      // Create Contacts store
+      if (!db.objectStoreNames.contains(CONTACTS_STORE)) {
+        const contactsStore = db.createObjectStore(CONTACTS_STORE, {
+          keyPath: "id",
+        });
+        contactsStore.createIndex("nickname", "nickname", { unique: false });
+        contactsStore.createIndex("createdAt", "createdAt", { unique: false });
       }
     };
 
@@ -340,4 +350,29 @@ export async function getDBStats(): Promise<{
     treeLeaves: treeLeaves.length,
     payloads: payloads.length,
   };
+}
+
+// ===== Contacts API =====
+export async function addContact(contact: Contact): Promise<void> {
+  return putItem(CONTACTS_STORE, contact);
+}
+
+export async function getContact(id: string): Promise<Contact | null> {
+  return getItem<Contact>(CONTACTS_STORE, id);
+}
+
+export async function getAllContacts(): Promise<Contact[]> {
+  return getAllItems<Contact>(CONTACTS_STORE);
+}
+
+export async function updateContact(contact: Contact): Promise<void> {
+  return putItem(CONTACTS_STORE, contact);
+}
+
+export async function deleteContact(id: string): Promise<void> {
+  return deleteItem(CONTACTS_STORE, id);
+}
+
+export async function clearContacts(): Promise<void> {
+  return clearStore(CONTACTS_STORE);
 }
