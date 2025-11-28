@@ -31,6 +31,13 @@ ENV NODE_ENV=production
 # Set Railway internal service URLs (will be overridden by Railway variables if set)
 ENV DATABASE_URL=postgresql://postgres:postgres@postgres.railway.internal:5432/postgres
 ENV HASURA_GRAPHQL_ENDPOINT=http://hasura.railway.internal:8080/v1/graphql
+ENV HASURA_GRAPHQL_ROLE=admin
+
+# Envio performance and throttling settings
+ENV ENVIO_THROTTLE_CHAIN_METADATA_INTERVAL_MILLIS=30000
+ENV ENVIO_THROTTLE_PRUNE_STALE_DATA_INTERVAL_MILLIS=300000
+ENV ENVIO_THROTTLE_LIVE_METRICS_BENCHMARK_INTERVAL_MILLIS=60000
+ENV ENVIO_THROTTLE_JSON_FILE_BENCHMARK_INTERVAL_MILLIS=60000
 
 # Expose Hasura port (if needed)
 EXPOSE 8080
