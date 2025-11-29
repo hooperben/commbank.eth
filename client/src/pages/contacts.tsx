@@ -27,11 +27,12 @@ export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: contacts, isLoading } = useSearchContacts(searchQuery);
+
   const deleteContactMutation = useDeleteContact();
 
   const handleSend = (contact: {
     nickname?: string;
-    address?: string;
+    evmAddress?: string;
     privateAddress?: string;
   }) => {
     // Navigate to send page with pre-filled contact info
@@ -116,7 +117,7 @@ export default function ContactsPage() {
                           {contact.nickname || "Anonymous"}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
-                          {formatAddress(contact.address)}
+                          {formatAddress(contact.evmAddress)}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
                           {formatAddress(contact.privateAddress)}

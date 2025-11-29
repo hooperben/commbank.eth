@@ -56,7 +56,7 @@ export interface ContactInfo {
 export interface Contact {
   id: string; // Auto-generated UUID
   nickname?: string;
-  address?: string; // EVM address
+  evmAddress?: string; // EVM address
   privateAddress?: string;
   envelopeAddress?: string;
   createdAt: number;

@@ -127,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (typeof window !== "undefined") {
         sessionStorage.setItem("authToken", jwt);
+        localStorage.setItem("signedIn", "true");
       }
     } catch (error) {
       console.error("Sign in error:", error);
@@ -208,6 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsSignedIn(false);
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("authToken");
+      localStorage.removeItem("signedIn");
     }
   };
 

@@ -3,24 +3,34 @@ import PageContainer from "@/components/page-container";
 import { SignupModal } from "@/components/signup/signup-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAddContact } from "@/hooks/use-contacts";
 import { useIsRegistered } from "@/hooks/use-is-registered";
 import { useSignIn } from "@/hooks/use-sign-in";
 import { useSignUp } from "@/hooks/use-sign-up";
-import { useAuth } from "@/lib/auth-context";
 import { verifyNicknameHash } from "@/lib/nickname-hash";
 import { PAGE_METADATA } from "@/lib/seo-config";
 import { AlertCircle, Loader2, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function SharePage() {
   const [searchParams] = useSearchParams();
-  const { isSignedIn } = useAuth();
+  const navigate = useNavigate();
 
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
   const [showSignupModal, setShowSignupModal] = useState(false);
+
+  // Check localStorage for sign-in status (works across tabs)
+  const [hasAccount, setHasAccount] = useState(false);
+
+  useEffect(() => {
+    // a users signed in before they have this flag set to true
+    if (typeof window !== "undefined") {
+      const signedIn = localStorage.getItem("signedIn") === "true";
+      setHasAccount(signedIn);
+    }
+  }, []);
 
   // Check if user is registered
   const { data: isRegistered, isLoading: checkingRegistration } =
@@ -31,6 +41,9 @@ export default function SharePage() {
 
   // Sign in mutation
   const signInMutation = useSignIn();
+
+  // Add contact mutation
+  const addContactMutation = useAddContact();
 
   const handleCreateAccount = () => {
     signUpMutation.mutate();
@@ -91,14 +104,27 @@ export default function SharePage() {
   const handleAddContact = () => {
     if (!contactInfo) return;
 
-    console.log("Add contact:", contactInfo);
-    toast.success(`Contact "${contactInfo.nickname}" added!`);
+    addContactMutation.mutate(
+      {
+        nickname: contactInfo.nickname || "Unknown",
+        evmAddress: contactInfo.address,
+        privateAddress: contactInfo.privateAddress,
+        envelopeAddress: contactInfo.envelope,
+      },
+      {
+        onSuccess: () => {
+          // Navigate to contacts page after successful add
+          navigate("/contacts");
+        },
+      },
+    );
   };
 
   const isLoading =
     signUpMutation.isPending ||
     signInMutation.isPending ||
-    checkingRegistration;
+    checkingRegistration ||
+    addContactMutation.isPending;
 
   return (
     <PageContainer {...PAGE_METADATA.share}>
@@ -181,19 +207,24 @@ export default function SharePage() {
               )}
 
               <div className="pt-4">
-                {isSignedIn ? (
+                {hasAccount ? (
                   <Button
                     onClick={handleAddContact}
                     className="w-full gap-2"
                     size="lg"
+                    disabled={addContactMutation.isPending}
                   >
-                    <UserPlus className="h-5 w-5" />
-                    Add Contact
+                    {addContactMutation.isPending ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <UserPlus className="h-5 w-5" />
+                    )}
+                    {addContactMutation.isPending ? "Adding..." : "Add Contact"}
                   </Button>
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground text-center">
-                      Sign in to add this contact
+                      Create an account to add this contact
                     </p>
                     <Button
                       onClick={handleGetStarted}

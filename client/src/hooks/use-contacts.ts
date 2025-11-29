@@ -1,4 +1,5 @@
 import type { Contact } from "@/_types";
+import { useAuth } from "@/lib/auth-context";
 import {
   addContact as addContactDB,
   deleteContact as deleteContactDB,
@@ -24,8 +25,11 @@ export function useContacts() {
 export function useAddContact() {
   const queryClient = useQueryClient();
 
+  const { signIn } = useAuth();
+
   return useMutation({
     mutationFn: async (contact: Omit<Contact, "id" | "createdAt">) => {
+      await signIn();
       const newContact: Contact = {
         ...contact,
         id: crypto.randomUUID(),
@@ -88,7 +92,7 @@ export function useDeleteContact() {
 
 /**
  * Search/filter contacts by query string
- * Searches nickname, address, privateAddress, and envelopeAddress
+ * Searches nickname, evmAddress, privateAddress, and envelopeAddress
  */
 export function useSearchContacts(query: string) {
   const { data: contacts, ...rest } = useContacts();
@@ -100,7 +104,7 @@ export function useSearchContacts(query: string) {
 
     return (
       contact.nickname?.toLowerCase().includes(searchLower) ||
-      contact.address?.toLowerCase().includes(searchLower) ||
+      contact.evmAddress?.toLowerCase().includes(searchLower) ||
       contact.privateAddress?.toLowerCase().includes(searchLower) ||
       contact.envelopeAddress?.toLowerCase().includes(searchLower)
     );
