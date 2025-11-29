@@ -42,6 +42,7 @@ jobs:
       - name: Build client
         env:
           VITE_GITHUB_ACTION_BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          VITE_DOMAIN: ${{ github.ref == 'refs/heads/main' && 'https://commbank.eth.limo' || 'https://dev.commbank.eth.limo' }}
         run: |
           export PNPM_HOME="$HOME/.local/share/pnpm"
           export PATH="$PNPM_HOME:$PATH"
