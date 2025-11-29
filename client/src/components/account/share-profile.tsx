@@ -6,11 +6,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
 import { addNicknameHash } from "@/lib/nickname-hash";
-import { Share2, Copy, Check } from "lucide-react";
+import { Check, Copy, Info, Share2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -175,7 +175,7 @@ export const ShareProfile = ({
 
           <div className="space-y-2">
             <Label htmlFor="nickname" className="text-sm font-medium">
-              Nickname (optional)
+              My Contact Name (optional)
             </Label>
             <Input
               id="nickname"
@@ -183,6 +183,12 @@ export const ShareProfile = ({
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
             />
+            <div className="flex items-start gap-2 rounded-md bg-muted p-3 border border-border">
+              <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Anyone you send the link to will save your contact as this name.
+              </p>
+            </div>
           </div>
 
           <Button

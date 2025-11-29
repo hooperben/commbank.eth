@@ -69,7 +69,8 @@ export default function AccountPage() {
         {/* Balance Card */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="space-y-4">
+              {/* Total Value */}
               <div className="flex items-center gap-2">
                 {isLoadingTotal ? (
                   <Skeleton className="h-12 w-64" />
@@ -98,6 +99,8 @@ export default function AccountPage() {
                   </>
                 )}
               </div>
+
+              {/* Badges */}
               <div className="flex items-center gap-2">
                 {defaultNetwork !== 1 ? (
                   <Badge variant="outline" className="text-sm bg-green-400">
