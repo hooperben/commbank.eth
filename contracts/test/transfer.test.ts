@@ -1,10 +1,3 @@
-import {
-  createInputNote,
-  createOutputNote,
-  emptyInputNote,
-  emptyOutputNote,
-} from "@/helpers/formatting";
-import { approve } from "@/helpers/functions/approve";
 import { getDepositDetails } from "@/helpers/functions/deposit";
 import { getNoteHash } from "@/helpers/functions/get-note-hash";
 import { getNullifier } from "@/helpers/functions/get-nullifier";
@@ -14,30 +7,34 @@ import {
   transfer,
 } from "@/helpers/functions/transfer";
 import { getTestingAPI } from "@/helpers/get-testing-api";
+import {
+  createInputNote,
+  createOutputNote,
+  emptyInputNote,
+  emptyOutputNote,
+} from "@/helpers/note-formatting";
 import { NoteEncryption } from "@/helpers/note-sharing";
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
-import { CommBankDotEth, USDC } from "@/typechain-types";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { parseUnits, Wallet } from "ethers";
-import { ethers } from "hardhat";
+import { poseidon2Hash } from "@zkpassport/poseidon2";
+import { ethers, Wallet } from "ethers";
+import { network } from "hardhat";
 
 describe("Testing Transfer functionality", () => {
-  let Signers: HardhatEthersSigner[];
-  let poseidonHash: (inputs: bigint[]) => Promise<{ toString(): string }>;
+  let Signers: ethers.Signer[];
 
-  let commbankDotEth: CommBankDotEth;
+  let commbankDotEth: ethers.Contract;
   let tree: PoseidonMerkleTree;
 
-  let usdcDeployment: USDC;
+  let usdcDeployment: ethers.Contract;
 
   let deployer1Secret: string;
   let deployer2Secret: string;
 
   beforeEach(async () => {
+    const { ethers } = await network.connect();
     Signers = await ethers.getSigners();
     ({
       usdcDeployment,
-      poseidonHash,
       commbankDotEth,
       tree,
       deployer1Secret,
@@ -47,25 +44,25 @@ describe("Testing Transfer functionality", () => {
 
   it("testing transfer functionality", async () => {
     const assetId = await usdcDeployment.getAddress();
-    const assetAmount = BigInt("5");
+    const assetAmount = 5_000_000n;
+
     const secret =
       2389312107716289199307843900794656424062350252250388738019021107824217896920n;
     const ownerSecret =
       10036677144260647934022413515521823129584317400947571241312859176539726523915n;
-    const owner = BigInt((await poseidonHash([ownerSecret])).toString());
+    const owner = BigInt(poseidon2Hash([ownerSecret]).toString());
 
-    // in order to transfer we need to first deposit
+    // create the ZK proof
     const { proof: depositProof } = await getDepositDetails({
       assetId,
       assetAmount,
       secret,
       owner,
     });
-    await approve(
-      Signers[0],
-      await usdcDeployment.getAddress(),
+
+    await usdcDeployment.approve(
       await commbankDotEth.getAddress(),
-      parseUnits("5", 6),
+      assetAmount,
     );
 
     // create encrypted payload for the deposited note
@@ -115,7 +112,7 @@ describe("Testing Transfer functionality", () => {
 
     // ALICE CHANGE NOTE DETAILS
     const alice_owner = owner;
-    const alice_amount = 3n;
+    const alice_amount = 3_000_000n;
     const alice_note_secret =
       19536471094918068928039225564664574556680178861106125446000998678966251111926n;
 
@@ -130,10 +127,10 @@ describe("Testing Transfer functionality", () => {
     // BOB SEND NOTE DETAILS
     const bobOwnerSecret =
       6955001134965379637962992480442037189090898019061077075663294923529403402038n;
-    const bobOwner = (await poseidonHash([bobOwnerSecret])).toString();
+    const bobOwner = poseidon2Hash([bobOwnerSecret]).toString();
     const bobNoteSecret =
       3957740128091467064337395812164919758932045173069261808814882570720300029469n;
-    const bobAmount = 2n;
+    const bobAmount = 2_000_000n;
     const bobOutputNote = createOutputNote(
       bobOwner,
       bobNoteSecret,

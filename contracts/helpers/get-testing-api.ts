@@ -1,35 +1,38 @@
-import { deployMockTokens } from "@/helpers/test-suite/deploy-mock-tokens";
-import { deployVerifiers } from "@/helpers/test-suite/deploy-verifiers";
-import { getNoirClasses } from "@/helpers/test-suite/get-noir-classes";
-import { getMerkleTree } from "@/helpers/test-suite/merkle";
-import { CommBankDotEth } from "@/typechain-types";
-import { ethers } from "hardhat";
-import { loadPoseidon } from "./load-poseidon";
-import { deployCommbankDotEth } from "./test-suite/deploy-commbank-dot-eth";
+import { getNoirClasses } from "@/helpers/objects/get-noir-classes";
+import { getMerkleTree } from "@/helpers/objects/poseidon-merkle-tree";
+import CommbankDotEthModule from "@/ignition/modules/CommbankDotEth";
+import TokensModule from "@/ignition/modules/Tokens";
+import { ethers } from "ethers";
+import hre from "hardhat";
+import Poseidon2HuffJson from "../contracts/utils/Poseidon2Huff.json";
 
 export const getTestingAPI = async () => {
-  const Signers = await ethers.getSigners();
-  const verifiers = await deployVerifiers();
+  const connection = await hre.network.connect();
+  const Signers = await connection.ethers.getSigners();
 
   const deployer1Secret =
     "0x1234567890123456789012345678901234567890123456789012345678901234";
   const deployer2Secret =
     "0x9876543210987654321098765432109876543210987654321098765432109876";
 
-  const poseidonHash = await loadPoseidon();
+  const { usdcDeployment, fourDecDeployment } =
+    await connection.ignition.deploy(TokensModule);
 
-  const {
-    usdcDeployment,
-    lzOFTDeploymentBase,
-    lzOFTDeploymentRemote,
-    fourDecDeployment,
-  } = await deployMockTokens();
+  const { commbankDotEth } =
+    await connection.ignition.deploy(CommbankDotEthModule);
 
-  const commbankDotEth = (await deployCommbankDotEth(
-    verifiers.deposit,
-    verifiers.transfer,
-    verifiers.withdraw,
-  )) as unknown as CommBankDotEth;
+  // As the poseidon2 huff bytecode was prebuilt, we have to assemble the factory like this
+  const poseidon2HuffFactory = new ethers.ContractFactory(
+    [],
+    Poseidon2HuffJson.bytecode,
+    Signers[0],
+  );
+  const poseidon2Huff = await poseidon2HuffFactory.deploy();
+  await poseidon2Huff.waitForDeployment();
+  const poseidon2Address = await poseidon2Huff.getAddress();
+
+  // set the poseidon 2 hash address
+  await commbankDotEth.setPoseidon(poseidon2Address);
 
   const {
     depositNoir,
@@ -48,8 +51,6 @@ export const getTestingAPI = async () => {
     commbankDotEth,
     usdcDeployment,
     fourDecDeployment,
-    lzOFTDeploymentBase,
-    lzOFTDeploymentRemote,
     depositNoir,
     depositBackend,
     transferNoir,
@@ -59,7 +60,6 @@ export const getTestingAPI = async () => {
     warpNoir,
     warpBackend,
     Signers,
-    poseidonHash,
     tree,
     deployer1Secret,
     deployer2Secret,

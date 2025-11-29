@@ -1,0 +1,74 @@
+name: Upload client build to Pinata
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+  pinata-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: |
+          curl -fsSL https://get.pnpm.io/install.sh | sh -
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+
+      - name: Install nargo
+        run: |
+          curl -L https://raw.githubusercontent.com/noir-lang/noirup/refs/heads/main/install | bash
+          export PATH="$HOME/.nargo/bin:$PATH"
+          noirup --version 1.0.0-beta.15
+          echo "$HOME/.nargo/bin" >> $GITHUB_PATH
+
+      - name: Install bb (Barretenberg)
+        run: |
+          curl -L https://raw.githubusercontent.com/AztecProtocol/aztec-packages/refs/heads/next/barretenberg/bbup/install | bash
+          $HOME/.bb/bbup
+          echo "$HOME/.bb" >> $GITHUB_PATH
+
+      - name: Install dependencies and build circuits
+        run: |
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
+          pnpm install --frozen-lockfile
+          cd contracts
+          pnpm run build
+
+      - name: Build client
+        env:
+          VITE_GITHUB_ACTION_BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          VITE_DOMAIN: ${{ github.ref == 'refs/heads/main' && 'https://commbank.eth.limo' || 'https://dev.commbank.eth.limo' }}
+          VITE_DEFAULT_CHAIN_ID: ${{ github.ref == 'refs/heads/main' && '1' || '11155111' }}
+        run: |
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
+          cd client
+          pnpm run build
+
+      - name: Install Go
+        run: |
+          wget https://go.dev/dl/go1.23.4.linux-amd64.tar.gz
+          sudo tar -C /usr/local -xzf go1.23.4.linux-amd64.tar.gz
+          echo "/usr/local/go/bin" >> $GITHUB_PATH
+
+      - name: Build and Install Pinata CLI
+        run: |
+          export PATH="/usr/local/go/bin:$PATH"
+          git clone https://github.com/hooperben/ipfs-cli.git /tmp/ipfs-cli
+          cd /tmp/ipfs-cli
+          go build -o ipfs-cli
+          sudo mv ipfs-cli /usr/local/bin/
+
+      - name: Authenticate Pinata CLI
+        env:
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+        run: ipfs-cli auth --token "$PINATA_JWT" --default
+
+      - name: Upload dist/ to Pinata
+        working-directory: client
+        run: ipfs-cli upload dist

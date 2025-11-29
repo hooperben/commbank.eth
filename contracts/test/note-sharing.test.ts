@@ -1,24 +1,17 @@
 import { NoteEncryption } from "@/helpers/note-sharing";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { Wallet } from "ethers";
-import { ethers } from "hardhat";
 import { expect } from "chai";
 
 describe("Testing Note Sharing functionality", () => {
-  let Signers: HardhatEthersSigner[];
-
-  beforeEach(async () => {
-    Signers = await ethers.getSigners();
-  });
-
   it("should let me encrypt and decrypt", async () => {
+    const alicePK =
+      "0x1234567890123456789012345678901234567890123456789012345678901234";
     // Create wallets (signers)
-    const alice = new Wallet(
-      "0x1234567890123456789012345678901234567890123456789012345678901234",
-    );
-    const bob = new Wallet(
-      "0x9876543210987654321098765432109876543210987654321098765432109876",
-    );
+    const alice = new Wallet(alicePK);
+
+    const bobPk =
+      "0x9876543210987654321098765432109876543210987654321098765432109876";
+    const bob = new Wallet(bobPk);
 
     // Create a note with secret
     const originalNote = {

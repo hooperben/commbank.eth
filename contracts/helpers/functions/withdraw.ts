@@ -1,6 +1,6 @@
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
-import { getNoirClasses } from "@/helpers/test-suite/get-noir-classes";
-import { InputNote } from "..";
+import { getNoirClasses } from "@/helpers/objects/get-noir-classes";
+import { InputNote } from "@/types/notes";
 
 export const getWithdrawDetails = async (
   tree: PoseidonMerkleTree,
@@ -26,7 +26,7 @@ export const getWithdrawDetails = async (
   });
 
   const withdrawProof = await withdrawBackend.generateProof(withdrawWitness, {
-    keccak: true,
+    keccakZK: true,
   });
 
   return {

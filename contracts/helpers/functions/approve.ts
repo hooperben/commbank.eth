@@ -1,18 +1,29 @@
-import { ERC20__factory, USDC } from "@/typechain-types";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "hardhat";
+import { ethers } from "ethers";
 
 export const approve = async (
-  account: HardhatEthersSigner,
+  account: ethers.Signer,
   erc20Address: string,
   spender: string,
   amount: bigint,
 ) => {
   const erc20 = new ethers.Contract(
     erc20Address,
-    ERC20__factory.abi,
+    [
+      {
+        constant: false,
+        inputs: [
+          { name: "_spender", type: "address" },
+          { name: "_value", type: "uint256" },
+        ],
+        name: "approve",
+        outputs: [{ name: "", type: "bool" }],
+        payable: false,
+        stateMutability: "nonpayable",
+        type: "function",
+      },
+    ],
     account,
-  ) as unknown as USDC;
+  );
 
   const tx = await erc20.approve(spender, amount);
 

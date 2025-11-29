@@ -1,5 +1,5 @@
-import { loadPoseidon } from "@/helpers/load-poseidon";
-import { OutputNote } from "..";
+import { OutputNote } from "@/types/notes";
+import { poseidon2Hash } from "@zkpassport/poseidon2";
 
 // Function overloads
 export async function getNoteHash(note: OutputNote): Promise<bigint>;
@@ -18,8 +18,6 @@ export async function getNoteHash(
   assetId?: bigint | string,
   amount?: bigint | string,
 ): Promise<bigint> {
-  const poseidonHash = await loadPoseidon();
-
   let owner: bigint | string;
   let noteSecret: bigint | string;
   let noteAssetId: bigint | string;
@@ -49,7 +47,7 @@ export async function getNoteHash(
     noteAmount = amount;
   }
 
-  const noteHash = await poseidonHash([
+  const noteHash = poseidon2Hash([
     BigInt(noteAssetId),
     BigInt(noteAmount),
     BigInt(owner),

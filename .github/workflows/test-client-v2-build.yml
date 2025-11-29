@@ -1,0 +1,46 @@
+name: Test client build
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: |
+          curl -fsSL https://get.pnpm.io/install.sh | sh -
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+
+      - name: Install nargo
+        run: |
+          curl -L https://raw.githubusercontent.com/noir-lang/noirup/refs/heads/main/install | bash
+          export PATH="$HOME/.nargo/bin:$PATH"
+          noirup --version 1.0.0-beta.15
+          echo "$HOME/.nargo/bin" >> $GITHUB_PATH
+
+      - name: Install bb (Barretenberg)
+        run: |
+          curl -L https://raw.githubusercontent.com/AztecProtocol/aztec-packages/refs/heads/next/barretenberg/bbup/install | bash
+          $HOME/.bb/bbup
+          echo "$HOME/.bb" >> $GITHUB_PATH
+
+      - name: Install dependencies and build circuits
+        run: |
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
+          pnpm install --frozen-lockfile
+          cd contracts
+          pnpm run build
+
+      - name: Build client
+        run: |
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
+          cd client
+          pnpm run build

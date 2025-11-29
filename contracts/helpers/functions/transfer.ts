@@ -1,25 +1,24 @@
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
-import { getNoirClasses } from "@/helpers/test-suite/get-noir-classes";
+import { getNoirClasses } from "@/helpers/objects/get-noir-classes";
 import { CommBankDotEth } from "@/typechain-types";
 import { ProofData } from "@aztec/bb.js";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers } from "ethers";
-import { InputNote, OutputNote } from "..";
+import { InputNote, OutputNote } from "@/types/notes";
 import { EncryptedNote, NoteEncryption } from "../note-sharing";
 
 export const getTransferDetails = async (
   tree: PoseidonMerkleTree,
   inputNotes: InputNote[],
-  nullifiers: BigInt[],
+  nullifiers: bigint[],
   outputNotes: OutputNote[],
-  outputHashes: BigInt[],
+  outputHashes: bigint[],
 ) => {
   const { transferNoir, transferBackend } = getNoirClasses();
 
   const root = await tree.getRoot();
 
   const { witness: transferWitness } = await transferNoir.execute({
-    root: root.toBigInt().toString(),
+    root: root.toString(),
     // not my ideal any'ing please don't judge me
     input_notes: inputNotes as any,
     output_notes: outputNotes as any,
@@ -28,7 +27,7 @@ export const getTransferDetails = async (
   });
 
   const transferProof = await transferBackend.generateProof(transferWitness, {
-    keccak: true,
+    keccakZK: true,
   });
 
   return {
@@ -39,7 +38,7 @@ export const getTransferDetails = async (
 export const transfer = async (
   commbankDotEth: CommBankDotEth,
   proof: ProofData,
-  runner: HardhatEthersSigner,
+  runner: ethers.Signer,
   encryptedNotes?: (EncryptedNote | "0x")[],
 ) => {
   // Convert encrypted notes to bytes arrays for the contract
@@ -95,7 +94,7 @@ export const createDepositPayload = async (
     asset_id: string;
     asset_amount: string;
   },
-  recipientSigner: HardhatEthersSigner,
+  recipientSigner: ethers.Signer,
 ): Promise<string[]> => {
   const encryptedNote = await NoteEncryption.createEncryptedNote(
     outputNote,

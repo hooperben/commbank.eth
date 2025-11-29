@@ -2,16 +2,11 @@
   "name": "commbank-dot-eth",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "client",
-    "contracts",
-    "shared",
-    "server"
-  ],
   "scripts": {
-    "dev": "bun run --filter client dev",
-    "build": "bun run --filter client build",
-    "build-contracts": "bun run --filter contracts build",
+    "dev": "VITE_RUNNING_LOCAL_INDEXER=true pnpm --filter envio-indexer dev & pnpm --filter client dev",
+    "build": "pnpm --filter client build",
+    "build-ipfs": "pnpm --filter client build-ipfs",
+    "build-contracts": "pnpm --filter contracts build",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",
     "lint": "eslint .",
@@ -23,7 +18,14 @@
     "eslint": "^9.38.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.5.0",
     "prettier": "^3.6.2",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19.1.16",
+      "@types/react-dom": "^19.1.9"
+    }
   }
 }

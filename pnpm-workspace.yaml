@@ -1,0 +1,6 @@
+packages:
+  - "client"
+  - "indexer"
+  - "indexer/generated"
+  - "contracts"
+  - "shared"

@@ -1,9 +1,0 @@
-{
-  "sites": [
-    {
-      "slug": "prehistoric-market-scrawny",
-      "distDir": "out",
-      "buildCommand": "bun run build"
-    }
-  ]
-}

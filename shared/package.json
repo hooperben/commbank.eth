@@ -2,14 +2,21 @@
   "name": "shared",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "main": "./classes/commbankdoteth.ts",
   "types": "./classes/commbankdoteth.ts",
   "exports": {
     ".": "./classes/commbankdoteth.ts",
-    "./classes/*": "./classes/*.ts"
+    "./classes/*": "./classes/*.ts",
+    "./constants/*": "./constants/*.ts"
   },
   "dependencies": {
-    "contracts": "workspace:*"
+    "@aztec/bb.js": "3.0.0-nightly.20251104",
+    "@noir-lang/noir_js": "1.0.0-beta.15",
+    "@zkpassport/poseidon2": "^0.6.2",
+    "contracts": "workspace:*",
+    "eciesjs": "^0.4.16",
+    "ethers": "^6.15.0"
   },
   "devDependencies": {
     "@types/node": "^20",

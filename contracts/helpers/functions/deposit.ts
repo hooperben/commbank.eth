@@ -1,14 +1,15 @@
-import { loadPoseidon } from "@/helpers/load-poseidon";
-import { getNoirClasses } from "@/helpers/test-suite/get-noir-classes";
-import { DepositNote } from "..";
+import { poseidon2Hash } from "@zkpassport/poseidon2";
+import { DepositNote } from "@/types/notes";
+import { Deposit } from "shared/classes/Deposit";
 
 export const getDepositDetails = async (depositNote: DepositNote) => {
   const { assetId, assetAmount, secret, owner } = depositNote;
-  const { depositNoir, depositBackend } = getNoirClasses();
 
-  const poseidonHash = await loadPoseidon();
+  const deposit = new Deposit();
 
-  const noteHash = await poseidonHash([
+  await deposit.depositNoir.init();
+
+  const noteHash = poseidon2Hash([
     BigInt(assetId),
     BigInt(assetAmount),
     BigInt(owner),
@@ -17,15 +18,17 @@ export const getDepositDetails = async (depositNote: DepositNote) => {
 
   const noteHashN = BigInt(noteHash.toString());
 
-  const { witness } = await depositNoir.execute({
+  const { witness } = await deposit.depositNoir.execute({
     hash: noteHashN.toString(),
-    asset_id: assetId.toString(),
+    asset_id: BigInt(assetId).toString(),
     asset_amount: assetAmount.toString(),
     owner: owner.toString(),
     secret: secret.toString(),
   });
 
-  const proof = await depositBackend.generateProof(witness, { keccak: true });
+  const proof = await deposit.depositBackend.generateProof(witness, {
+    keccakZK: true,
+  });
 
   return {
     proof,
