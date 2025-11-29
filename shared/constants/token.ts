@@ -43,6 +43,15 @@ export const sepoliaAssets: SupportedAsset[] = [
   {
     chainId: 11155111,
     lzEndpointId: 40101,
+    name: "Australian Dollar Coin",
+    symbol: "AUDD",
+    address: "0xd794125Bc226895b987845Ef768B8C104fAbecD5",
+    decimals: 6,
+    roundTo: 2,
+  },
+  {
+    chainId: 11155111,
+    lzEndpointId: 40101,
     name: "Ethereum",
     symbol: "ETH",
     address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",

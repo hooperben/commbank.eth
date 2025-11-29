@@ -4,15 +4,23 @@ import PageContainer from "@/components/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAccountTotal } from "@/hooks/use-account-total";
 import { useAudUsdPrice, useEthUsdPrice } from "@/hooks/use-chainlink-price";
 import { useAuth } from "@/lib/auth-context";
 import { PAGE_METADATA } from "@/lib/seo-config";
-import { ArrowDownLeft, ArrowUpRight, Info, Users } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  DollarSign,
+  Info,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultNetwork } from "shared/constants/token";
@@ -21,12 +29,22 @@ import { defaultNetwork } from "shared/constants/token";
 export default function AccountPage() {
   const { isSignedIn } = useAuth();
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [showAud, setShowAud] = useState(false);
 
   // Fetch price data from Chainlink
   const { data: ethUsdPrice, isLoading: isLoadingEthUsd } = useEthUsdPrice();
   const { data: audUsdPrice, isLoading: isLoadingAudUsd } = useAudUsdPrice();
 
-  // Calculate ETH value in AUD (ETH/USD * AUD/USD)
+  // Calculate total account value
+  const { totalUsd, isLoading: isLoadingTotal } = useAccountTotal();
+
+  // Calculate total in AUD
+  const totalAud =
+    audUsdPrice && totalUsd
+      ? totalUsd / parseFloat(audUsdPrice.formattedPrice)
+      : 0;
+
+  // Calculate ETH value in AUD (ETH/USD / AUD/USD)
   const ethAudValue =
     ethUsdPrice && audUsdPrice
       ? (
@@ -41,9 +59,6 @@ export default function AccountPage() {
 
   const isPriceLoading = isLoadingEthUsd || isLoadingAudUsd;
 
-  // Mock data - will be replaced with real hooks later
-  const totalAvailable = 0;
-
   const recentTransactions = [
     // Will be populated later
   ];
@@ -55,9 +70,34 @@ export default function AccountPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-4xl font-bold">
-                ${totalAvailable.toFixed(2)}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                {isLoadingTotal ? (
+                  <Skeleton className="h-12 w-64" />
+                ) : (
+                  <>
+                    <CardTitle className="text-4xl font-bold">
+                      {showAud
+                        ? `$${totalAud.toFixed(2)} AUD`
+                        : `$${totalUsd.toFixed(2)} USD`}
+                    </CardTitle>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => setShowAud(!showAud)}
+                        >
+                          <DollarSign className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Change currency</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 {defaultNetwork !== 1 ? (
                   <Badge variant="outline" className="text-sm bg-green-400">
@@ -81,7 +121,7 @@ export default function AccountPage() {
           <CardContent className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {isPriceLoading ? (
-                <span>Loading prices...</span>
+                <Skeleton className="h-12 w-64" />
               ) : ethAudValue && ethUsdValue ? (
                 <>
                   <span>
