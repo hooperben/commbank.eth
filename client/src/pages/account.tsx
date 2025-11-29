@@ -4,10 +4,15 @@ import PageContainer from "@/components/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useAudUsdPrice, useEthUsdPrice } from "@/hooks/use-chainlink-price";
 import { useAuth } from "@/lib/auth-context";
 import { PAGE_METADATA } from "@/lib/seo-config";
-import { ArrowDownLeft, ArrowUpRight, Users } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Info, Users } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultNetwork } from "shared/constants/token";
@@ -16,6 +21,25 @@ import { defaultNetwork } from "shared/constants/token";
 export default function AccountPage() {
   const { isSignedIn } = useAuth();
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+
+  // Fetch price data from Chainlink
+  const { data: ethUsdPrice, isLoading: isLoadingEthUsd } = useEthUsdPrice();
+  const { data: audUsdPrice, isLoading: isLoadingAudUsd } = useAudUsdPrice();
+
+  // Calculate ETH value in AUD (ETH/USD * AUD/USD)
+  const ethAudValue =
+    ethUsdPrice && audUsdPrice
+      ? (
+          parseFloat(ethUsdPrice.formattedPrice) /
+          parseFloat(audUsdPrice.formattedPrice)
+        ).toFixed(2)
+      : null;
+
+  const ethUsdValue = ethUsdPrice
+    ? parseFloat(ethUsdPrice.formattedPrice).toFixed(2)
+    : null;
+
+  const isPriceLoading = isLoadingEthUsd || isLoadingAudUsd;
 
   // Mock data - will be replaced with real hooks later
   const totalAvailable = 0;
@@ -55,10 +79,30 @@ export default function AccountPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="flex gap-2 text-sm text-muted-foreground">
-              {/* <div>100 AUDD</div> */}
-              <Separator orientation="vertical" className="h-4" />
-              {/* <Balance asset={}/> */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              {isPriceLoading ? (
+                <span>Loading prices...</span>
+              ) : ethAudValue && ethUsdValue ? (
+                <>
+                  <span>
+                    1 ETH = {ethAudValue} AUD / {ethUsdValue} USD
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-5 w-5 p-0"
+                      >
+                        <Info className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Pricing data provided by Chainlink pricing feeds</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              ) : null}
             </div>
           </CardContent>
         </Card>

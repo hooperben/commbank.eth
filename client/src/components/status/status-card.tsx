@@ -34,7 +34,7 @@ export function StatusCard({ title, status, children }: StatusCardProps) {
     return (
       <Badge variant={variants[status.type]} className="gap-1">
         {getStatusIcon()}
-        {status.type.toUpperCase()}
+        {status.type === "success" ? "ACTIVE" : status.type.toUpperCase()}
       </Badge>
     );
   };
