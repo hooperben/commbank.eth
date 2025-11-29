@@ -7,13 +7,13 @@ async function main() {
 
   console.log(deployer.address);
 
-  const { usdcDeployment } = await connection.ignition.deploy(TokensModule);
+  const { auddDeployment } = await connection.ignition.deploy(TokensModule);
 
-  console.log(usdcDeployment);
+  console.log(auddDeployment);
 
   const recipient = "0x6e400024D346e8874080438756027001896937E3";
 
-  const tx = await usdcDeployment.transfer(recipient, 500_000_000n);
+  const tx = await auddDeployment.transfer(recipient, 420_000_000n);
 
   console.log(tx);
 }
