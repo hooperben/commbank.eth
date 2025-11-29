@@ -61,4 +61,5 @@ export const sepoliaAssets: SupportedAsset[] = [
   },
 ];
 
-export const defaultNetwork = sepoliaAssets[0].chainId;
+export const defaultNetwork =
+  Number(import.meta.env.VITE_DEFAULT_CHAIN_ID) || sepoliaAssets[0].chainId;

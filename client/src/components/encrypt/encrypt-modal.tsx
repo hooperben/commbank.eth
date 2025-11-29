@@ -1,8 +1,8 @@
-import { useState } from "react";
-import type { SupportedAsset } from "shared/constants/token";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { EncryptStep } from "./encrypt-step";
+import { useState } from "react";
+import { defaultNetwork, type SupportedAsset } from "shared/constants/token";
 import { ConfirmEncryptStep } from "./confirm-encryption-step";
+import { EncryptStep } from "./encrypt-step";
 import { SuccessStep } from "./success-step";
 
 export type ModalStep = "select" | "confirm" | "success";
@@ -31,8 +31,10 @@ export function EncryptModal({
 
   const handleConfirmSuccess = (txHash: string) => {
     setTxHash(txHash);
-    // TODO ENVise
-    setExplorerUrl(`https://sepolia.etherscan.io/tx/${txHash}`);
+    // TODO move away from etherscan
+    setExplorerUrl(
+      `https://${defaultNetwork !== 1 && "sepolia."}etherscan.io/tx/${txHash}`,
+    );
     setStep("success");
   };
 

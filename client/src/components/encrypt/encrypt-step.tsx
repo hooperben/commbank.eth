@@ -13,7 +13,11 @@ import { useERC20Balance } from "@/hooks/use-erc20-balance";
 import { ethers } from "ethers";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { sepoliaAssets } from "shared/constants/token";
+import {
+  defaultNetwork,
+  mainnetAssets,
+  sepoliaAssets,
+} from "shared/constants/token";
 import type { EncryptData } from "./encrypt-modal";
 
 export function EncryptStep({
@@ -21,9 +25,10 @@ export function EncryptStep({
 }: {
   onSelectAsset: (data: EncryptData) => void;
 }) {
-  const [selectedAsset, setSelectedAsset] = useState<
-    (typeof sepoliaAssets)[0] | null
-  >(null);
+  const assets = defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+  const [selectedAsset, setSelectedAsset] = useState<(typeof assets)[0] | null>(
+    null,
+  );
   const [amount, setAmount] = useState<string>("");
 
   const { data: balance, isLoading: isLoadingBalance } =
@@ -78,9 +83,7 @@ export function EncryptStep({
               value={selectedAsset?.address}
               // TODO make ID lookup
               onValueChange={(value) => {
-                const asset = sepoliaAssets.find(
-                  (item) => item.address === value,
-                );
+                const asset = assets.find((item) => item.address === value);
                 setSelectedAsset(asset ?? null);
               }}
             >
@@ -88,7 +91,7 @@ export function EncryptStep({
                 <SelectValue placeholder="Select Asset" />
               </SelectTrigger>
               <SelectContent>
-                {sepoliaAssets.map((asset) => (
+                {assets.map((asset) => (
                   <SelectItem key={asset.address} value={asset.address}>
                     {asset.symbol}
                   </SelectItem>

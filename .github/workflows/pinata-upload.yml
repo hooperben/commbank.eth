@@ -43,6 +43,7 @@ jobs:
         env:
           VITE_GITHUB_ACTION_BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           VITE_DOMAIN: ${{ github.ref == 'refs/heads/main' && 'https://commbank.eth.limo' || 'https://dev.commbank.eth.limo' }}
+          VITE_DEFAULT_CHAIN_ID: ${{ github.ref == 'refs/heads/main' && '1' || '11155111' }}
         run: |
           export PNPM_HOME="$HOME/.local/share/pnpm"
           export PATH="$PNPM_HOME:$PATH"

@@ -10,4 +10,7 @@ export const SUPPORTED_NETWORKS: Record<number, any> = {
     FourDEC: "0x840feC4Efbd4764edAA237E78757cE59CeA3Db26",
     USDC: "0x237eEeE66266c72DBb7Ee2Aa84811666cE4EB815",
   },
+  1: {
+    rpc: "https://eth-mainnet.g.alchemy.com/v2/Xq2kgRj8MHmXSE3sbThrHfr9R4-5HPWg",
+  },
 };
