@@ -62,7 +62,7 @@ export function DeleteAccountModal() {
     setIsDeleting(false);
   };
 
-  const isValidInput = "I understand and want to delete my account";
+  const isValidInput = "delete my account";
 
   return (
     <Dialog
@@ -108,7 +108,7 @@ export function DeleteAccountModal() {
               Please Enter the text
             </Label>
             <Label htmlFor="delete-confirm" className="text-sm text-primary">
-              'Delete my account'.{" "}
+              'delete my account'.{" "}
             </Label>
 
             <Textarea

@@ -8,37 +8,39 @@ import {
 import { useIsRegistered } from "@/hooks/use-is-registered";
 import { useAuth } from "@/lib/auth-context";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { RestoreAccount } from "./restore-account";
+import { useSignUp } from "@/hooks/use-sign-up";
 
 interface SignupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateAccount: () => Promise<void>;
 }
 
-export function SignupModal({
-  isOpen,
-  onClose,
-  onCreateAccount,
-}: SignupModalProps) {
+export function SignupModal({ isOpen, onClose }: SignupModalProps) {
   const [showRestore, setShowRestore] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(false);
+  const { refetch: refetchIsRegistered } = useIsRegistered();
+
+  const { state, mutateAsync: signUp, isPending } = useSignUp();
+
+  useEffect(() => {
+    console.log("Signup state changed:", state);
+  }, [state]);
 
   const handleCreateAccount = async () => {
-    setLoading(true);
-    await onCreateAccount();
-    setLoading(false);
-    onClose();
+    try {
+      await signUp();
+      // Note: onClose is handled by useSignUp's onSuccess callback via navigation
+    } catch (error) {
+      // Error already handled by useSignUp's onError callback
+      // Keep modal open so user can try again
+    }
   };
-
-  const { data: isRegistered, refetch: refetchIsRegistered } =
-    useIsRegistered();
 
   const handleRestoreComplete = async (mnemonic: string) => {
     try {
@@ -82,12 +84,11 @@ export function SignupModal({
             onClick={handleCreateAccount}
             className="w-full h-12 text-base"
             variant="outline"
-            disabled={loading}
+            disabled={isPending}
           >
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {loading && isRegistered && <p>(2/2) Sign in with passkey</p>}
-            {loading && !isRegistered && <p>(1/2) Registering passkey</p>}
-            {!loading && <p> create a commbank.eth account</p>}
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending && <span>{"Registering passkey and signing in"}</span>}
+            {!isPending && <span>create a commbank.eth account</span>}
           </Button>
 
           <div className="text-center space-y-3">

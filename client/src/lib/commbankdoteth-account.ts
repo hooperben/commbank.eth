@@ -103,7 +103,7 @@ export class CommbankDotETHAccount {
 
       const { credential } = result;
 
-      // Extract and store credential info for disaster recovery
+      // Extract and store credential info
       await this.storeCredentialInfo(credential, wallet.address);
 
       // Authenticate to get consistent authenticator data for encryption
@@ -501,6 +501,8 @@ export class CommbankDotETHAccount {
         address,
         createdAt: Date.now(),
       };
+
+      console.log(credentialInfo);
 
       localStorage.setItem(
         CommbankDotETHAccount.STORAGE_KEY_CREDENTIAL,

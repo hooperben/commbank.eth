@@ -1,8 +1,9 @@
+import { useAuth } from "@/lib/auth-context";
 import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
 import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useIsRegistered } from "./use-is-registered";
 
 export const useSignUp = () => {
@@ -10,16 +11,21 @@ export const useSignUp = () => {
   const navigate = useNavigate();
   const { refetch: refetchRegistered } = useIsRegistered();
 
+  const [state, setState] = useState<"Registering" | "Signing In">();
+
   // Sign up mutation
   const signUpMutation = useMutation({
     mutationFn: async () => {
       const account = new CommbankDotETHAccount();
+      setState("Registering");
       const wallet = await account.registerPasskey();
 
       if (!wallet) {
         throw new Error("Failed to register passkey");
       }
       await refetchRegistered();
+
+      setState("Signing In");
 
       // Sign in automatically after registration
       // Note: registerPasskey already authenticates once to encrypt the mnemonic,
@@ -31,10 +37,12 @@ export const useSignUp = () => {
       await signIn(mnemonic);
     },
     onSuccess: () => {
+      setState(undefined);
       toast.success("Account created successfully!");
       navigate("/account");
     },
     onError: (error) => {
+      setState(undefined);
       console.error("Sign up error:", error);
       toast.error(
         error instanceof Error
@@ -44,5 +52,5 @@ export const useSignUp = () => {
     },
   });
 
-  return signUpMutation;
+  return { state, ...signUpMutation };
 };
