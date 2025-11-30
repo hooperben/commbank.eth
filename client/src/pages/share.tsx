@@ -27,8 +27,8 @@ export default function SharePage() {
   useEffect(() => {
     // a users signed in before they have this flag set to true
     if (typeof window !== "undefined") {
-      const signedIn = localStorage.getItem("signedIn") === "true";
-      setHasAccount(signedIn);
+      const registered = localStorage.getItem("accountRegistered") === "true";
+      setHasAccount(registered);
     }
   }, []);
 
@@ -45,8 +45,8 @@ export default function SharePage() {
   // Add contact mutation
   const addContactMutation = useAddContact();
 
-  const handleCreateAccount = () => {
-    signUpMutation.mutate();
+  const handleCreateAccount = async () => {
+    await signUpMutation.mutateAsync();
   };
 
   const handleGetStarted = () => {

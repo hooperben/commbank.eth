@@ -26,8 +26,8 @@ export const HomePage = () => {
   const signUpMutation = useSignUp();
   const signInMutation = useSignIn();
 
-  const handleCreateAccount = () => {
-    signUpMutation.mutate();
+  const handleCreateAccount = async () => {
+    await signUpMutation.mutateAsync();
   };
 
   const handleButtonClick = () => {

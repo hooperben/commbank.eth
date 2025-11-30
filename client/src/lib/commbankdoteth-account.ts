@@ -71,7 +71,9 @@ export class CommbankDotETHAccount {
    *
    * @returns The newly created Wallet, or null if registration failed
    */
-  async registerPasskey(): Promise<HDNodeWallet | null> {
+  async registerPasskey(
+    providedMnemonic?: string,
+  ): Promise<HDNodeWallet | null> {
     try {
       // Check if already registered
       const alreadyRegistered = await this.isRegistered();
@@ -82,13 +84,16 @@ export class CommbankDotETHAccount {
         return null;
       }
 
-      // Create a random wallet
-      const randomWallet = Wallet.createRandom();
-      const mnemonic = randomWallet.mnemonic?.phrase;
+      // Use the provided providedMnemonic or create a random wallet
+      const mnemonic = providedMnemonic
+        ? providedMnemonic
+        : Wallet.createRandom().mnemonic?.phrase;
 
       if (!mnemonic) {
-        throw new Error("Failed to generate mnemonic");
+        throw new Error("Failed to create account");
       }
+
+      const wallet = Wallet.fromPhrase(mnemonic);
 
       // Register the passkey
       const result = await this.createPasskeyCredential();
@@ -99,7 +104,7 @@ export class CommbankDotETHAccount {
       const { credential } = result;
 
       // Extract and store credential info for disaster recovery
-      await this.storeCredentialInfo(credential, randomWallet.address);
+      await this.storeCredentialInfo(credential, wallet.address);
 
       // Authenticate to get consistent authenticator data for encryption
       // Note: We must authenticate (not use creation data) because the authenticator data
@@ -118,7 +123,9 @@ export class CommbankDotETHAccount {
         CommbankDotETHAccount.USERNAME,
       );
 
-      return randomWallet;
+      localStorage.setItem("accountRegistered", "true");
+
+      return wallet;
     } catch (error) {
       console.error("Error registering passkey:", error);
       return null;
@@ -541,7 +548,7 @@ export class CommbankDotETHAccount {
         CommbankDotETHAccount.STORAGE_KEY_ENCRYPTED,
       );
       if (!storedData) {
-        throw new Error("No stored mnemonic found");
+        throw new Error("No stored account found");
       }
 
       const encryptedMnemonic = JSON.parse(storedData);
@@ -563,7 +570,7 @@ export class CommbankDotETHAccount {
       return decoder.decode(decryptedData);
     } catch (error) {
       console.error("Error retrieving mnemonic:", error);
-      throw new Error("Error Retrieving Mnemonic");
+      throw new Error("Error Retrieving Account");
     }
   }
 }

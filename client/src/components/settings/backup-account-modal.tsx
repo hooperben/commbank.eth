@@ -7,7 +7,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -15,7 +14,7 @@ import {
   downloadAsJson,
   encryptMnemonicWithPin,
 } from "@/lib/backup-helpers";
-import { AlertTriangle, Copy, Download, Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, Copy, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -26,16 +25,9 @@ export function BackupAccountModal() {
   const [confirmExport, setConfirmExport] = useState(false);
   const [addPin, setAddPin] = useState(true);
   const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const pinsMatch = pin && confirmPin && pin === confirmPin;
 
   // only show error if it's around the same length
-  const showPinError =
-    confirmPin && confirmPin.length >= pin.length && !pinsMatch;
-  const canExport = confirmExport && (!addPin || pinsMatch);
+  const canExport = confirmExport;
 
   function waitForWindowFocus(): Promise<void> {
     return new Promise((resolve) => {
@@ -123,7 +115,6 @@ export function BackupAccountModal() {
     setConfirmExport(false);
     setAddPin(true);
     setPin("");
-    setConfirmPin("");
   };
 
   return (
@@ -176,100 +167,6 @@ export function BackupAccountModal() {
               I understand and want to export my account secret
             </span>
           </Label>
-
-          {confirmExport && (
-            <>
-              {/* Add Password Checkbox */}
-              <Label
-                className="hover:bg-accent/50 flex items-start gap-3 rounded-md border border-input p-3 transition-colors cursor-pointer"
-                htmlFor="add-pin"
-              >
-                <Checkbox
-                  id="add-pin"
-                  checked={addPin}
-                  onCheckedChange={(checked) => setAddPin(checked as boolean)}
-                />
-                <div className="space-y-1">
-                  <span className="text-sm font-medium">
-                    Add password to backup (recommended)
-                  </span>
-                  <p className="text-xs text-muted-foreground">
-                    Encrypt your backup with a password for additional security
-                  </p>
-                </div>
-              </Label>
-
-              {/* Password Fields */}
-              {addPin && (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="pin" className="text-sm">
-                      Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="pin"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter password"
-                        value={pin}
-                        onChange={(e) => setPin(e.target.value)}
-                        className="pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-pin" className="text-sm">
-                      Confirm Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="confirm-pin"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm password"
-                        value={confirmPin}
-                        onChange={(e) => setConfirmPin(e.target.value)}
-                        className="pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </Button>
-                    </div>
-                    {showPinError && (
-                      <p className="text-xs text-destructive">
-                        Passwords do not match
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
 
           {/* Export Buttons */}
           <div className="grid grid-cols-2 gap-3 pt-2">

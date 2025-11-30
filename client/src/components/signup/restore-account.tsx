@@ -1,28 +1,27 @@
-import { useState } from "react";
+import type { BackupFile, DerivedAddresses } from "@/_types";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  isValidMnemonic,
   deriveAddressesFromMnemonic,
-  decryptMnemonic,
+  isValidMnemonic,
 } from "@/lib/mnemonic-helpers";
-import type { BackupFile, DerivedAddresses } from "@/_types";
-import { Upload, AlertCircle } from "lucide-react";
+import { Upload } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AddressPreview } from "./address-preview";
 
 interface RestoreAccountProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (mnemonic: string) => void;
+  onComplete: (mnemonic: string) => Promise<void>;
 }
 
 type RestoreStep = "upload" | "decrypt" | "preview";
@@ -34,11 +33,9 @@ export function RestoreAccount({
 }: RestoreAccountProps) {
   const [step, setStep] = useState<RestoreStep>("upload");
   const [mnemonicInput, setMnemonicInput] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<BackupFile | null>(null);
-  const [decryptionPin, setDecryptionPin] = useState("");
-  const [pinError, setPinError] = useState(false);
   const [mnemonic, setMnemonic] = useState("");
   const [addresses, setAddresses] = useState<DerivedAddresses | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -48,7 +45,6 @@ export function RestoreAccount({
     reader.onload = (e) => {
       try {
         const json = JSON.parse(e.target?.result as string) as BackupFile;
-        setUploadedFile(json);
 
         // Check if it's an encrypted file
         if ("encryptedMnemonic" in json) {
@@ -78,29 +74,7 @@ export function RestoreAccount({
       setMnemonic(trimmed);
       handlePreview(trimmed);
     } else {
-      toast.error("Invalid 24-word mnemonic phrase");
-    }
-  };
-
-  const handleDecrypt = () => {
-    if (!uploadedFile || !("encryptedMnemonic" in uploadedFile)) return;
-
-    const decrypted = decryptMnemonic(
-      uploadedFile.encryptedMnemonic,
-      decryptionPin,
-    );
-
-    if (!decrypted) {
-      setPinError(true);
-      return;
-    }
-
-    if (isValidMnemonic(decrypted)) {
-      setMnemonic(decrypted);
-      setPinError(false);
-      handlePreview(decrypted);
-    } else {
-      toast.error("Decrypted mnemonic is invalid");
+      toast.error("Invalid 12 word mnemonic phrase");
     }
   };
 
@@ -115,8 +89,14 @@ export function RestoreAccount({
     }
   };
 
-  const handleConfirmImport = () => {
-    onComplete(mnemonic);
+  const handleConfirmImport = async () => {
+    setIsImporting(true);
+    try {
+      await onComplete(mnemonic);
+    } catch (error) {
+      console.error("Import failed:", error);
+      setIsImporting(false);
+    }
   };
 
   const renderUploadStep = () => (
@@ -128,6 +108,13 @@ export function RestoreAccount({
         <div className="space-y-2">
           <Label htmlFor="file-upload" className="text-sm font-medium">
             Upload commbank.eth.json file
+          </Label>
+          <Label
+            htmlFor="file-upload"
+            className="text-xs font-medium text-primary/80"
+          >
+            This is the file that you should have generated when you backed up
+            your commbank.eth account.
           </Label>
           <div className="flex items-center gap-2">
             <Input
@@ -159,7 +146,13 @@ export function RestoreAccount({
 
         <div className="space-y-2">
           <Label htmlFor="mnemonic" className="text-sm font-medium">
-            Paste 24-word mnemonic
+            Paste mnemonic here
+          </Label>
+          <Label
+            htmlFor="file-upload"
+            className="text-xs font-medium text-primary/80"
+          >
+            Paste any 12 word mnemonic phrase here and that will work too.
           </Label>
           <Textarea
             id="mnemonic"
@@ -180,45 +173,6 @@ export function RestoreAccount({
     </>
   );
 
-  const renderDecryptStep = () => (
-    <>
-      <DialogHeader>
-        <DialogTitle>Enter Decryption PIN</DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4 py-4">
-        <div className="space-y-2">
-          <Label htmlFor="pin" className="text-sm font-medium">
-            Decryption PIN
-          </Label>
-          <Input
-            id="pin"
-            type="password"
-            placeholder="Enter your PIN"
-            value={decryptionPin}
-            onChange={(e) => {
-              setDecryptionPin(e.target.value);
-              setPinError(false);
-            }}
-          />
-          {pinError && (
-            <div className="flex items-center gap-2 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              <span>Invalid key</span>
-            </div>
-          )}
-        </div>
-
-        <Button
-          onClick={handleDecrypt}
-          className="w-full"
-          disabled={!decryptionPin || pinError}
-        >
-          Next
-        </Button>
-      </div>
-    </>
-  );
-
   const renderPreviewStep = () => (
     <>
       <DialogHeader>
@@ -227,8 +181,13 @@ export function RestoreAccount({
       <div className="space-y-4 py-4">
         {addresses && <AddressPreview addresses={addresses} />}
 
-        <Button onClick={handleConfirmImport} className="w-full" size="lg">
-          Confirm Import
+        <Button
+          onClick={handleConfirmImport}
+          className="w-full"
+          size="lg"
+          disabled={isImporting}
+        >
+          {isImporting ? "Importing..." : "Confirm Import"}
         </Button>
       </div>
     </>
@@ -238,7 +197,6 @@ export function RestoreAccount({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         {step === "upload" && renderUploadStep()}
-        {step === "decrypt" && renderDecryptStep()}
         {step === "preview" && renderPreviewStep()}
       </DialogContent>
     </Dialog>

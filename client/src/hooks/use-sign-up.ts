@@ -3,19 +3,23 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { useNavigate } from "react-router-dom";
+import { useIsRegistered } from "./use-is-registered";
 
 export const useSignUp = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const { refetch: refetchRegistered } = useIsRegistered();
 
   // Sign up mutation
   const signUpMutation = useMutation({
     mutationFn: async () => {
       const account = new CommbankDotETHAccount();
       const wallet = await account.registerPasskey();
+
       if (!wallet) {
         throw new Error("Failed to register passkey");
       }
+      await refetchRegistered();
 
       // Sign in automatically after registration
       // Note: registerPasskey already authenticates once to encrypt the mnemonic,

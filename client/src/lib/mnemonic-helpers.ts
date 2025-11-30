@@ -11,12 +11,6 @@ import type { DerivedAddresses } from "@/_types";
 export function isValidMnemonic(mnemonic: string): boolean {
   try {
     const trimmed = mnemonic.trim();
-    const words = trimmed.split(/\s+/);
-
-    // Check if it has 24 words
-    if (words.length !== 24) {
-      return false;
-    }
 
     // Try to create a wallet from it
     ethers.Wallet.fromPhrase(trimmed);
