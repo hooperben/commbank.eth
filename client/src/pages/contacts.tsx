@@ -1,3 +1,4 @@
+import { AddContactModal } from "@/components/contacts/add-contact-modal";
 import PageContainer from "@/components/page-container";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,10 +60,15 @@ export default function ContactsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Contacts</CardTitle>
-            <CardDescription>
-              Manage your saved commbank.eth contacts
-            </CardDescription>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-2xl">Contacts</CardTitle>
+                <CardDescription>
+                  Manage your saved commbank.eth contacts
+                </CardDescription>
+              </div>
+              <AddContactModal />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Search Bar */}
