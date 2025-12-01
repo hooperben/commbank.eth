@@ -18,27 +18,16 @@ import {
 } from "@/components/ui/table";
 import { useDeleteContact, useSearchContacts } from "@/hooks/use-contacts";
 import { PAGE_METADATA } from "@/lib/seo-config";
-import { ArrowLeft, Search, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function ContactsPage() {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: contacts, isLoading } = useSearchContacts(searchQuery);
 
   const deleteContactMutation = useDeleteContact();
-
-  const handleSend = (contact: {
-    nickname?: string;
-    evmAddress?: string;
-    privateAddress?: string;
-  }) => {
-    // Navigate to send page with pre-filled contact info
-    console.log("Send to contact:", contact);
-    navigate("/send", { state: { contact } });
-  };
 
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this contact?")) {
@@ -104,9 +93,9 @@ export default function ContactsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nickname</TableHead>
+                      <TableHead>Name</TableHead>
                       <TableHead>Public Address</TableHead>
-                      <TableHead>Private Address</TableHead>
+                      <TableHead>Private Addresses</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -124,14 +113,6 @@ export default function ContactsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleSend(contact)}
-                            >
-                              <Send className="h-4 w-4 mr-1" />
-                              Send
-                            </Button>
                             <Button
                               size="sm"
                               variant="ghost"
