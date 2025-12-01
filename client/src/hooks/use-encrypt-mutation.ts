@@ -1,11 +1,13 @@
+import { useAuth } from "@/lib/auth-context";
 import { SUPPORTED_NETWORKS } from "@/lib/networks";
 import { useMutation } from "@tanstack/react-query";
-import { Deposit } from "shared/classes/Deposit";
-import { PoseidonMerkleTree } from "shared/classes/PoseidonMerkleTree";
-import { NoteEncryption } from "shared/classes/Note";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
-import { useAuth } from "@/lib/auth-context";
+import { Deposit } from "shared/classes/Deposit";
+import { NoteEncryption } from "shared/classes/Note";
+import { PoseidonMerkleTree } from "shared/classes/PoseidonMerkleTree";
+import { commbankDotEthAbi } from "shared/constants/abi/commbankdoteth";
+import { erc20Abi } from "shared/constants/abi/erc20abi";
 
 interface EncryptedNote {
   encryptedSecret: string;
@@ -51,8 +53,19 @@ async function createDepositPayload(
   return await encodeEncryptedPayload([encryptedNote, "0x", "0x"]);
 }
 
-export const useEncryptMutation = () => {
-  const { getMnemonic, privateAddress } = useAuth();
+export const useEncryptMutation = ({
+  onApprovalSuccess,
+  onZkProofSuccess,
+  onTxSuccess,
+}: {
+  onApprovalSuccess?: () => void;
+  onZkProofSuccess?: () => void;
+  onTxSuccess?: () => void;
+}) => {
+  const { getMnemonic, privateAddress, address } = useAuth();
+
+  // TODO make this programmatic
+  const canEncrypt = ["0x6e400024D346e8874080438756027001896937E3"];
 
   const mutationFn = useMutation({
     mutationFn: async ({
@@ -66,6 +79,9 @@ export const useEncryptMutation = () => {
       amount: number;
       decimals?: number;
     }) => {
+      if (!canEncrypt.includes(address!))
+        throw new Error("Not allowed to encrypt.");
+
       const chain = SUPPORTED_NETWORKS[chainId];
       if (!chain) throw new Error("Misconfigured");
 
@@ -102,6 +118,28 @@ export const useEncryptMutation = () => {
 
       if (!privateAddress) throw new Error("Missing auth");
 
+      // Approve ERC20 token (only if needed)
+      const erc20 = new ethers.Contract(assetId, erc20Abi, signer);
+
+      // Check current allowance
+      const currentAllowance = await erc20.allowance(
+        await signer.getAddress(),
+        chain.CommBankDotEth,
+      );
+
+      // Only approve if current allowance is less than needed
+      if (currentAllowance < assetAmount) {
+        console.log("approving");
+        const approveTx = await erc20.approve(
+          chain.CommBankDotEth,
+          assetAmount,
+        );
+        await approveTx.wait();
+      }
+      if (onApprovalSuccess) {
+        onApprovalSuccess();
+      }
+
       // Generate deposit proof
       const noteHash = poseidon2Hash([
         BigInt(assetId),
@@ -135,72 +173,13 @@ export const useEncryptMutation = () => {
         signer,
       );
 
-      // Approve ERC20 token (only if needed)
-      const erc20Abi = [
-        {
-          constant: true,
-          inputs: [
-            { name: "_owner", type: "address" },
-            { name: "_spender", type: "address" },
-          ],
-          name: "allowance",
-          outputs: [{ name: "", type: "uint256" }],
-          payable: false,
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          constant: false,
-          inputs: [
-            { name: "_spender", type: "address" },
-            { name: "_value", type: "uint256" },
-          ],
-          name: "approve",
-          outputs: [{ name: "", type: "bool" }],
-          payable: false,
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-      ];
-
-      const erc20 = new ethers.Contract(assetId, erc20Abi, signer);
-
-      // Check current allowance
-      const currentAllowance = await erc20.allowance(
-        await signer.getAddress(),
-        chain.CommBankDotEth,
-      );
-
-      // Only approve if current allowance is less than needed
-      if (currentAllowance < assetAmount) {
-        console.log("approving");
-        const approveTx = await erc20.approve(
-          chain.CommBankDotEth,
-          assetAmount,
-        );
-        await approveTx.wait();
+      if (onZkProofSuccess) {
+        onZkProofSuccess();
       }
-
-      // Call deposit on contract
-      const commbankAbi = [
-        {
-          inputs: [
-            { name: "_erc20", type: "address" },
-            { name: "_amount", type: "uint64" },
-            { name: "_proof", type: "bytes" },
-            { name: "_publicInputs", type: "bytes32[]" },
-            { name: "_payload", type: "bytes[]" },
-          ],
-          name: "deposit",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-      ];
 
       const commbankDotEthContract = new ethers.Contract(
         chain.CommBankDotEth,
-        commbankAbi,
+        commbankDotEthAbi,
         signer,
       );
 
@@ -210,21 +189,28 @@ export const useEncryptMutation = () => {
         return ethers.zeroPadValue(ethers.getBytes(input), 32);
       });
 
-      const depositTx = await commbankDotEthContract.deposit(
-        assetId,
-        assetAmount,
-        proof.proof,
-        publicInputsBytes32,
-        depositPayload,
-      );
+      try {
+        const depositTx = await commbankDotEthContract.deposit(
+          assetId,
+          assetAmount,
+          proof.proof,
+          publicInputsBytes32,
+          depositPayload,
+        );
 
-      console.log(depositTx);
+        if (onTxSuccess) {
+          onTxSuccess();
+        }
 
-      return {
-        txHash: depositTx.hash,
-        proof,
-        tree,
-      };
+        return {
+          txHash: depositTx.hash,
+          proof,
+          tree,
+        };
+      } catch (err) {
+        console.log("EEERRR:", err);
+        throw err;
+      }
     },
   });
 

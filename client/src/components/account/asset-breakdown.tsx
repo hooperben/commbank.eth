@@ -1,4 +1,10 @@
+import { DecryptModal } from "@/components/decrypt/decrypt-modal";
+import { InlineEncryptConfirmation } from "@/components/encrypt/inline-encrypt-confirmation";
+import { SendModal } from "@/components/send/send-modal";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowUpRight } from "lucide-react";
+import { useState } from "react";
 import {
   defaultNetwork,
   mainnetAssets,
@@ -10,6 +16,38 @@ import { BalanceRow } from "../token/balance";
 export function AssetBreakdown() {
   const assets: SupportedAsset[] =
     defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+
+  const [encryptingAsset, setEncryptingAsset] = useState<string | null>(null);
+  const [decryptModalOpen, setDecryptModalOpen] = useState(false);
+  const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<SupportedAsset | null>(
+    null,
+  );
+
+  const handleEncryptClick = (asset: SupportedAsset) => {
+    setSelectedAsset(asset);
+    setEncryptingAsset(asset.symbol);
+  };
+
+  const handleDecryptClick = (asset: SupportedAsset) => {
+    setSelectedAsset(asset);
+    setDecryptModalOpen(true);
+  };
+
+  const handleSendClick = (asset: SupportedAsset) => {
+    setSelectedAsset(asset);
+    setSendModalOpen(true);
+  };
+
+  const handleCancelEncrypt = () => {
+    setEncryptingAsset(null);
+    setSelectedAsset(null);
+  };
+
+  const handleEncryptSuccess = () => {
+    setEncryptingAsset(null);
+    setSelectedAsset(null);
+  };
 
   return (
     <>
@@ -32,39 +70,90 @@ export function AssetBreakdown() {
               </thead>
               <tbody>
                 {assets.map((asset) => (
-                  <tr
-                    key={asset.symbol}
-                    className="border-b hover:bg-muted/50 transition-colors"
-                  >
-                    <td className="p-3 font-semibold text-left">
-                      {asset.symbol}
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <BalanceRow
-                          key={`${asset.address}${asset.chainId}`}
-                          asset={asset}
-                        />
-                      </div>
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        0{/* TODO */}
-                      </div>
-                    </td>
-                    <td className="p-3 text-right font-medium">
-                      <BalanceRow
-                        key={`${asset.address}${asset.chainId}`}
-                        asset={asset}
-                      />
-                    </td>
-                  </tr>
+                  <>
+                    <tr
+                      key={asset.symbol}
+                      className="border-b hover:bg-muted/50 transition-colors"
+                    >
+                      <td className="p-3 font-semibold text-left">
+                        {asset.symbol}
+                      </td>
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <BalanceRow
+                            key={`${asset.address}${asset.chainId}`}
+                            asset={asset}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => handleEncryptClick(asset)}
+                          >
+                            encrypt
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          0{/* TODO */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => handleDecryptClick(asset)}
+                          >
+                            decrypt
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="p-3 text-right font-medium">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => handleSendClick(asset)}
+                          >
+                            <ArrowUpRight className="h-4 w-4" />
+                          </Button>
+                          <BalanceRow
+                            key={`${asset.address}${asset.chainId}`}
+                            asset={asset}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                    {encryptingAsset === asset.symbol && selectedAsset && (
+                      <tr key={`${asset.symbol}-encrypt`}>
+                        <td colSpan={4} className="p-3">
+                          <InlineEncryptConfirmation
+                            asset={selectedAsset}
+                            onCancel={handleCancelEncrypt}
+                            onSuccess={handleEncryptSuccess}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <DecryptModal
+        open={decryptModalOpen}
+        onOpenChange={setDecryptModalOpen}
+        asset={selectedAsset || undefined}
+      />
+      <SendModal
+        open={sendModalOpen}
+        onOpenChange={setSendModalOpen}
+        asset={selectedAsset || undefined}
+      />
     </>
   );
 }
