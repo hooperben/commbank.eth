@@ -66,6 +66,7 @@ export const useEncryptMutation = ({
 
   // TODO make this programmatic
   const canEncrypt = ["0x6e400024D346e8874080438756027001896937E3"];
+  const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
   const mutationFn = useMutation({
     mutationFn: async ({
@@ -84,6 +85,10 @@ export const useEncryptMutation = ({
 
       const chain = SUPPORTED_NETWORKS[chainId];
       if (!chain) throw new Error("Misconfigured");
+
+      // Check if this is a native ETH deposit
+      const isNativeDeposit =
+        assetId.toLowerCase() === ETH_ADDRESS.toLowerCase();
 
       // Get wallet from auth (getMnemonic is from useAuth hook)
       const mnemonic = await getMnemonic();
@@ -107,6 +112,7 @@ export const useEncryptMutation = ({
       await deposit.depositNoir.init();
 
       // Generate secret for note (within bounds)
+      // TODO move to dedicated helper
       const secret =
         BigInt(ethers.hexlify(ethers.randomBytes(32))) %
         BigInt(
@@ -118,26 +124,28 @@ export const useEncryptMutation = ({
 
       if (!privateAddress) throw new Error("Missing auth");
 
-      // Approve ERC20 token (only if needed)
-      const erc20 = new ethers.Contract(assetId, erc20Abi, signer);
+      // Approve ERC20 token (only if needed and not native ETH)
+      if (!isNativeDeposit) {
+        const erc20 = new ethers.Contract(assetId, erc20Abi, signer);
 
-      // Check current allowance
-      const currentAllowance = await erc20.allowance(
-        await signer.getAddress(),
-        chain.CommBankDotEth,
-      );
-
-      // Only approve if current allowance is less than needed
-      if (currentAllowance < assetAmount) {
-        console.log("approving");
-        const approveTx = await erc20.approve(
+        // Check current allowance
+        const currentAllowance = await erc20.allowance(
+          await signer.getAddress(),
           chain.CommBankDotEth,
-          assetAmount,
         );
-        await approveTx.wait();
-      }
-      if (onApprovalSuccess) {
-        onApprovalSuccess();
+
+        // Only approve if current allowance is less than needed
+        if (currentAllowance < assetAmount) {
+          console.log("approving");
+          const approveTx = await erc20.approve(
+            chain.CommBankDotEth,
+            assetAmount,
+          );
+          await approveTx.wait();
+        }
+        if (onApprovalSuccess) {
+          onApprovalSuccess();
+        }
       }
 
       // Generate deposit proof
@@ -190,13 +198,26 @@ export const useEncryptMutation = ({
       });
 
       try {
-        const depositTx = await commbankDotEthContract.deposit(
-          assetId,
-          assetAmount,
-          proof.proof,
-          publicInputsBytes32,
-          depositPayload,
-        );
+        let depositTx;
+
+        if (isNativeDeposit) {
+          // Call depositNative with ETH value
+          depositTx = await commbankDotEthContract.depositNative(
+            proof.proof,
+            publicInputsBytes32,
+            depositPayload,
+            { value: assetAmount },
+          );
+        } else {
+          // Call deposit for ERC20 tokens
+          depositTx = await commbankDotEthContract.deposit(
+            assetId,
+            assetAmount,
+            proof.proof,
+            publicInputsBytes32,
+            depositPayload,
+          );
+        }
 
         if (onTxSuccess) {
           onTxSuccess();

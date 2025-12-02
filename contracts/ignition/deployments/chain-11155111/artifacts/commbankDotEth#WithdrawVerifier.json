@@ -181,6 +181,6 @@
       }
     ]
   },
-  "inputSourceName": "contracts/verifiers/WithdrawVerifier.sol",
+  "inputSourceName": "project/contracts/verifiers/WithdrawVerifier.sol",
   "buildInfoId": "solc-0_8_28-20b5f0cd9000b7b014db665ddc42749fefec2d48"
 }

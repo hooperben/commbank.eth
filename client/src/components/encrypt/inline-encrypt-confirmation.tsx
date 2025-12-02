@@ -22,7 +22,7 @@ export type EncryptionStep =
 export function InlineEncryptConfirmation({
   asset,
   onCancel,
-  onSuccess,
+  // onSuccess,
 }: InlineEncryptConfirmationProps) {
   const [amount, setAmount] = useState<string>("");
   const { data: balanceData } = useERC20Balance(asset);
@@ -65,7 +65,7 @@ export function InlineEncryptConfirmation({
       },
       {
         onSuccess: () => {
-          onSuccess();
+          // onSuccess();
         },
         onError: (e) => {
           console.error(e);
@@ -104,12 +104,9 @@ export function InlineEncryptConfirmation({
 
   if (!encryptionStep) {
     return (
-      <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-4">
+      <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-4 text-left">
         <div className="space-y-2">
-          <p className="text-sm font-semibold">Confirm Encryption</p>
-          <p className="text-xs text-muted-foreground">
-            You're encrypting {asset.symbol}
-          </p>
+          <p className="text-sm font-semibold">Encrypt {asset.symbol}</p>
         </div>
 
         <div className="space-y-2">
