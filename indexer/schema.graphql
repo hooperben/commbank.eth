@@ -1,7 +1,7 @@
 type Commbankdoteth_LeafInserted {
   id: ID!
   leafIndex: BigInt!
-  leafValue: BigInt!
+  leafValue: String!
 }
 
 type Commbankdoteth_NotePayload {
@@ -34,4 +34,3 @@ type Commbankdoteth_RoleRevoked {
   account: String!
   sender: String!
 }
-

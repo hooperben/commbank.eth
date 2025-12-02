@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,54 +6,34 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/lib/auth-context";
-import { isValidMnemonic } from "@/lib/mnemonic-helpers";
+import { Textarea } from "@/components/ui/textarea";
 import { deleteAllAccountData } from "@/lib/account-deletion-helpers";
-import { Trash2, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+import { AlertTriangle, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export function DeleteAccountModal() {
   const { getMnemonic, signOut } = useAuth();
   const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [mnemonicInput, setMnemonicInput] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
 
   const handleDeleteAccount = async () => {
     try {
       setIsDeleting(true);
 
       // Validate the mnemonic matches
-      const actualMnemonic = await getMnemonic();
-      if (!actualMnemonic) {
-        toast.error("Failed to retrieve account mnemonic");
+      const account = await getMnemonic();
+      if (!account) {
+        toast.error("Failed to retrieve account");
         setIsDeleting(false);
         return;
       }
-
-      const trimmedInput = mnemonicInput.trim();
-
-      // Validate input is a valid mnemonic
-      if (!isValidMnemonic(trimmedInput)) {
-        toast.error("Invalid mnemonic phrase");
-        setIsDeleting(false);
-        return;
-      }
-
-      // Check if input matches actual mnemonic
-      if (trimmedInput !== actualMnemonic) {
-        toast.error("Mnemonic does not match your account");
-        setIsDeleting(false);
-        return;
-      }
-
-      // Sign out first
-      signOut();
 
       // Delete all data
       await deleteAllAccountData();
@@ -62,7 +42,12 @@ export function DeleteAccountModal() {
       setIsOpen(false);
 
       // Show success message
-      toast.success("Everything's deleted - have a good day!");
+      toast.success("Deletion Successful", {
+        description: "Have a nice day.",
+      });
+
+      // Sign out
+      signOut();
 
       // Navigate to home
       navigate("/");
@@ -74,11 +59,10 @@ export function DeleteAccountModal() {
   };
 
   const resetForm = () => {
-    setMnemonicInput("");
     setIsDeleting(false);
   };
 
-  const isValidInput = mnemonicInput.trim() && isValidMnemonic(mnemonicInput.trim());
+  const isValidInput = "delete my account";
 
   return (
     <Dialog
@@ -117,27 +101,33 @@ export function DeleteAccountModal() {
 
           {/* Mnemonic Verification */}
           <div className="space-y-2">
-            <Label htmlFor="mnemonic-verify" className="text-sm">
-              Enter your 24-word mnemonic to confirm deletion
+            <Label
+              htmlFor="delete-confirm"
+              className="text-sm flex flex-row font-light"
+            >
+              Please Enter the text
             </Label>
+            <Label htmlFor="delete-confirm" className="text-sm text-primary">
+              'delete my account'.{" "}
+            </Label>
+
             <Textarea
-              id="mnemonic-verify"
-              placeholder="word1 word2 word3 ..."
-              value={mnemonicInput}
-              onChange={(e) => setMnemonicInput(e.target.value)}
+              id="delete-confirm"
+              placeholder=""
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
               rows={4}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
-              This will require passkey authentication to retrieve your mnemonic
-              for verification.
+              Deleting your account will require passkey authentication.
             </p>
           </div>
 
           {/* Delete Button */}
           <Button
             onClick={handleDeleteAccount}
-            disabled={!isValidInput || isDeleting}
+            disabled={confirmText !== isValidInput || isDeleting}
             variant="destructive"
             className="w-full gap-2"
           >

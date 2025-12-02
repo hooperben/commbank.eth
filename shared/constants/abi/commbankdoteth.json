@@ -52,9 +52,9 @@
       },
       {
         "indexed": true,
-        "internalType": "uint256",
+        "internalType": "bytes32",
         "name": "leafValue",
-        "type": "uint256"
+        "type": "bytes32"
       }
     ],
     "name": "LeafInserted",
@@ -189,6 +189,19 @@
   },
   {
     "inputs": [],
+    "name": "ETH_ADDRESS",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "INITIAL_ROOT",
     "outputs": [
       {
@@ -253,6 +266,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "deployer",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -260,9 +286,9 @@
         "type": "address"
       },
       {
-        "internalType": "uint64",
+        "internalType": "uint256",
         "name": "_amount",
-        "type": "uint64"
+        "type": "uint256"
       },
       {
         "internalType": "bytes",
@@ -283,6 +309,29 @@
     "name": "deposit",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_proof",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_publicInputs",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_payload",
+        "type": "bytes[]"
+      }
+    ],
+    "name": "depositNative",
+    "outputs": [],
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -519,6 +568,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_hasher",
+        "type": "address"
+      }
+    ],
+    "name": "setPoseidon",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

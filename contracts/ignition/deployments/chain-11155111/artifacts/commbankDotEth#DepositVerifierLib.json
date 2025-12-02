@@ -395,6 +395,6 @@
   "linkReferences": {},
   "deployedLinkReferences": {},
   "immutableReferences": {},
-  "inputSourceName": "contracts/verifiers/DepositVerifier.sol",
+  "inputSourceName": "project/contracts/verifiers/DepositVerifier.sol",
   "buildInfoId": "solc-0_8_28-3fbdc73a9c11b1d9ad2f2fe1a3ec717e6ff0cfea"
 }

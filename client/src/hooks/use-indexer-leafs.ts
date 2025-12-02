@@ -30,7 +30,7 @@ const fetchIndexerLeafs = async (
     {
       headers: {
         "Content-Type": "application/json",
-        "x-hasura-admin-secret": import.meta.env.VITE_INDEXER_KEY,
+        "X-Hasura-Role": "client",
       },
     },
   );

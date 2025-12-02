@@ -12,15 +12,10 @@ import {
 } from "@/components/ui/tooltip";
 import { useAccountTotal } from "@/hooks/use-account-total";
 import { useAudUsdPrice, useEthUsdPrice } from "@/hooks/use-chainlink-price";
+import { usePreferredCurrency } from "@/hooks/use-preferred-currency";
 import { useAuth } from "@/lib/auth-context";
 import { PAGE_METADATA } from "@/lib/seo-config";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  DollarSign,
-  Info,
-  Users,
-} from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Info, Users } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultNetwork } from "shared/constants/token";
@@ -29,7 +24,11 @@ import { defaultNetwork } from "shared/constants/token";
 export default function AccountPage() {
   const { isSignedIn } = useAuth();
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [showAud, setShowAud] = useState(false);
+  const {
+    currency,
+    toggleCurrency,
+    isLoading: isLoadingCurrency,
+  } = usePreferredCurrency();
 
   // Fetch price data from Chainlink
   const { data: ethUsdPrice, isLoading: isLoadingEthUsd } = useEthUsdPrice();
@@ -72,12 +71,12 @@ export default function AccountPage() {
             <div className="space-y-4">
               {/* Total Value */}
               <div className="flex items-center gap-2">
-                {isLoadingTotal ? (
+                {isLoadingTotal || isLoadingCurrency ? (
                   <Skeleton className="h-12 w-64" />
                 ) : (
                   <>
                     <CardTitle className="text-4xl font-bold">
-                      {showAud
+                      {currency === "AUD"
                         ? `$${totalAud.toFixed(2)} AUD`
                         : `$${totalUsd.toFixed(2)} USD`}
                     </CardTitle>
@@ -86,10 +85,10 @@ export default function AccountPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => setShowAud(!showAud)}
+                          className="h-8 w-8 p-0 text-lg"
+                          onClick={toggleCurrency}
                         >
-                          <DollarSign className="h-3 w-3" />
+                          {currency !== "AUD" ? "🇦🇺" : "🇺🇸"}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>

@@ -53,9 +53,11 @@ export function useAddContact() {
  */
 export function useUpdateContact() {
   const queryClient = useQueryClient();
+  const { getMnemonic } = useAuth();
 
   return useMutation({
     mutationFn: async (contact: Contact) => {
+      await getMnemonic();
       await updateContactDB(contact);
       return contact;
     },
@@ -74,9 +76,12 @@ export function useUpdateContact() {
  */
 export function useDeleteContact() {
   const queryClient = useQueryClient();
+  const { getMnemonic } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // requires passkey usage
+      await getMnemonic();
       await deleteContactDB(id);
       return id;
     },

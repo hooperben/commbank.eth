@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useDeviceCompatible } from "@/hooks/use-device-compatible";
 import { useIsRegistered } from "@/hooks/use-is-registered";
 import { useSignIn } from "@/hooks/use-sign-in";
-import { useSignUp } from "@/hooks/use-sign-up";
 import { useAuth } from "@/lib/auth-context";
 import { PAGE_METADATA } from "@/lib/seo-config";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -23,12 +22,7 @@ export const HomePage = () => {
 
   const { isPasskeySupported, isDBSupported } = useDeviceCompatible();
 
-  const signUpMutation = useSignUp();
   const signInMutation = useSignIn();
-
-  const handleCreateAccount = () => {
-    signUpMutation.mutate();
-  };
 
   const handleButtonClick = () => {
     if (!isPasskeySupported || !isDBSupported) return;
@@ -45,17 +39,13 @@ export const HomePage = () => {
 
   const isBrowserSupported = isPasskeySupported && isDBSupported;
 
-  const isLoading =
-    signUpMutation.isPending ||
-    signInMutation.isPending ||
-    checkingRegistration;
+  const isLoading = signInMutation.isPending || checkingRegistration;
 
   return (
     <PageContainer {...PAGE_METADATA.home}>
       <SignupModal
         isOpen={showSignupModal}
         onClose={() => setShowSignupModal(false)}
-        onCreateAccount={handleCreateAccount}
       />
 
       <div className="transform transition-all duration-1000 delay-300 flex w-full justify-center ml-4">

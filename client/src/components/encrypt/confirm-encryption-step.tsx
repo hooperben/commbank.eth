@@ -14,7 +14,7 @@ export function ConfirmEncryptStep({
   onBack: () => void;
   onSuccess: (txHash: string, explorerUrl: string) => void;
 }) {
-  const { mutate: encrypt, isPending, error } = useEncryptMutation();
+  const { mutate: encrypt, isPending, error } = useEncryptMutation({});
 
   const estimatedCost = 0.00003; // ETH
   const costUSD = 50; // Approximate USD

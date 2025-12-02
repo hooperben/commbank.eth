@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAddContact } from "@/hooks/use-contacts";
 import { useIsRegistered } from "@/hooks/use-is-registered";
 import { useSignIn } from "@/hooks/use-sign-in";
-import { useSignUp } from "@/hooks/use-sign-up";
 import { verifyNicknameHash } from "@/lib/nickname-hash";
 import { PAGE_METADATA } from "@/lib/seo-config";
 import { AlertCircle, Loader2, UserPlus } from "lucide-react";
@@ -27,8 +26,8 @@ export default function SharePage() {
   useEffect(() => {
     // a users signed in before they have this flag set to true
     if (typeof window !== "undefined") {
-      const signedIn = localStorage.getItem("signedIn") === "true";
-      setHasAccount(signedIn);
+      const registered = localStorage.getItem("accountRegistered") === "true";
+      setHasAccount(registered);
     }
   }, []);
 
@@ -36,18 +35,11 @@ export default function SharePage() {
   const { data: isRegistered, isLoading: checkingRegistration } =
     useIsRegistered();
 
-  // Sign up mutation
-  const signUpMutation = useSignUp();
-
   // Sign in mutation
   const signInMutation = useSignIn();
 
   // Add contact mutation
   const addContactMutation = useAddContact();
-
-  const handleCreateAccount = () => {
-    signUpMutation.mutate();
-  };
 
   const handleGetStarted = () => {
     if (!isRegistered) {
@@ -121,7 +113,6 @@ export default function SharePage() {
   };
 
   const isLoading =
-    signUpMutation.isPending ||
     signInMutation.isPending ||
     checkingRegistration ||
     addContactMutation.isPending;
@@ -161,7 +152,6 @@ export default function SharePage() {
           <SignupModal
             isOpen={showSignupModal}
             onClose={() => setShowSignupModal(false)}
-            onCreateAccount={handleCreateAccount}
           />
           <Card>
             <CardHeader>

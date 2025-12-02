@@ -3,6 +3,7 @@ import { CommbankDotETHAccount } from "./commbankdoteth-account";
 import { ethers } from "ethers";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { NoteEncryption } from "shared/classes/Note";
+import { useIsRegistered } from "@/hooks/use-is-registered";
 
 interface AuthContextType {
   isLoading: boolean;
@@ -32,6 +33,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [commbankDotEthAccount, setCommbankDotEthAccount] =
     useState<CommbankDotETHAccount>();
+
+  const { refetch: refetchRegistered } = useIsRegistered();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -70,6 +73,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Use provided mnemonic if available, otherwise retrieve from passkey
       let mnemonic = providedMnemonic;
+
+      // if the user has provided the mnemonic, create the passkey
+      if (mnemonic) {
+        await commbankDotEthAccount?.registerPasskey(mnemonic);
+      }
 
       if (!mnemonic) {
         mnemonic = await commbankDotEthAccount?.retrieveMnemonic();
@@ -128,6 +136,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== "undefined") {
         sessionStorage.setItem("authToken", jwt);
         localStorage.setItem("signedIn", "true");
+        localStorage.setItem("accountRegistered", "true");
+        await refetchRegistered();
       }
     } catch (error) {
       console.error("Sign in error:", error);

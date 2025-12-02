@@ -105,7 +105,7 @@ contract PoseidonMerkleTree {
     }
   }
 
-  event LeafInserted(uint256 indexed leafIndex, uint256 indexed leafValue);
+  event LeafInserted(uint256 indexed leafIndex, bytes32 indexed leafValue);
 
   // Add a helper function to generate consistent keys
   function getStorageKey(
@@ -155,7 +155,7 @@ contract PoseidonMerkleTree {
     roots[newRootIndex] = currentHash;
 
     nextIndex = insertIndex + 1;
-    emit LeafInserted(insertIndex, _leaf);
+    emit LeafInserted(insertIndex, bytes32(_leaf));
 
     return insertIndex;
   }

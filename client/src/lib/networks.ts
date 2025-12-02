@@ -2,11 +2,11 @@
 export const SUPPORTED_NETWORKS: Record<number, any> = {
   11155111: {
     rpc: "https://eth-sepolia.g.alchemy.com/v2/Xq2kgRj8MHmXSE3sbThrHfr9R4-5HPWg",
-    ZKTranscriptLib: "0xA09599efa9a31036D20a9eEF07C69E77937E784E",
-    DepositVerifier: "0xf90c7e5FbC840B381002279B555dc3e0290Da095",
-    TransferVerifier: "0xD1CAD1C8CEEdeD7Ad65440fd643E2d9320c2bf51",
-    WithdrawVerifier: "0x9A0E3f3d11F7bA8B92faD4533043b5994615629d",
-    CommBankDotEth: "0xc246Abca0566848759dA29c30Fc77DC4A9962919",
+    ZKTranscriptLib: "0x751b0fd43e81c7eA4B0Edc808c7A8AeB9AC2dAC8",
+    DepositVerifier: "0xc56287e24913BC667fBCC0a38e5c8F4c93357632",
+    TransferVerifier: "0x2Adbe9B0110704ce793d6Eb1997e57D1b59E1EEa",
+    WithdrawVerifier: "0x2F2Dbe3059C99DAF2318D188161A4cf12ff49EFc",
+    CommBankDotEth: "0x6813974e8A965fE09efEEc1cD4DC6D8FBa0831dC",
     FourDEC: "0x840feC4Efbd4764edAA237E78757cE59CeA3Db26",
     USDC: "0x237eEeE66266c72DBb7Ee2Aa84811666cE4EB815",
   },
