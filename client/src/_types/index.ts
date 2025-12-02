@@ -88,3 +88,22 @@ export interface SystemStatus {
   info?: string;
   link?: string;
 }
+
+// Transaction types
+export type TransactionType =
+  | "Approval"
+  | "Deposit"
+  | "Transfer"
+  | "PrivateTransfer"
+  | "Withdraw";
+
+export interface Transaction {
+  id: string; // Auto-generated UUID or transaction hash
+  chainId: number;
+  transactionHash: string; // 0x-prefixed transaction hash
+  type: TransactionType;
+  to: string; // Contract address or recipient address (0x-prefixed)
+  data?: string; // Contract function calldata (optional)
+  value?: string; // BigInt as string (optional)
+  timestamp: number; // Unix timestamp
+}

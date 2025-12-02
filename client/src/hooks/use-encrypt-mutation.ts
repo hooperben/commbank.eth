@@ -1,4 +1,5 @@
 import { useAuth } from "@/lib/auth-context";
+import { addTransaction } from "@/lib/db";
 import { SUPPORTED_NETWORKS } from "@/lib/networks";
 import { useMutation } from "@tanstack/react-query";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
@@ -141,7 +142,25 @@ export const useEncryptMutation = ({
             chain.CommBankDotEth,
             assetAmount,
           );
-          await approveTx.wait();
+          const approvalReceipt = await approveTx.wait();
+
+          // Log approval transaction to IndexedDB
+          if (approvalReceipt) {
+            try {
+              await addTransaction({
+                id: approvalReceipt.hash,
+                chainId,
+                transactionHash: approvalReceipt.hash,
+                type: "Approval",
+                to: assetId,
+                data: approveTx.data,
+                value: "0",
+                timestamp: Date.now(),
+              });
+            } catch (dbError) {
+              console.error("Failed to log approval transaction:", dbError);
+            }
+          }
         }
         if (onApprovalSuccess) {
           onApprovalSuccess();
@@ -217,6 +236,27 @@ export const useEncryptMutation = ({
             publicInputsBytes32,
             depositPayload,
           );
+        }
+
+        // Wait for deposit transaction to be mined
+        const depositReceipt = await depositTx.wait();
+
+        // Log deposit transaction to IndexedDB
+        if (depositReceipt) {
+          try {
+            await addTransaction({
+              id: depositReceipt.hash,
+              chainId,
+              transactionHash: depositReceipt.hash,
+              type: "Deposit",
+              to: chain.CommBankDotEth,
+              data: depositTx.data,
+              value: isNativeDeposit ? assetAmount.toString() : undefined,
+              timestamp: Date.now(),
+            });
+          } catch (dbError) {
+            console.error("Failed to log deposit transaction:", dbError);
+          }
         }
 
         if (onTxSuccess) {
