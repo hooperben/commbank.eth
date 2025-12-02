@@ -6,12 +6,12 @@ networks:
     contracts:
       - name: commbankdoteth
         address:
-          - 0x6813974e8A965fE09efEEc1cD4DC6D8FBa0831dC
+          - 0x8385753132c072d15c9F861B93D4827aaB549EFc
         handler: src/EventHandlers.ts
         events:
           - event: LeafInserted(uint256 indexed leafIndex, bytes32 indexed leafValue)
           - event: NotePayload(bytes encryptedNote)
-          - event: NullifierUsed(uint256 indexed nullifier)
+          - event: NullifierUsed(bytes32 indexed nullifier)
           - event: RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
           - event: RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
           - event: RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)

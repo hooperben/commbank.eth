@@ -11,7 +11,7 @@ type Commbankdoteth_NotePayload {
 
 type Commbankdoteth_NullifierUsed {
   id: ID!
-  nullifier: BigInt!
+  nullifier: String!
 }
 
 type Commbankdoteth_RoleAdminChanged {
