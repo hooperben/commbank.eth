@@ -1,14 +1,15 @@
 import { useAuth } from "@/lib/auth-context";
-import { addTransaction } from "@/lib/db";
+import { addNote, addTransaction } from "@/lib/db";
 import { SUPPORTED_NETWORKS } from "@/lib/networks";
 import { useMutation } from "@tanstack/react-query";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
 import { Deposit } from "shared/classes/Deposit";
 import { NoteEncryption } from "shared/classes/Note";
-import { PoseidonMerkleTree } from "shared/classes/PoseidonMerkleTree";
 import { commbankDotEthAbi } from "shared/constants/abi/commbankdoteth";
 import { erc20Abi } from "shared/constants/abi/erc20abi";
+import { defaultNetwork } from "shared/constants/token";
+import { useTransactionsByChainId } from "./use-transactions";
 
 interface EncryptedNote {
   encryptedSecret: string;
@@ -65,6 +66,9 @@ export const useEncryptMutation = ({
 }) => {
   const { getMnemonic, privateAddress, address } = useAuth();
 
+  const { refetch: refetchTransactions } =
+    useTransactionsByChainId(defaultNetwork);
+
   // TODO make this programmatic
   const canEncrypt = ["0x6e400024D346e8874080438756027001896937E3"];
   const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -100,13 +104,13 @@ export const useEncryptMutation = ({
       const provider = new ethers.JsonRpcProvider(chain.rpc);
       const signer = wallet.connect(provider);
 
-      // Fetch and load tree data
-      const treeResponse = await fetch("/full-tree.json");
-      if (!treeResponse.ok) {
-        throw new Error("Failed to fetch tree data");
-      }
-      const treeJson = await treeResponse.text();
-      const tree = await PoseidonMerkleTree.fromJSON(treeJson);
+      // // Fetch and load tree data
+      // const treeResponse = await fetch("/full-tree.json");
+      // if (!treeResponse.ok) {
+      //   throw new Error("Failed to fetch tree data");
+      // }
+      // const treeJson = await treeResponse.text();
+      // const tree = await PoseidonMerkleTree.fromJSON(treeJson);
 
       // Initialize deposit circuit
       const deposit = new Deposit();
@@ -157,6 +161,7 @@ export const useEncryptMutation = ({
                 value: "0",
                 timestamp: Date.now(),
               });
+              await refetchTransactions();
             } catch (dbError) {
               console.error("Failed to log approval transaction:", dbError);
             }
@@ -254,6 +259,17 @@ export const useEncryptMutation = ({
               value: isNativeDeposit ? assetAmount.toString() : undefined,
               timestamp: Date.now(),
             });
+            await refetchTransactions();
+
+            await addNote({
+              id: publicInputsBytes32[0],
+              assetId,
+              assetAmount: assetAmount.toString(),
+              nullifier: publicInputsBytes32[0],
+              secret: secret.toString(),
+              entity_id: privateAddress, // TODO entity_id is a typo, should be privateAddress
+              isUsed: false,
+            });
           } catch (dbError) {
             console.error("Failed to log deposit transaction:", dbError);
           }
@@ -266,7 +282,6 @@ export const useEncryptMutation = ({
         return {
           txHash: depositTx.hash,
           proof,
-          tree,
         };
       } catch (err) {
         console.log("EEERRR:", err);

@@ -19,7 +19,12 @@ import { PAGE_METADATA } from "@/lib/seo-config";
 import { ArrowDownLeft, ArrowUpRight, Info, Users } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { defaultNetwork } from "shared/constants/token";
+import {
+  defaultNetwork,
+  mainnetAssets,
+  sepoliaAssets,
+  type SupportedAsset,
+} from "shared/constants/token";
 // import { EncryptModal } from "@/components/encrypt/encrypt-modal";
 
 export default function AccountPage() {
@@ -37,6 +42,15 @@ export default function AccountPage() {
 
   // Calculate total account value
   const { totalUsd, isLoading: isLoadingTotal } = useAccountTotal();
+
+  const assets: SupportedAsset[] =
+    defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+
+  // Create mapping by address for quick access: assetByAddress[address]
+  const assetByAddress: Record<string, SupportedAsset> = {};
+  for (const asset of assets) {
+    assetByAddress[asset.address] = asset;
+  }
 
   // Calculate total in AUD
   const totalAud =
@@ -60,10 +74,8 @@ export default function AccountPage() {
   const isPriceLoading = isLoadingEthUsd || isLoadingAudUsd;
 
   // Fetch transactions for the default network
-  const {
-    data: transactions,
-    isLoading: isLoadingTransactions,
-  } = useTransactionsByChainId(defaultNetwork);
+  const { data: transactions, isLoading: isLoadingTransactions } =
+    useTransactionsByChainId(defaultNetwork);
 
   // Get the 5 most recent transactions, sorted by timestamp
   const recentTransactions = (transactions || [])
@@ -221,6 +233,7 @@ export default function AccountPage() {
                   >
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
+                        <h2>{assetByAddress[tx.to]?.symbol}</h2>
                         <Badge variant="outline">{tx.type}</Badge>
                         <span className="text-sm font-mono text-muted-foreground">
                           {tx.transactionHash.slice(0, 10)}...
@@ -234,10 +247,7 @@ export default function AccountPage() {
                     <div className="flex items-center gap-2">
                       {tx.value && (
                         <span className="text-sm font-medium">
-                          {(
-                            parseFloat(tx.value) / 1e18
-                          ).toFixed(4)}{" "}
-                          ETH
+                          {(parseFloat(tx.value) / 1e18).toFixed(4)} ETH
                         </span>
                       )}
                       <Button variant="ghost" size="sm" asChild>
