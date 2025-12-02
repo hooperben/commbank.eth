@@ -13,6 +13,7 @@ import {
 import { useAccountTotal } from "@/hooks/use-account-total";
 import { useAudUsdPrice, useEthUsdPrice } from "@/hooks/use-chainlink-price";
 import { usePreferredCurrency } from "@/hooks/use-preferred-currency";
+import { useTransactionsByChainId } from "@/hooks/use-transactions";
 import { useAuth } from "@/lib/auth-context";
 import { PAGE_METADATA } from "@/lib/seo-config";
 import { ArrowDownLeft, ArrowUpRight, Info, Users } from "lucide-react";
@@ -58,9 +59,16 @@ export default function AccountPage() {
 
   const isPriceLoading = isLoadingEthUsd || isLoadingAudUsd;
 
-  const recentTransactions = [
-    // Will be populated later
-  ];
+  // Fetch transactions for the default network
+  const {
+    data: transactions,
+    isLoading: isLoadingTransactions,
+  } = useTransactionsByChainId(defaultNetwork);
+
+  // Get the 5 most recent transactions, sorted by timestamp
+  const recentTransactions = (transactions || [])
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 5);
 
   return (
     <PageContainer {...PAGE_METADATA.account}>
@@ -191,7 +199,13 @@ export default function AccountPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentTransactions.length === 0 ? (
+            {isLoadingTransactions ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : recentTransactions.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <p>No recent transactions</p>
                 {!isSignedIn && (
@@ -200,7 +214,45 @@ export default function AccountPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {/* Transaction items will be added here later */}
+                {recentTransactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{tx.type}</Badge>
+                        <span className="text-sm font-mono text-muted-foreground">
+                          {tx.transactionHash.slice(0, 10)}...
+                          {tx.transactionHash.slice(-8)}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(tx.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {tx.value && (
+                        <span className="text-sm font-medium">
+                          {(
+                            parseFloat(tx.value) / 1e18
+                          ).toFixed(4)}{" "}
+                          ETH
+                        </span>
+                      )}
+                      <Button variant="ghost" size="sm" asChild>
+                        <a
+                          href={`https://sepolia.etherscan.io/tx/${tx.transactionHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs"
+                        >
+                          View →
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
