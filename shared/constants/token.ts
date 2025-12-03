@@ -63,3 +63,12 @@ export const sepoliaAssets: SupportedAsset[] = [
 
 export const defaultNetwork =
   Number(import.meta.env.VITE_DEFAULT_CHAIN_ID) || sepoliaAssets[0].chainId;
+
+const assets: SupportedAsset[] =
+  defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+
+// Create mapping by address for quick access: assetByAddress[address]
+export const defaultNetworkAssetByAddress: Record<string, SupportedAsset> = {};
+for (const asset of assets) {
+  defaultNetworkAssetByAddress[asset.address.toLowerCase()] = asset;
+}
