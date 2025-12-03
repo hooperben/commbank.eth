@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactionsByChainId } from "@/hooks/use-transactions";
 import { useAuth } from "@/lib/auth-context";
-import { formatUnits } from "ethers/utils";
+import { formatEther, formatUnits } from "ethers/utils";
 import {
   defaultNetwork,
   defaultNetworkAssetByAddress,
@@ -95,7 +95,7 @@ export const Transactions = () => {
                     </span>
                   )}
 
-                  {tx.type === "Deposit" && (
+                  {tx.type === "Deposit" && !tx.value && (
                     <>
                       {formatUnits(
                         getAssetAmount(tx),
