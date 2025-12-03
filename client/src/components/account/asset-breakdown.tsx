@@ -11,7 +11,7 @@ import {
   sepoliaAssets,
   type SupportedAsset,
 } from "shared/constants/token";
-import { BalanceRow } from "../token/balance";
+import { BalanceRow, PrivateBalanceRow } from "../token/balance";
 
 export function AssetBreakdown() {
   const assets: SupportedAsset[] =
@@ -63,8 +63,12 @@ export function AssetBreakdown() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-3 font-semibold">Asset</th>
-                  <th className="text-center p-3 font-semibold">Public</th>
-                  <th className="text-center p-3 font-semibold">Private</th>
+                  <th className="text-center p-3 font-semibold">
+                    Public Balance
+                  </th>
+                  <th className="text-center p-3 font-semibold">
+                    Private Balance
+                  </th>
                   <th className="text-right p-3 font-semibold">Total</th>
                 </tr>
               </thead>
@@ -96,7 +100,7 @@ export function AssetBreakdown() {
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          0{/* TODO */}
+                          <PrivateBalanceRow asset={asset} />
                           <Button
                             variant="outline"
                             size="sm"
