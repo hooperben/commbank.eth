@@ -6,7 +6,7 @@ interface NotePayloadResponse {
   envio_Commbankdoteth_NotePayload: IndexerNotePayload[];
 }
 
-const fetchIndexerNotes = async (
+export const fetchIndexerNotes = async (
   limit: number = 50,
   offset: number = 0,
 ): Promise<IndexerNotePayload[]> => {

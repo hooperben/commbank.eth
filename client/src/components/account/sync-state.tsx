@@ -1,7 +1,12 @@
 import type { Payload, TreeLeaf } from "@/_types";
 import { useIndexerLeafs } from "@/hooks/use-indexer-leafs";
 import { useIndexerNotes } from "@/hooks/use-indexer-notes";
-import { getAllPayloads, getAllTreeLeaves } from "@/lib/db";
+import {
+  addPayload,
+  addTreeLeaf,
+  getAllPayloads,
+  getAllTreeLeaves,
+} from "@/lib/db";
 import { useEffect, useState } from "react";
 import { SyncButton } from "./sync-button";
 
@@ -77,12 +82,12 @@ export const SyncState = () => {
           }
 
           // TODO: Uncomment when ready to write to database
-          // await Promise.all([
-          //   ...newLeafs.map((leaf) => addTreeLeaf(leaf)),
-          //   ...newPayloads.map((payload) => addPayload(payload)),
-          // ]);
+          await Promise.all([
+            ...newLeafs.map((leaf) => addTreeLeaf(leaf)),
+            ...newPayloads.map((payload) => addPayload(payload)),
+          ]);
 
-          console.log("=== SYNC: Complete (data not written yet) ===");
+          console.log("Wrote to DB");
         } else {
           console.log("=== SYNC: No new data to sync ===");
         }
