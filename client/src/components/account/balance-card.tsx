@@ -14,6 +14,7 @@ import { usePreferredCurrency } from "@/hooks/use-preferred-currency";
 import { Info } from "lucide-react";
 import { useState } from "react";
 import { defaultNetwork } from "shared/constants/token";
+import { SyncState } from "./sync-state";
 
 export const BalanceCard = () => {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
@@ -53,7 +54,7 @@ export const BalanceCard = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row w-full justify-between">
         <div className="space-y-4">
           {/* Total Value */}
           <div className="flex items-center gap-2">
@@ -104,6 +105,9 @@ export const BalanceCard = () => {
               }
             />
           </div>
+        </div>
+        <div>
+          <SyncState />
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
