@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/select";
 import { useContacts } from "@/hooks/use-contacts";
 import { useERC20Balance } from "@/hooks/use-erc20-balance";
+import { useMerkleTree } from "@/hooks/use-merkle-tree";
+import { usePrivateTransfer } from "@/hooks/use-private-transfer";
 import { useUserAssetNotes } from "@/hooks/use-user-asset-notes";
 import { ethers } from "ethers";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
@@ -107,7 +109,11 @@ export function SendModal({
     setStep("confirm");
   };
 
-  const handleConfirm = () => {
+  const { tree } = useMerkleTree();
+  const { data: sendingNotes } = useUserAssetNotes(asset?.address);
+  const privateTransferMutation = usePrivateTransfer();
+
+  const handleConfirm = async () => {
     const contact = contacts?.find((c) => c.id === selectedContactId);
     const transaction = {
       type: transferType,
@@ -119,9 +125,23 @@ export function SendModal({
 
     console.log("Transaction to send:", transaction);
 
-    // TODO make this real
+    if (
+      transferType === "private" &&
+      tree &&
+      sendingNotes &&
+      asset &&
+      contact
+    ) {
+      privateTransferMutation.mutate({
+        amount,
+        asset,
+        recipient: contact,
+        sendingNotes,
+        tree,
+      });
+    }
 
-    handleOpenChange(false);
+    // handleOpenChange(false);
   };
 
   // Filter contacts based on transfer type
@@ -351,13 +371,30 @@ export function SendModal({
               )}
             </div>
 
+            {privateTransferMutation.error && (
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                Error: {privateTransferMutation.error.message}
+              </div>
+            )}
+
             <div className="flex gap-2 pt-2">
-              <Button variant="outline" onClick={handleBack} className="flex-1">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                className="flex-1"
+                disabled={privateTransferMutation.isPending}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
-              <Button onClick={handleConfirm} className="flex-1">
-                Confirm
+              <Button
+                onClick={handleConfirm}
+                className="flex-1"
+                disabled={privateTransferMutation.isPending}
+              >
+                {privateTransferMutation.isPending
+                  ? "Generating Proof..."
+                  : "Confirm"}
               </Button>
             </div>
           </div>
