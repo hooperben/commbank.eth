@@ -4,9 +4,11 @@ import { getAllTreeLeaves } from "@/lib/db";
 import { useMutation } from "@tanstack/react-query";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
+import { NoteEncryption } from "shared/classes/Note";
 import type { PoseidonMerkleTree } from "shared/classes/PoseidonMerkleTree";
 import { Transact } from "shared/classes/Transact";
 import type { SupportedAsset } from "shared/constants/token";
+import { getRandomInPoseidonField } from "shared/constants/zk";
 
 interface PrivateTransferParams {
   amount: string;
@@ -134,11 +136,7 @@ export function usePrivateTransfer() {
       const outputNotes = [];
 
       // Output note for recipient
-      const recipientSecret =
-        BigInt(ethers.hexlify(ethers.randomBytes(32))) %
-        BigInt(
-          "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001",
-        );
+      const recipientSecret = getRandomInPoseidonField();
 
       outputNotes.push({
         owner: recipient.privateAddress || "0",
@@ -149,11 +147,7 @@ export function usePrivateTransfer() {
 
       // Change note for sender (if any)
       if (changeAmount > 0n) {
-        const changeSecret =
-          BigInt(ethers.hexlify(ethers.randomBytes(32))) %
-          BigInt(
-            "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001",
-          );
+        const changeSecret = getRandomInPoseidonField();
 
         outputNotes.push({
           owner: owner.toString(),
@@ -217,12 +211,50 @@ export function usePrivateTransfer() {
 
       console.log("Transfer proof generated:", proof);
 
+      // Encrypt output notes for recipients
+      const encryptedPayload: string[] = [];
+
+      for (let i = 0; i < outputNotes.length; i++) {
+        const note = outputNotes[i];
+        if (note.owner === "0") {
+          encryptedPayload.push("0x");
+        } else {
+          // Determine the recipient's public key
+          let recipientPublicKey: string;
+
+          if (i === 0 && recipient.envelopeAddress) {
+            // First output note is for the recipient
+            recipientPublicKey = recipient.envelopeAddress;
+          } else {
+            // Change note for sender - use sender's wallet
+            recipientPublicKey =
+              await NoteEncryption.getPublicKeyFromAddress(wallet);
+          }
+
+          // Encrypt the entire note (secret, owner, asset_id, asset_amount)
+          const encryptedNote = await NoteEncryption.encryptNoteData(
+            {
+              secret: note.secret,
+              owner: note.owner,
+              asset_id: note.asset_id,
+              asset_amount: note.asset_amount,
+            },
+            recipientPublicKey,
+          );
+
+          encryptedPayload.push(encryptedNote);
+        }
+      }
+
+      console.log("Encrypted payload:", encryptedPayload);
+
       return {
         proof,
         inputNotes,
         outputNotes,
         nullifiers,
         outputHashes,
+        encryptedPayload,
       };
     },
   });

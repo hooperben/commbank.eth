@@ -8,7 +8,7 @@ import { useDBStats } from "@/hooks/use-indexed-db";
 import { useIndexerLeafs } from "@/hooks/use-indexer-leafs";
 import { useIndexerNotes } from "@/hooks/use-indexer-notes";
 import { useAuth } from "@/lib/auth-context";
-import { NoteDecryption } from "@/lib/note-decryption";
+import { NoteDecryption } from "shared/classes/Note";
 import {
   AlertCircle,
   Database,

@@ -9,6 +9,8 @@ export interface SupportedAsset {
   roundTo?: number;
 }
 
+export const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+
 export const mainnetAssets: SupportedAsset[] = [
   {
     chainId: 1,
@@ -23,7 +25,7 @@ export const mainnetAssets: SupportedAsset[] = [
     lzEndpointId: 30101,
     name: "Ethereum",
     symbol: "ETH",
-    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    address: ETH_ADDRESS,
     decimals: 18,
     isNative: true,
     roundTo: 8,
@@ -54,7 +56,7 @@ export const sepoliaAssets: SupportedAsset[] = [
     lzEndpointId: 40101,
     name: "Ethereum",
     symbol: "ETH",
-    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    address: ETH_ADDRESS,
     decimals: 18,
     isNative: true,
     roundTo: 8,

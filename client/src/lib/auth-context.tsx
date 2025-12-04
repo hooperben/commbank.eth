@@ -3,10 +3,9 @@ import { useIsRegistered } from "@/hooks/use-is-registered";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { NoteEncryption } from "shared/classes/Note";
+import { NoteEncryption, NoteDecryption } from "shared/classes/Note";
 import { CommbankDotETHAccount } from "./commbankdoteth-account";
 import { addNote, getAllPayloads } from "./db";
-import { NoteDecryption } from "./note-decryption";
 
 interface AuthContextType {
   isLoading: boolean;
