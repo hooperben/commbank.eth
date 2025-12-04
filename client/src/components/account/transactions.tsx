@@ -1,11 +1,17 @@
-import type { Transaction } from "@/_types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactionsByChainId } from "@/hooks/use-transactions";
 import { useAuth } from "@/lib/auth-context";
+import {
+  getAssetAddress,
+  getAssetAmount,
+  getTransactionVerb,
+} from "@/lib/transactions";
 import { formatUnits } from "ethers/utils";
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   defaultNetwork,
   defaultNetworkAssetByAddress,
@@ -23,36 +29,20 @@ export const Transactions = () => {
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 5);
 
-  const getAssetAddress = (transaction: Transaction) => {
-    if (transaction.type === "Deposit") {
-      const asset =
-        `0x${transaction.data?.substring(34, 74)?.toLowerCase()}`.toLowerCase();
-      return asset;
-    }
-    return transaction.to.toLowerCase();
-  };
-
-  const getAssetAmount = (transaction: Transaction) => {
-    if (transaction.type === "Deposit") {
-      const amount = `0x${transaction.data?.substring(74, 138)}`;
-      return BigInt(amount);
-    }
-    return 0n;
-  };
-
-  const getTransactionVerb = (txType: string) => {
-    if (txType === "Deposit") {
-      return "Encrypt";
-    }
-    return txType;
-  };
-
   return (
     <Card className="text-left">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">
-          Recent Transactions
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-2xl font-bold">
+            Recent Transactions
+          </CardTitle>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/transactions">
+              View All
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoadingTransactions ? (

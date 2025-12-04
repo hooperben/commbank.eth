@@ -14,6 +14,7 @@ import { SettingsPage } from "./pages/settings";
 import SharePage from "./pages/share";
 import StatusPage from "./pages/status";
 import TestingPage from "./pages/testing";
+import TransactionsPage from "./pages/transactions";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <ContactsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/transactions"
+                  element={
+                    <ProtectedRoute>
+                      <TransactionsPage />
                     </ProtectedRoute>
                   }
                 />

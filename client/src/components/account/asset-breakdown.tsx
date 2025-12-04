@@ -11,7 +11,11 @@ import {
   sepoliaAssets,
   type SupportedAsset,
 } from "shared/constants/token";
-import { BalanceRow, PrivateBalanceRow } from "../token/balance";
+import {
+  BalanceRow,
+  PrivateBalanceRow,
+  TotalBalanceRow,
+} from "../token/balance";
 
 export function AssetBreakdown() {
   const assets: SupportedAsset[] =
@@ -121,7 +125,7 @@ export function AssetBreakdown() {
                           >
                             <ArrowUpRight className="h-4 w-4" />
                           </Button>
-                          <BalanceRow
+                          <TotalBalanceRow
                             key={`${asset.address}${asset.chainId}`}
                             asset={asset}
                           />
