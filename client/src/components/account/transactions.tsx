@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactionsByChainId } from "@/hooks/use-transactions";
 import { useAuth } from "@/lib/auth-context";
-import { formatEther, formatUnits } from "ethers/utils";
+import { formatUnits } from "ethers/utils";
 import {
   defaultNetwork,
   defaultNetworkAssetByAddress,
@@ -35,11 +35,16 @@ export const Transactions = () => {
   const getAssetAmount = (transaction: Transaction) => {
     if (transaction.type === "Deposit") {
       const amount = `0x${transaction.data?.substring(74, 138)}`;
-
-      console.log(BigInt(amount));
       return BigInt(amount);
     }
     return 0n;
+  };
+
+  const getTransactionVerb = (txType: string) => {
+    if (txType === "Deposit") {
+      return "Encrypt";
+    }
+    return txType;
   };
 
   return (
@@ -72,13 +77,13 @@ export const Transactions = () => {
               >
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {getTransactionVerb(tx.type)}
+                    </Badge>
                     <h2>
-                      {
-                        defaultNetworkAssetByAddress[getAssetAddress(tx)]
-                          ?.symbol
-                      }
+                      {defaultNetworkAssetByAddress[getAssetAddress(tx)]
+                        ?.symbol ?? "ETH"}
                     </h2>
-                    <Badge variant="outline">{tx.type}</Badge>
                     <span className="text-sm font-mono text-muted-foreground">
                       {tx.transactionHash.slice(0, 10)}...
                       {tx.transactionHash.slice(-8)}
@@ -96,14 +101,14 @@ export const Transactions = () => {
                   )}
 
                   {tx.type === "Deposit" && !tx.value && (
-                    <>
+                    <span className="text-sm font-medium">
                       {formatUnits(
                         getAssetAmount(tx),
                         defaultNetworkAssetByAddress[getAssetAddress(tx)]
                           .decimals,
                       )}{" "}
                       {defaultNetworkAssetByAddress[getAssetAddress(tx)].symbol}
-                    </>
+                    </span>
                   )}
 
                   <Button variant="ghost" size="sm" asChild>

@@ -4,7 +4,13 @@ import { useUserAssetNotes } from "@/hooks/use-user-asset-notes";
 import { ethers, formatUnits } from "ethers";
 import type { SupportedAsset } from "shared/constants/token";
 
-export const BalanceRow = ({ asset }: { asset: SupportedAsset }) => {
+export const BalanceRow = ({
+  asset,
+  description,
+}: {
+  asset: SupportedAsset;
+  description?: string;
+}) => {
   const { data, isLoading } = useERC20Balance(asset);
 
   const formatBalance = (balance: bigint) => {
@@ -22,6 +28,7 @@ export const BalanceRow = ({ asset }: { asset: SupportedAsset }) => {
         <div className="text-right">
           <div className="font-medium text-sm text-foreground">
             {formatBalance(data)}
+            {description && <span>{description}</span>}
           </div>
         </div>
       )}
@@ -29,7 +36,13 @@ export const BalanceRow = ({ asset }: { asset: SupportedAsset }) => {
   );
 };
 
-export const PrivateBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
+export const PrivateBalanceRow = ({
+  asset,
+  description,
+}: {
+  asset: SupportedAsset;
+  description?: string;
+}) => {
   const { data: assetNotes, isLoading } = useUserAssetNotes(asset.address);
 
   const assetTotal = assetNotes
@@ -45,6 +58,46 @@ export const PrivateBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
         <div className="text-right">
           <div className="font-medium text-sm text-foreground">
             {assetTotal && formatUnits(assetTotal, asset.decimals)}
+            {description && <span>{description}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const TotalBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
+  const { data: assetNotes, isLoading } = useUserAssetNotes(asset.address);
+
+  const assetTotal = assetNotes
+    ? assetNotes.reduce((acc, curr) => {
+        return acc + BigInt(curr.assetAmount);
+      }, 0n)
+    : undefined;
+
+  const { data } = useERC20Balance(asset);
+
+  const sumAndFormatBalances = (
+    publicBalance: bigint,
+    privateBalance: bigint,
+  ) => {
+    const formatted = ethers.formatUnits(
+      publicBalance + privateBalance,
+      asset.decimals,
+    );
+    if (asset.roundTo !== undefined) {
+      return parseFloat(formatted).toFixed(asset.roundTo);
+    }
+    return formatted;
+  };
+
+  return (
+    <div>
+      {isLoading && <Skeleton className="w-24 h-8" />}
+      {assetNotes && !isLoading && (
+        <div className="text-right">
+          <div className="font-medium text-sm text-foreground">
+            {assetTotal && data && sumAndFormatBalances(data, assetTotal)}
           </div>
         </div>
       )}
