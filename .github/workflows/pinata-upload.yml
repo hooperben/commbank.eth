@@ -70,5 +70,18 @@ jobs:
         run: ipfs-cli auth --token "$PINATA_JWT" --default
 
       - name: Upload dist/ to Pinata
+        id: pinata-upload
         working-directory: client
-        run: ipfs-cli upload dist
+        run: |
+          OUTPUT=$(ipfs-cli upload dist)
+          echo "$OUTPUT"
+          HASH=$(echo "$OUTPUT" | grep -oE 'Qm[a-zA-Z0-9]{44}|baf[a-zA-Z0-9]{56}' | head -1)
+          echo "ipfs_hash=$HASH" >> $GITHUB_OUTPUT
+          echo "Uploaded to IPFS with hash: $HASH"
+
+      - name: Display IPFS Hash
+        run: |
+          echo "🎉 Client build uploaded to Pinata!"
+          echo "IPFS Hash: ${{ steps.pinata-upload.outputs.ipfs_hash }}"
+          echo "Gateway URL: https://gateway.pinata.cloud/ipfs/${{ steps.pinata-upload.outputs.ipfs_hash }}"
+          echo "Alternative: https://${{ steps.pinata-upload.outputs.ipfs_hash }}.ipfs.dweb.link"

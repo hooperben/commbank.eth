@@ -1,0 +1,11 @@
+import { ethers } from "ethers";
+
+export const getRandomInPoseidonField = () => {
+  const secret =
+    BigInt(ethers.hexlify(ethers.randomBytes(32))) %
+    BigInt(
+      "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001",
+    );
+
+  return secret;
+};

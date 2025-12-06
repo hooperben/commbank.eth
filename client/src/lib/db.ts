@@ -3,10 +3,17 @@
  * Stores notes, merkle tree leaves, encrypted payloads, and metadata
  */
 
-import type { Note, TreeLeaf, Payload, Meta, Contact } from "@/_types";
+import type {
+  Note,
+  TreeLeaf,
+  Payload,
+  Meta,
+  Contact,
+  Transaction,
+} from "@/_types";
 
 const DB_NAME = "commbankdotethdb";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Store names
 const NOTES_STORE = "notes";
@@ -14,6 +21,7 @@ const TREE_STORE = "tree";
 const PAYLOAD_STORE = "payload";
 const META_STORE = "meta";
 const CONTACTS_STORE = "contacts";
+const TRANSACTIONS_STORE = "transactions";
 
 /**
  * Check if IndexedDB is supported in the current browser
@@ -79,6 +87,21 @@ export function initDB(): Promise<IDBDatabase> {
         });
         contactsStore.createIndex("nickname", "nickname", { unique: false });
         contactsStore.createIndex("createdAt", "createdAt", { unique: false });
+      }
+
+      // Create Transactions store
+      if (!db.objectStoreNames.contains(TRANSACTIONS_STORE)) {
+        const transactionsStore = db.createObjectStore(TRANSACTIONS_STORE, {
+          keyPath: "id",
+        });
+        transactionsStore.createIndex("chainId", "chainId", { unique: false });
+        transactionsStore.createIndex("transactionHash", "transactionHash", {
+          unique: false,
+        });
+        transactionsStore.createIndex("type", "type", { unique: false });
+        transactionsStore.createIndex("timestamp", "timestamp", {
+          unique: false,
+        });
       }
     };
 
@@ -375,4 +398,92 @@ export async function deleteContact(id: string): Promise<void> {
 
 export async function clearContacts(): Promise<void> {
   return clearStore(CONTACTS_STORE);
+}
+
+// ===== Transactions API =====
+
+export async function addTransaction(transaction: Transaction): Promise<void> {
+  return putItem(TRANSACTIONS_STORE, transaction);
+}
+
+export async function getTransaction(id: string): Promise<Transaction | null> {
+  return getItem<Transaction>(TRANSACTIONS_STORE, id);
+}
+
+export async function getAllTransactions(): Promise<Transaction[]> {
+  return getAllItems<Transaction>(TRANSACTIONS_STORE);
+}
+
+export async function getTransactionsByChainId(
+  chainId: number,
+): Promise<Transaction[]> {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([TRANSACTIONS_STORE], "readonly");
+    const store = transaction.objectStore(TRANSACTIONS_STORE);
+    const index = store.index("chainId");
+    const request = index.getAll(chainId);
+
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+
+    request.onerror = () => {
+      reject(new Error("Failed to get transactions by chainId"));
+    };
+  });
+}
+
+export async function getTransactionsByType(
+  type: string,
+): Promise<Transaction[]> {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([TRANSACTIONS_STORE], "readonly");
+    const store = transaction.objectStore(TRANSACTIONS_STORE);
+    const index = store.index("type");
+    const request = index.getAll(type);
+
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+
+    request.onerror = () => {
+      reject(new Error("Failed to get transactions by type"));
+    };
+  });
+}
+
+export async function getTransactionByHash(
+  hash: string,
+): Promise<Transaction | null> {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([TRANSACTIONS_STORE], "readonly");
+    const store = transaction.objectStore(TRANSACTIONS_STORE);
+    const index = store.index("transactionHash");
+    const request = index.get(hash);
+
+    request.onsuccess = () => {
+      resolve(request.result || null);
+    };
+
+    request.onerror = () => {
+      reject(new Error("Failed to get transaction by hash"));
+    };
+  });
+}
+
+export async function updateTransaction(
+  transaction: Transaction,
+): Promise<void> {
+  return putItem(TRANSACTIONS_STORE, transaction);
+}
+
+export async function deleteTransaction(id: string): Promise<void> {
+  return deleteItem(TRANSACTIONS_STORE, id);
+}
+
+export async function clearTransactions(): Promise<void> {
+  return clearStore(TRANSACTIONS_STORE);
 }

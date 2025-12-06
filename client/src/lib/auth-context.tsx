@@ -1,9 +1,11 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { CommbankDotETHAccount } from "./commbankdoteth-account";
-import { ethers } from "ethers";
-import { poseidon2Hash } from "@zkpassport/poseidon2";
-import { NoteEncryption } from "shared/classes/Note";
+import { fetchIndexerNotes } from "@/hooks/use-indexer-notes";
 import { useIsRegistered } from "@/hooks/use-is-registered";
+import { poseidon2Hash } from "@zkpassport/poseidon2";
+import { ethers } from "ethers";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { NoteEncryption, NoteDecryption } from "shared/classes/Note";
+import { CommbankDotETHAccount } from "./commbankdoteth-account";
+import { addNote, getAllPayloads } from "./db";
 
 interface AuthContextType {
   isLoading: boolean;
@@ -92,6 +94,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const privateAddress = poseidon2Hash([BigInt(wallet.privateKey)]);
       const signingKey = await NoteEncryption.getPublicKeyFromAddress(wallet);
       const privateAddressHex = "0x" + privateAddress.toString(16);
+
+      // TODO review this implementation and reuse elsewhere
+      // Fetch and decrypt indexer encrypted payloads
+      try {
+        const indexerPayloads = await fetchIndexerNotes(50, 0);
+        const existingPayloads = await getAllPayloads();
+        const existingPayloadIds = new Set(existingPayloads.map((p) => p.id));
+
+        // Try to decrypt each payload
+        for (const payload of indexerPayloads) {
+          // Skip if already in database
+          if (existingPayloadIds.has(payload.id)) {
+            console.log("skipping", existingPayloadIds);
+            continue;
+          }
+
+          try {
+            const decrypted = await NoteDecryption.decryptEncryptedNote(
+              payload.encryptedNote,
+              wallet.privateKey,
+            );
+
+            // Successfully decrypted - add to notes database
+            await addNote({
+              id: payload.id,
+              assetId: decrypted.asset_id,
+              assetAmount: decrypted.asset_amount,
+              nullifier: payload.id,
+              secret: decrypted.secret,
+              entity_id: decrypted.owner,
+              isUsed: false,
+            });
+
+            console.log("Decrypted and stored note:", payload.id);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars -- will happen a bit
+          } catch (_e) {
+            // Silently ignore decryption failures - note wasn't meant for this user
+            continue;
+          }
+        }
+      } catch (error) {
+        // Silently fail if indexer is unavailable or other errors occur
+        console.error("Failed to sync encrypted payloads:", error);
+      }
 
       const now = Math.floor(Date.now() / 1000);
       const expiresIn = 60 * 60; // 1 hour in seconds

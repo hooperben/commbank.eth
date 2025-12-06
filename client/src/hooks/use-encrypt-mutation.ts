@@ -1,47 +1,24 @@
 import { useAuth } from "@/lib/auth-context";
+import { addNote, addTransaction } from "@/lib/db";
 import { SUPPORTED_NETWORKS } from "@/lib/networks";
 import { useMutation } from "@tanstack/react-query";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
 import { Deposit } from "shared/classes/Deposit";
 import { NoteEncryption } from "shared/classes/Note";
-import { PoseidonMerkleTree } from "shared/classes/PoseidonMerkleTree";
 import { commbankDotEthAbi } from "shared/constants/abi/commbankdoteth";
 import { erc20Abi } from "shared/constants/abi/erc20abi";
-
-interface EncryptedNote {
-  encryptedSecret: string;
-  owner: string;
-  asset_id: string;
-  asset_amount: string;
-}
-
-async function encodeEncryptedPayload(
-  encryptedNotes: (EncryptedNote | "0x")[],
-): Promise<string[]> {
-  const payload: string[] = [];
-
-  for (const note of encryptedNotes) {
-    if (note === "0x" || !note) {
-      payload.push("0x");
-    } else {
-      const encodedNote = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["string", "string", "string", "string"],
-        [note.encryptedSecret, note.owner, note.asset_id, note.asset_amount],
-      );
-      payload.push(encodedNote);
-    }
-  }
-
-  return payload;
-}
+import { defaultNetwork, ETH_ADDRESS } from "shared/constants/token";
+import { getRandomInPoseidonField } from "shared/constants/zk";
+import { useCanEncrypt } from "./use-can-encrypt";
+import { useTransactionsByChainId } from "./use-transactions";
 
 async function createDepositPayload(
   outputNote: {
     secret: string | bigint;
-    owner: string;
-    asset_id: string;
-    asset_amount: string;
+    owner: string | bigint;
+    asset_id: string | bigint;
+    asset_amount: string | bigint;
   },
   recipientSigner: ethers.Signer,
 ): Promise<string[]> {
@@ -50,7 +27,7 @@ async function createDepositPayload(
     recipientSigner,
   );
 
-  return await encodeEncryptedPayload([encryptedNote, "0x", "0x"]);
+  return [encryptedNote, "0x", "0x"];
 }
 
 export const useEncryptMutation = ({
@@ -62,11 +39,12 @@ export const useEncryptMutation = ({
   onZkProofSuccess?: () => void;
   onTxSuccess?: () => void;
 }) => {
-  const { getMnemonic, privateAddress, address } = useAuth();
+  const { getMnemonic, privateAddress } = useAuth();
 
-  // TODO make this programmatic
-  const canEncrypt = ["0x6e400024D346e8874080438756027001896937E3"];
-  const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+  const { refetch: refetchTransactions } =
+    useTransactionsByChainId(defaultNetwork);
+
+  const canEncrypt = useCanEncrypt();
 
   const mutationFn = useMutation({
     mutationFn: async ({
@@ -80,8 +58,7 @@ export const useEncryptMutation = ({
       amount: number;
       decimals?: number;
     }) => {
-      if (!canEncrypt.includes(address!))
-        throw new Error("Not allowed to encrypt.");
+      if (!canEncrypt) throw new Error("Not allowed to encrypt.");
 
       const chain = SUPPORTED_NETWORKS[chainId];
       if (!chain) throw new Error("Misconfigured");
@@ -99,25 +76,12 @@ export const useEncryptMutation = ({
       const provider = new ethers.JsonRpcProvider(chain.rpc);
       const signer = wallet.connect(provider);
 
-      // Fetch and load tree data
-      const treeResponse = await fetch("/full-tree.json");
-      if (!treeResponse.ok) {
-        throw new Error("Failed to fetch tree data");
-      }
-      const treeJson = await treeResponse.text();
-      const tree = await PoseidonMerkleTree.fromJSON(treeJson);
-
       // Initialize deposit circuit
       const deposit = new Deposit();
       await deposit.depositNoir.init();
 
       // Generate secret for note (within bounds)
-      // TODO move to dedicated helper
-      const secret =
-        BigInt(ethers.hexlify(ethers.randomBytes(32))) %
-        BigInt(
-          "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001",
-        );
+      const secret = getRandomInPoseidonField();
 
       // Convert amount to proper units (with decimals)
       const assetAmount = ethers.parseUnits(amount.toString(), decimals);
@@ -141,7 +105,26 @@ export const useEncryptMutation = ({
             chain.CommBankDotEth,
             assetAmount,
           );
-          await approveTx.wait();
+          const approvalReceipt = await approveTx.wait();
+
+          // Log approval transaction to IndexedDB
+          if (approvalReceipt) {
+            try {
+              await addTransaction({
+                id: approvalReceipt.hash,
+                chainId,
+                transactionHash: approvalReceipt.hash,
+                type: "Approval",
+                to: assetId,
+                data: approveTx.data,
+                value: "0",
+                timestamp: Date.now(),
+              });
+              await refetchTransactions();
+            } catch (dbError) {
+              console.error("Failed to log approval transaction:", dbError);
+            }
+          }
         }
         if (onApprovalSuccess) {
           onApprovalSuccess();
@@ -219,17 +202,53 @@ export const useEncryptMutation = ({
           );
         }
 
+        // set tx submitted success before getting receipt
         if (onTxSuccess) {
           onTxSuccess();
+        }
+
+        // Wait for deposit transaction to be mined
+        const depositReceipt = await depositTx.wait();
+
+        // Log deposit transaction to IndexedDB
+        if (depositReceipt) {
+          try {
+            await addTransaction({
+              id: depositReceipt.hash,
+              chainId,
+              transactionHash: depositReceipt.hash,
+              type: "Deposit",
+              to: chain.CommBankDotEth,
+              data: depositTx.data,
+              value: isNativeDeposit ? assetAmount.toString() : undefined,
+              timestamp: Date.now(),
+            });
+            await refetchTransactions();
+
+            await addNote({
+              id: publicInputsBytes32[0],
+              assetId,
+              assetAmount: assetAmount.toString(),
+              nullifier: publicInputsBytes32[0],
+              secret: secret.toString(),
+              entity_id: privateAddress, // TODO entity_id is a typo, should be privateAddress
+              isUsed: false,
+            });
+          } catch (dbError) {
+            console.error("Failed to log deposit transaction:", dbError);
+          }
+          // TODO make this real
+          // if (onConfirmationSuccess) {
+          //   onConfirmationSuccess();
+          // }
         }
 
         return {
           txHash: depositTx.hash,
           proof,
-          tree,
         };
       } catch (err) {
-        console.log("EEERRR:", err);
+        console.log("Error Encrypting:", err);
         throw err;
       }
     },

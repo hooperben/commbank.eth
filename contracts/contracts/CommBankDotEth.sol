@@ -27,7 +27,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
 
   bytes32 public DEPOSIT_ROLE = keccak256("DEPOSIT_ROLE");
 
-  event NullifierUsed(uint256 indexed nullifier);
+  event NullifierUsed(bytes32 indexed nullifier);
   event NotePayload(bytes encryptedNote);
 
   uint256 constant NOTES_INPUT_LENGTH = 3;
@@ -140,7 +140,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
         // mark as spent
         nullifierUsed[_publicInputs[i]] = true;
 
-        emit NullifierUsed(uint256(_publicInputs[i]));
+        emit NullifierUsed(_publicInputs[i]);
       }
     }
 
@@ -183,7 +183,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
         // mark as spent
         nullifierUsed[_publicInputs[i]] = true;
 
-        emit NullifierUsed(uint256(_publicInputs[i]));
+        emit NullifierUsed(_publicInputs[i]);
       }
     }
 

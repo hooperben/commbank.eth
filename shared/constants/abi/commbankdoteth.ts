@@ -78,9 +78,9 @@ export const commbankDotEthAbi = [
     inputs: [
       {
         indexed: true,
-        internalType: "uint256",
+        internalType: "bytes32",
         name: "nullifier",
-        type: "uint256",
+        type: "bytes32",
       },
     ],
     name: "NullifierUsed",
