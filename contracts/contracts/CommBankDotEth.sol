@@ -19,9 +19,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
-  IVerifier depositVerifier;
-  IVerifier transferVerifier;
-  IVerifier withdrawVerifier;
+  address public depositVerifier;
+  address public transferVerifier;
+  address public withdrawVerifier;
 
   mapping(bytes32 => bool) public nullifierUsed;
 
@@ -43,9 +43,9 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     address _transactVerifier,
     address _withdrawalVerifier
   ) PoseidonMerkleTree(12) {
-    depositVerifier = IVerifier(_noteVerifier);
-    transferVerifier = IVerifier(_transactVerifier);
-    withdrawVerifier = IVerifier(_withdrawalVerifier);
+    depositVerifier = _noteVerifier;
+    transferVerifier = _transactVerifier;
+    withdrawVerifier = _withdrawalVerifier;
 
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(DEPOSIT_ROLE, msg.sender);
@@ -53,7 +53,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
 
   function deposit(
     address _erc20,
-    uint256 _amount, // with decimals !!
+    uint256 _amount, // with decimals
     bytes calldata _proof,
     bytes32[] calldata _publicInputs,
     bytes[] calldata _payload
@@ -66,7 +66,10 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     require(depositTransfer, "failed to transfer deposit");
 
     // VERIFY PROOF
-    bool isValidProof = depositVerifier.verify(_proof, _publicInputs);
+    bool isValidProof = IVerifier(depositVerifier).verify(
+      _proof,
+      _publicInputs
+    );
     require(isValidProof, "Invalid deposit proof!");
 
     // CHECK INPUT ADDRESS AND AMOUNT MATCH PROOF INPUTS
@@ -95,7 +98,10 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     bytes[] calldata _payload
   ) public payable onlyRole(DEPOSIT_ROLE) {
     // VERIFY PROOF
-    bool isValidProof = depositVerifier.verify(_proof, _publicInputs);
+    bool isValidProof = IVerifier(depositVerifier).verify(
+      _proof,
+      _publicInputs
+    );
     require(isValidProof, "Invalid deposit proof!");
 
     // check that input address is 0xEee address
@@ -126,7 +132,10 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     require(isKnownRoot(uint256(_publicInputs[0])), "Invalid Root!");
 
     // verify the proof
-    bool isValidProof = transferVerifier.verify(_proof, _publicInputs);
+    bool isValidProof = IVerifier(transferVerifier).verify(
+      _proof,
+      _publicInputs
+    );
     require(isValidProof, "Invalid transfer proof");
 
     // if proof is valid, write nullifiers as spent
@@ -169,7 +178,10 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
   ) public {
     require(isKnownRoot(uint256(_publicInputs[0])), "Invalid Root!");
 
-    bool isValidProof = withdrawVerifier.verify(_proof, _publicInputs);
+    bool isValidProof = IVerifier(withdrawVerifier).verify(
+      _proof,
+      _publicInputs
+    );
     require(isValidProof, "Invalid withdraw proof");
 
     // Mark nullifiers as spent

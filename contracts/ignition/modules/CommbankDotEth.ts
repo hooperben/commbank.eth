@@ -1,44 +1,17 @@
 /// <reference types="hardhat" />
 
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
+import DepositVerifierModule from "./DepositVerifier";
+import TransferVerifierModule from "./TransferVerifier";
+import WithdrawVerifierModule from "./WithdrawVerifier";
 
 const CommbankDotEthModule = buildModule("commbankDotEth", (m) => {
-  const depositVerifierZKTL = m.library(
-    "contracts/verifiers/DepositVerifier.sol:ZKTranscriptLib",
-    {
-      id: "DepositVerifierLib",
-    },
-  );
-  const depositVerifier = m.contract("DepositVerifier", [], {
-    libraries: {
-      ZKTranscriptLib: depositVerifierZKTL,
-    },
-  });
+  // Import the verifier modules
+  const { depositVerifier } = m.useModule(DepositVerifierModule);
+  const { transferVerifier } = m.useModule(TransferVerifierModule);
+  const { withdrawVerifier } = m.useModule(WithdrawVerifierModule);
 
-  const transferVerifierZKTL = m.library(
-    "contracts/verifiers/TransferVerifier.sol:ZKTranscriptLib",
-    {
-      id: "TransferVerifierLib",
-    },
-  );
-  const transferVerifier = m.contract("TransferVerifier", [], {
-    libraries: {
-      ZKTranscriptLib: transferVerifierZKTL,
-    },
-  });
-
-  const withdrawVerifierZKTL = m.library(
-    "contracts/verifiers/WithdrawVerifier.sol:ZKTranscriptLib",
-    {
-      id: "WithdrawVerifierLib",
-    },
-  );
-  const withdrawVerifier = m.contract("WithdrawVerifier", [], {
-    libraries: {
-      ZKTranscriptLib: withdrawVerifierZKTL,
-    },
-  });
-
+  // Deploy CommBankDotEth with the verifier contracts (not libraries)
   const commbankDotEth = m.contract("CommBankDotEth", [
     depositVerifier,
     transferVerifier,
