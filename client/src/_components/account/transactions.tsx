@@ -1,7 +1,12 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/_components/ui/badge";
+import { Button } from "@/_components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/_components/ui/card";
+import { Skeleton } from "@/_components/ui/skeleton";
 import { useTransactionsByChainId } from "@/_hooks/use-transactions";
 import { useAuth } from "@/_providers/auth-provider";
 import {

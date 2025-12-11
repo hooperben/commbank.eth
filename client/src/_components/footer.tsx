@@ -1,5 +1,5 @@
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import { FooterStatusIndicator } from "@/components/status/footer-status-indicator";
+import { ModeToggle } from "@/_components/ui/mode-toggle";
+import { FooterStatusIndicator } from "@/_components/status/footer-status-indicator";
 
 export default function Footer() {
   return (

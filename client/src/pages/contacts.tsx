@@ -1,14 +1,14 @@
-import { AddContactModal } from "@/components/contacts/add-contact-modal";
+import { AddContactModal } from "@/_components/contacts/add-contact-modal";
 import PageContainer from "@/_providers/page-container";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/_components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+} from "@/_components/ui/card";
+import { Input } from "@/_components/ui/input";
 import {
   Table,
   TableBody,
@@ -16,7 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/_components/ui/table";
 import { useDeleteContact, useSearchContacts } from "@/_hooks/use-contacts";
 import { PAGE_METADATA } from "@/_constants/seo-config";
 import { ArrowLeft, Search, Trash2 } from "lucide-react";

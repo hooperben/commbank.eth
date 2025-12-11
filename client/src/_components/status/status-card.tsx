@@ -1,5 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/_components/ui/card";
+import { Badge } from "@/_components/ui/badge";
 import type { SystemStatus } from "@/_types";
 import { CheckCircle2, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 

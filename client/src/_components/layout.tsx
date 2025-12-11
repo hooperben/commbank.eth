@@ -1,11 +1,11 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import Footer from "@/components/footer";
+import { AppSidebar } from "@/_components/app-sidebar";
+import Footer from "@/_components/footer";
 import PageHead from "@/_providers/page-head";
 import {
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from "@/_components/ui/sidebar";
 import { useAuth } from "@/_providers/auth-provider";
 import {
   PageTitleProvider,

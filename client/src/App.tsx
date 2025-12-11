@@ -1,21 +1,21 @@
+import { AppLayout } from "@/_components/layout";
+import { InAppBrowserWarning } from "@/_components/status/in-app-browser-warning";
+import { AboutPage } from "@/pages/about";
+import AccountPage from "@/pages/account";
+import ContactsPage from "@/pages/contacts";
+import { HomePage } from "@/pages/home";
+import NotFoundPage from "@/pages/not-found";
+import { SettingsPage } from "@/pages/settings";
+import SharePage from "@/pages/share";
+import StatusPage from "@/pages/status";
+import TestingPage from "@/pages/testing";
+import TransactionsPage from "@/pages/transactions";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./_providers/auth-provider";
 import { ProtectedRoute } from "./_providers/protected-route";
 import { QueryClientProvider } from "./_providers/query-client";
 import { ThemeProvider } from "./_providers/theme-provider";
 import "./App.css";
-import { AppLayout } from "./components/layout";
-import { InAppBrowserWarning } from "./components/status/in-app-browser-warning";
-import { AboutPage } from "./pages/about";
-import AccountPage from "./pages/account";
-import ContactsPage from "./pages/contacts";
-import { HomePage } from "./pages/home";
-import NotFoundPage from "./pages/not-found";
-import { SettingsPage } from "./pages/settings";
-import SharePage from "./pages/share";
-import StatusPage from "./pages/status";
-import TestingPage from "./pages/testing";
-import TransactionsPage from "./pages/transactions";
 
 function App() {
   return (

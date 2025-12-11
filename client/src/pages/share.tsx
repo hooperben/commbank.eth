@@ -1,8 +1,13 @@
 import type { ContactInfo, ShareProfileParams } from "@/_types";
 import PageContainer from "@/_providers/page-container";
-import { SignupModal } from "@/components/sign-up/signup-modal";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SignupModal } from "@/_components/sign-up/signup-modal";
+import { Button } from "@/_components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/_components/ui/card";
 import { useAddContact } from "@/_hooks/use-contacts";
 import { useIsRegistered } from "@/_hooks/use-is-registered";
 import { useSignIn } from "@/_hooks/use-sign-in";

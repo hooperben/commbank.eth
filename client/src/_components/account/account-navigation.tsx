@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/_components/ui/button";
 import { useAuth } from "@/_providers/auth-provider";
 import { ArrowDownLeft, ArrowUpRight, Users } from "lucide-react";
 import { Link } from "react-router-dom";

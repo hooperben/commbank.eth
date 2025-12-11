@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/_components/ui/button";
+import { Checkbox } from "@/_components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+} from "@/_components/ui/dialog";
+import { Label } from "@/_components/ui/label";
 import { useAuth } from "@/_providers/auth-provider";
 import { downloadAsJson } from "@/lib/utils";
 import { copyToClipboard } from "@/lib/utils";

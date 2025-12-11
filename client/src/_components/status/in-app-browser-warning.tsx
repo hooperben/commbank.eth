@@ -1,4 +1,8 @@
-import { Banner, BannerDescription, BannerTitle } from "@/components/ui/banner";
+import {
+  Banner,
+  BannerDescription,
+  BannerTitle,
+} from "@/_components/ui/banner";
 import {
   getInAppBrowserName,
   shouldShowInAppBrowserWarning,

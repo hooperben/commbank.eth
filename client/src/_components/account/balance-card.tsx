@@ -1,13 +1,18 @@
-import { ShareProfile } from "@/components/account/share-profile";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ShareProfile } from "@/_components/account/share-profile";
+import { Badge } from "@/_components/ui/badge";
+import { Button } from "@/_components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/_components/ui/card";
+import { Skeleton } from "@/_components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/_components/ui/tooltip";
 import { useAccountTotal } from "@/_hooks/use-account-total";
 import { useAudUsdPrice, useEthUsdPrice } from "@/_hooks/use-chainlink-price";
 import { usePreferredCurrency } from "@/_hooks/use-preferred-currency";

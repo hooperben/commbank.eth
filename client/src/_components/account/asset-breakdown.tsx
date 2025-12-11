@@ -1,8 +1,13 @@
-import { DecryptModal } from "@/components/PUM/decrypt-modal";
-import { InlineEncryptConfirmation } from "@/components/PUM/inline-encrypt-confirmation";
-import { SendModal } from "@/components/PUM/private-send-modal";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DecryptModal } from "@/_components/PUM/decrypt-modal";
+import { InlineEncryptConfirmation } from "@/_components/PUM/inline-encrypt-confirmation";
+import { SendModal } from "@/_components/PUM/private-send-modal";
+import { Button } from "@/_components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/_components/ui/card";
 import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 import {

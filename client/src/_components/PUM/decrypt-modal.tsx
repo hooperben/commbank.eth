@@ -3,7 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/_components/ui/dialog";
 import type { SupportedAsset } from "shared/constants/token";
 
 export function DecryptModal({

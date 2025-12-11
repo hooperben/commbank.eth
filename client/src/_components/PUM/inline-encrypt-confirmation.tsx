@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/_components/ui/button";
+import { Input } from "@/_components/ui/input";
 import { useEncryptMutation } from "@/_hooks/use-encrypt-mutation";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
 import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";

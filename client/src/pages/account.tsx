@@ -1,7 +1,7 @@
-import { AccountNavigation } from "@/components/account/account-navigation";
-import { AssetBreakdown } from "@/components/account/asset-breakdown";
-import { BalanceCard } from "@/components/account/balance-card";
-import { Transactions } from "@/components/account/transactions";
+import { AccountNavigation } from "@/_components/account/account-navigation";
+import { AssetBreakdown } from "@/_components/account/asset-breakdown";
+import { BalanceCard } from "@/_components/account/balance-card";
+import { Transactions } from "@/_components/account/transactions";
 import PageContainer from "@/_providers/page-container";
 import { PAGE_METADATA } from "@/_constants/seo-config";
 

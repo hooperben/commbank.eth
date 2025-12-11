@@ -7,7 +7,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from "@/_components/ui/sidebar";
 import { Link } from "react-router-dom";
 import { Logo } from "./logo";
 import { useSideBarItems } from "@/_hooks/use-sidebar-item";

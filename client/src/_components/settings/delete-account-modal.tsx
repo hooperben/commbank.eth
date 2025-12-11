@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/_components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/_components/ui/dialog";
+import { Label } from "@/_components/ui/label";
+import { Textarea } from "@/_components/ui/textarea";
 import { useAuth } from "@/_providers/auth-provider";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useState } from "react";

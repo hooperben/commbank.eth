@@ -1,11 +1,11 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/_components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/_components/ui/dropdown-menu";
 import { useAuth } from "@/_providers/auth-provider";
 import { LogOut, Settings, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";

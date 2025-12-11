@@ -1,10 +1,10 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/_components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/_components/ui/dialog";
 import { useIsRegistered } from "@/_hooks/use-is-registered";
 import { useAuth } from "@/_providers/auth-provider";
 import { Loader2 } from "lucide-react";

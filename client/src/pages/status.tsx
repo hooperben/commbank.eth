@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PageContainer from "@/_providers/page-container";
-import { StatusCard } from "@/components/status/status-card";
-import { Button } from "@/components/ui/button";
+import { StatusCard } from "@/_components/status/status-card";
+import { Button } from "@/_components/ui/button";
 import type { SystemStatus } from "@/_types";
 import {
   checkRPCStatus,

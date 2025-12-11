@@ -1,14 +1,14 @@
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/_components/ui/button";
+import { Checkbox } from "@/_components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/_components/ui/dialog";
+import { Input } from "@/_components/ui/input";
+import { Label } from "@/_components/ui/label";
 import { useAddContact } from "@/_hooks/use-contacts";
 import { isValidEthereumAddress } from "@/lib/utils";
 import { Info, UserPlus } from "lucide-react";

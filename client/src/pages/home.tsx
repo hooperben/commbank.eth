@@ -1,8 +1,8 @@
-import { BrowserNotSupportedWarning } from "@/components/status/browser-not-supported-warning";
-import { Logo } from "@/components/logo";
+import { BrowserNotSupportedWarning } from "@/_components/status/browser-not-supported-warning";
+import { Logo } from "@/_components/logo";
 import PageContainer from "@/_providers/page-container";
-import { SignupModal } from "@/components/sign-up/signup-modal";
-import { Button } from "@/components/ui/button";
+import { SignupModal } from "@/_components/sign-up/signup-modal";
+import { Button } from "@/_components/ui/button";
 import { useDeviceCompatible } from "@/_hooks/use-device-compatible";
 import { useIsRegistered } from "@/_hooks/use-is-registered";
 import { useSignIn } from "@/_hooks/use-sign-in";

@@ -1,5 +1,5 @@
 import PageContainer from "@/_providers/page-container";
-import { Markdown } from "@/components/markdown";
+import { Markdown } from "@/_components/markdown";
 import { PAGE_METADATA } from "@/_constants/seo-config";
 
 const aboutContent = `

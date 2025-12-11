@@ -1,18 +1,18 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/_components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+} from "@/_components/ui/dialog";
+import { Input } from "@/_components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/_components/ui/select";
 import { useContacts } from "@/_hooks/use-contacts";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
 import { useMerkleTree } from "@/_hooks/use-merkle-tree";
