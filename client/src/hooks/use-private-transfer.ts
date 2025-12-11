@@ -1,14 +1,17 @@
 import type { Contact, Note } from "@/_types";
 import { useAuth } from "@/lib/auth-context";
-import { getAllTreeLeaves } from "@/lib/db";
+import { addNote, addTransaction, getAllTreeLeaves } from "@/lib/db";
+import { SUPPORTED_NETWORKS } from "@/lib/networks";
 import { useMutation } from "@tanstack/react-query";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
 import { NoteEncryption } from "shared/classes/Note";
 import type { PoseidonMerkleTree } from "shared/classes/PoseidonMerkleTree";
 import { Transact } from "shared/classes/Transact";
-import type { SupportedAsset } from "shared/constants/token";
+import { commbankDotEthAbi } from "shared/constants/abi/commbankdoteth";
+import { defaultNetwork, type SupportedAsset } from "shared/constants/token";
 import { getRandomInPoseidonField } from "shared/constants/zk";
+import { useTransactionsByChainId } from "./use-transactions";
 
 interface PrivateTransferParams {
   amount: string;
@@ -18,8 +21,18 @@ interface PrivateTransferParams {
   tree: PoseidonMerkleTree;
 }
 
-export function usePrivateTransfer() {
-  const { getMnemonic } = useAuth();
+export function usePrivateTransfer({
+  onProofSuccess,
+  onTxSuccess,
+  onReceiptSuccess,
+}: {
+  onProofSuccess?: () => void;
+  onTxSuccess?: () => void;
+  onReceiptSuccess?: () => void;
+} = {}) {
+  const { getMnemonic, privateAddress } = useAuth();
+  const { refetch: refetchTransactions } =
+    useTransactionsByChainId(defaultNetwork);
 
   return useMutation({
     mutationFn: async ({
@@ -163,6 +176,9 @@ export function usePrivateTransfer() {
       }
 
       const nullifiers = inputNotes.map((item) => {
+        // For empty input notes, return "0" instead of computing hash
+        if (item.owner === "0") return "0";
+
         const nullifier = poseidon2Hash([
           BigInt(item.leaf_index),
           BigInt(item.owner),
@@ -172,10 +188,6 @@ export function usePrivateTransfer() {
         ]);
         return nullifier.toString();
       });
-
-      while (nullifiers.length < 3) {
-        nullifiers.push("0");
-      }
 
       const outputHashes = outputNotes.map((note) => {
         if (note.owner === "0") return "0";
@@ -206,7 +218,7 @@ export function usePrivateTransfer() {
       });
 
       const proof = await transact.transactBackend.generateProof(witness, {
-        keccak: true,
+        keccakZK: true,
       });
 
       console.log("Transfer proof generated:", proof);
@@ -248,7 +260,112 @@ export function usePrivateTransfer() {
 
       console.log("Encrypted payload:", encryptedPayload);
 
+      if (onProofSuccess) {
+        onProofSuccess();
+      }
+
+      // Get network configuration
+      const chain = SUPPORTED_NETWORKS[defaultNetwork];
+      if (!chain) throw new Error("Network not configured");
+
+      // Connect to provider and signer
+      const provider = new ethers.JsonRpcProvider(chain.rpc);
+      const signer = wallet.connect(provider);
+
+      // Get current gas price from RPC
+      const feeData = await provider.getFeeData();
+      const gasPrice = feeData.gasPrice;
+
+      // Initialize contract
+      const commbankDotEthContract = new ethers.Contract(
+        chain.CommBankDotEth,
+        commbankDotEthAbi,
+        signer,
+      );
+
+      console.log({
+        proof: proof.proof,
+        public: proof.publicInputs,
+        encryptedPayload,
+      });
+
+      console.log(
+        await commbankDotEthContract.transfer.populateTransaction(
+          proof.proof,
+          proof.publicInputs,
+          encryptedPayload,
+        ),
+      );
+
+      // Call transfer on the contract
+      const transferTx = await commbankDotEthContract.transfer(
+        proof.proof,
+        proof.publicInputs,
+        encryptedPayload,
+        { gasPrice },
+      );
+
+      console.log(transferTx);
+
+      console.log("Transfer transaction submitted:", transferTx.hash);
+
+      if (onTxSuccess) {
+        onTxSuccess();
+      }
+
+      // Wait for transaction receipt
+      const transferReceipt = await transferTx.wait();
+
+      console.log("Transfer transaction confirmed:", transferReceipt.hash);
+
+      // Log transaction to IndexedDB
+      if (transferReceipt) {
+        try {
+          await addTransaction({
+            id: transferReceipt.hash,
+            chainId: defaultNetwork,
+            transactionHash: transferReceipt.hash,
+            type: "Transfer",
+            to: chain.CommBankDotEth,
+            data: transferTx.data,
+            timestamp: Date.now(),
+          });
+
+          // Mark input notes as used
+          for (const input of selectedInputs) {
+            await addNote({
+              ...input,
+              isUsed: true,
+            });
+          }
+
+          // Add change note to database if it exists
+          if (changeAmount > 0n && privateAddress) {
+            const changeNote = outputNotes[1]; // Change note is second output
+            await addNote({
+              id: outputHashes[1],
+              assetId: changeNote.asset_id,
+              assetAmount: changeNote.asset_amount,
+              nullifier: outputHashes[1],
+              secret: changeNote.secret,
+              entity_id: privateAddress,
+              isUsed: false,
+            });
+          }
+
+          // Refetch transactions to update UI
+          await refetchTransactions();
+        } catch (dbError) {
+          console.error("Failed to log transaction to database:", dbError);
+        }
+      }
+
+      if (onReceiptSuccess) {
+        onReceiptSuccess();
+      }
+
       return {
+        txHash: transferTx.hash,
         proof,
         inputNotes,
         outputNotes,

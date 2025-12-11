@@ -1,5 +1,5 @@
 import { useAuth } from "@/lib/auth-context";
-import { addNote, addTransaction } from "@/lib/db";
+import { addNote, addTransaction, updateTransaction } from "@/lib/db";
 import { SUPPORTED_NETWORKS } from "@/lib/networks";
 import { useMutation } from "@tanstack/react-query";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
@@ -34,10 +34,12 @@ export const useEncryptMutation = ({
   onApprovalSuccess,
   onZkProofSuccess,
   onTxSuccess,
+  onTxReceiptSuccess,
 }: {
   onApprovalSuccess?: () => void;
   onZkProofSuccess?: () => void;
   onTxSuccess?: () => void;
+  onTxReceiptSuccess?: () => void;
 }) => {
   const { getMnemonic, privateAddress } = useAuth();
 
@@ -76,6 +78,10 @@ export const useEncryptMutation = ({
       const provider = new ethers.JsonRpcProvider(chain.rpc);
       const signer = wallet.connect(provider);
 
+      // Get current gas price from RPC
+      const feeData = await provider.getFeeData();
+      const gasPrice = feeData.gasPrice;
+
       // Initialize deposit circuit
       const deposit = new Deposit();
       await deposit.depositNoir.init();
@@ -104,6 +110,7 @@ export const useEncryptMutation = ({
           const approveTx = await erc20.approve(
             chain.CommBankDotEth,
             assetAmount,
+            { gasPrice },
           );
           const approvalReceipt = await approveTx.wait();
 
@@ -189,7 +196,7 @@ export const useEncryptMutation = ({
             proof.proof,
             publicInputsBytes32,
             depositPayload,
-            { value: assetAmount },
+            { value: assetAmount, gasPrice },
           );
         } else {
           // Call deposit for ERC20 tokens
@@ -199,6 +206,7 @@ export const useEncryptMutation = ({
             proof.proof,
             publicInputsBytes32,
             depositPayload,
+            { gasPrice },
           );
         }
 
@@ -207,13 +215,31 @@ export const useEncryptMutation = ({
           onTxSuccess();
         }
 
+        const txSubmittedAt = Date.now();
+
+        await addTransaction({
+          id: depositTx.hash,
+          chainId,
+          transactionHash: depositTx.hash,
+          type: "Deposit-Pending",
+          to: chain.CommBankDotEth,
+          data: depositTx.data,
+          value: isNativeDeposit ? assetAmount.toString() : undefined,
+          timestamp: txSubmittedAt,
+        });
+        await refetchTransactions();
+
         // Wait for deposit transaction to be mined
         const depositReceipt = await depositTx.wait();
+
+        if (onTxReceiptSuccess) {
+          onTxReceiptSuccess();
+        }
 
         // Log deposit transaction to IndexedDB
         if (depositReceipt) {
           try {
-            await addTransaction({
+            await updateTransaction({
               id: depositReceipt.hash,
               chainId,
               transactionHash: depositReceipt.hash,
@@ -221,7 +247,7 @@ export const useEncryptMutation = ({
               to: chain.CommBankDotEth,
               data: depositTx.data,
               value: isNativeDeposit ? assetAmount.toString() : undefined,
-              timestamp: Date.now(),
+              timestamp: txSubmittedAt,
             });
             await refetchTransactions();
 

@@ -111,7 +111,21 @@ export function SendModal({
 
   const { tree } = useMerkleTree();
   const { data: sendingNotes } = useUserAssetNotes(asset?.address);
-  const privateTransferMutation = usePrivateTransfer();
+  const [transferStatus, setTransferStatus] = useState<string>("");
+  const { refetch: refetchUserAssets } = useUserAssetNotes(asset?.address);
+
+  const privateTransferMutation = usePrivateTransfer({
+    onProofSuccess: () => {
+      setTransferStatus("(2/4) Submitting Transaction");
+    },
+    onTxSuccess: () => {
+      setTransferStatus("(3/4) Submitted, Awaiting Confirmation");
+    },
+    onReceiptSuccess: () => {
+      refetchUserAssets();
+      setTransferStatus("(4/4) Transfer complete");
+    },
+  });
 
   const handleConfirm = async () => {
     const contact = contacts?.find((c) => c.id === selectedContactId);
@@ -132,6 +146,7 @@ export function SendModal({
       asset &&
       contact
     ) {
+      setTransferStatus("(1/4) Generating proof");
       privateTransferMutation.mutate({
         amount,
         asset,
@@ -140,8 +155,6 @@ export function SendModal({
         tree,
       });
     }
-
-    // handleOpenChange(false);
   };
 
   // Filter contacts based on transfer type
@@ -371,6 +384,12 @@ export function SendModal({
               )}
             </div>
 
+            {transferStatus && (
+              <div className="text-sm text-primary bg-primary/10 p-3 rounded-md">
+                {transferStatus}
+              </div>
+            )}
+
             {privateTransferMutation.error && (
               <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
                 Error: {privateTransferMutation.error.message}
@@ -393,7 +412,7 @@ export function SendModal({
                 disabled={privateTransferMutation.isPending}
               >
                 {privateTransferMutation.isPending
-                  ? "Generating Proof..."
+                  ? transferStatus.split(" ")[1] || "Processing..."
                   : "Confirm"}
               </Button>
             </div>
