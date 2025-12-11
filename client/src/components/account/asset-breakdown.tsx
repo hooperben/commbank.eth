@@ -16,6 +16,7 @@ import {
   PrivateBalanceRow,
   TotalBalanceRow,
 } from "../token/balance";
+import { SyncState } from "./sync-state";
 
 export function AssetBreakdown() {
   const assets: SupportedAsset[] =
@@ -59,6 +60,7 @@ export function AssetBreakdown() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">Accounts</CardTitle>
+            <SyncState />
           </div>
         </CardHeader>
         <CardContent className="px-3 md:px-6">

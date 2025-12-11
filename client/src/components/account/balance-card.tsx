@@ -14,7 +14,6 @@ import { usePreferredCurrency } from "@/hooks/use-preferred-currency";
 import { Info } from "lucide-react";
 import { useState } from "react";
 import { defaultNetwork } from "shared/constants/token";
-import { SyncState } from "./sync-state";
 
 export const BalanceCard = () => {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
@@ -57,22 +56,25 @@ export const BalanceCard = () => {
       <CardHeader className="flex flex-row w-full justify-between">
         <div className="space-y-4">
           {/* Total Value */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {isLoadingTotal || isLoadingCurrency ? (
               <Skeleton className="h-12 w-64" />
             ) : (
               <>
-                <CardTitle className="text-4xl font-bold">
+                <CardTitle className="text-4xl md:text-5xl font-bold">
                   {currency === "AUD"
-                    ? `$${totalAud.toFixed(2)} AUD`
-                    : `$${totalUsd.toFixed(2)} USD`}
+                    ? `$${totalAud.toFixed(2)}`
+                    : `$${totalUsd.toFixed(2)}`}
+                </CardTitle>
+                <CardTitle className="text-4xl md:text-5xl font-bold text-muted-foreground">
+                  {currency === "AUD" ? "AUD" : "USD"}
                 </CardTitle>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 w-8 p-0 text-lg"
+                      className="h-8 w-8 p-0 text-lg shrink-0"
                       onClick={toggleCurrency}
                     >
                       {currency !== "AUD" ? "🇦🇺" : "🇺🇸"}
@@ -87,7 +89,7 @@ export const BalanceCard = () => {
           </div>
 
           {/* Badges */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {defaultNetwork !== 1 ? (
               <Badge variant="outline" className="text-sm bg-green-400">
                 testnet
@@ -106,22 +108,23 @@ export const BalanceCard = () => {
             />
           </div>
         </div>
-        <div>
-          <SyncState />
-        </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
           {isPriceLoading ? (
-            <Skeleton className="h-12 w-64" />
+            <Skeleton className="h-5 w-64" />
           ) : ethAudValue && ethUsdValue ? (
             <>
-              <span>
+              <span className="tabular-nums">
                 1 ETH = {ethAudValue} AUD / {ethUsdValue} USD
               </span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-5 w-5 p-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-5 w-5 p-0 shrink-0"
+                  >
                     <Info className="h-3 w-3" />
                   </Button>
                 </TooltipTrigger>

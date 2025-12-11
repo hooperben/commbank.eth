@@ -27,5 +27,6 @@ export const useIndexerLeafs = (limit: number = 50, offset: number = 0) => {
     queryKey: ["indexer-leafs", limit, offset],
     queryFn: () => fetchIndexerLeafs(limit, offset),
     retry: 1,
+    refetchInterval: 20_000, // refetch every 20 seconds
   });
 };

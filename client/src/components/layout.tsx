@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { PageTitleProvider, usePageTitle } from "@/lib/page-title-context";
 import type React from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import { SettingsDropdown } from "./profile/settings-dropdown";
 
@@ -16,6 +17,16 @@ function SidebarTriggerFixed() {
   const { open, isMobile } = useSidebar();
   const { isLoading } = useAuth();
   const { title } = usePageTitle();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   if (isLoading) return null;
 
@@ -53,8 +64,14 @@ function SidebarTriggerFixed() {
           after:opacity-60
         `}
       />
-      {title && (
-        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+      {title && !isMobile && (
+        <h1
+          className={`text-xl font-semibold tracking-tight transition-opacity duration-300 ease-out ${
+            isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
+        >
+          {title}
+        </h1>
       )}
     </div>
   );
