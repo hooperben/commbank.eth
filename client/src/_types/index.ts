@@ -93,6 +93,7 @@ export interface SystemStatus {
 export type TransactionType =
   | "Approval"
   | "Deposit"
+  | "Deposit-Pending"
   | "Transfer"
   | "PrivateTransfer"
   | "Withdraw";

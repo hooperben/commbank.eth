@@ -6,7 +6,7 @@ networks:
     contracts:
       - name: commbankdoteth
         address:
-          - 0x8385753132c072d15c9F861B93D4827aaB549EFc
+          - 0x582E8C09955727112014B50A4eB3978697CDCB77
         handler: src/EventHandlers.ts
         events:
           - event: LeafInserted(uint256 indexed leafIndex, bytes32 indexed leafValue)

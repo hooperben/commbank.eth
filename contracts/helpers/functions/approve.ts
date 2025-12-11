@@ -6,6 +6,12 @@ export const approve = async (
   spender: string,
   amount: bigint,
 ) => {
+  // Get current gas price from RPC
+  const provider = account.provider;
+  if (!provider) throw new Error("Signer has no provider");
+  const feeData = await provider.getFeeData();
+  const gasPrice = feeData.gasPrice;
+
   const erc20 = new ethers.Contract(
     erc20Address,
     [
@@ -25,7 +31,7 @@ export const approve = async (
     account,
   );
 
-  const tx = await erc20.approve(spender, amount);
+  const tx = await erc20.approve(spender, amount, { gasPrice });
 
   return tx;
 };

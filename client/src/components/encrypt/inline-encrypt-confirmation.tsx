@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEncryptMutation } from "@/hooks/use-encrypt-mutation";
 import { useERC20Balance } from "@/hooks/use-erc20-balance";
+import { useUserAssetNotes } from "@/hooks/use-user-asset-notes";
 import { ethers } from "ethers";
 import { Check, Loader2, X } from "lucide-react";
 import { useState } from "react";
@@ -29,6 +30,12 @@ export function InlineEncryptConfirmation({
   const { data: balanceData } = useERC20Balance(asset);
 
   const [encryptionStep, setEncryptionStep] = useState<EncryptionStep>();
+  const { refetch: retchUserAssetNotes } = useUserAssetNotes(asset.address);
+
+  const onTxSuccess = () => {
+    retchUserAssetNotes();
+    setEncryptionStep("complete");
+  };
 
   const {
     mutate: encrypt,
@@ -37,7 +44,7 @@ export function InlineEncryptConfirmation({
   } = useEncryptMutation({
     onApprovalSuccess: () => setEncryptionStep("proof-generation"),
     onZkProofSuccess: () => setEncryptionStep("deposit"),
-    onTxSuccess: () => setEncryptionStep("complete"),
+    onTxSuccess: onTxSuccess,
   });
 
   const balance = balanceData
@@ -165,7 +172,7 @@ export function InlineEncryptConfirmation({
               {/* Right column - Steps */}
               <div className="space-y-2 text-left text-xs">
                 <StepIndicator
-                  label={`1. Token Approval Tx (if ERC20)`}
+                  label={`1. Token Approval (if ERC20 token)`}
                   step="approval"
                 />
                 <StepIndicator
