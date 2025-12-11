@@ -1,5 +1,5 @@
 import { useAudUsdPrice, useEthUsdPrice } from "@/_hooks/use-chainlink-price";
-import { useERC20Balance } from "@/_hooks/use-erc20-balance";
+import { useERC20Balances } from "@/_hooks/use-erc20-balance";
 import { ethers } from "ethers";
 import {
   defaultNetwork,
@@ -16,28 +16,23 @@ export const useAccountTotal = () => {
   const { data: ethUsdPrice, isLoading: isLoadingEthPrice } = useEthUsdPrice();
   const { data: audUsdPrice, isLoading: isLoadingAudPrice } = useAudUsdPrice();
 
-  // Fetch all balances
-  const balances = assets.map((asset) => ({
-    asset,
-    ...useERC20Balance(asset),
-  }));
+  // fetch erc20 balances
+  const { data: assetBalances, isLoading: isLoadingAsset } =
+    useERC20Balances(assets);
 
-  // Check if any balance is still loading
-  const isLoadingBalances = balances.some((b) => b.isLoading);
-  const isLoadingPrices = isLoadingEthPrice || isLoadingAudPrice;
-  const isLoading = isLoadingBalances || isLoadingPrices;
+  // TODO add note balances here
 
   // Calculate total value in USD
   const totalUsd = (() => {
-    if (!ethUsdPrice || !audUsdPrice) return 0;
+    if (!ethUsdPrice || !audUsdPrice || !assetBalances) return 0;
 
     let total = 0;
 
-    for (const { asset, data: balance } of balances) {
-      if (!balance) continue;
+    for (const asset of assetBalances) {
+      if (!asset.balance) continue;
 
       const balanceFormatted = parseFloat(
-        ethers.formatUnits(balance, asset.decimals),
+        ethers.formatUnits(asset.balance, asset.decimals),
       );
 
       // Convert each asset to USD
@@ -60,6 +55,6 @@ export const useAccountTotal = () => {
 
   return {
     totalUsd,
-    isLoading,
+    isLoading: isLoadingEthPrice || isLoadingAudPrice || isLoadingAsset,
   };
 };

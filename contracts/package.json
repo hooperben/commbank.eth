@@ -8,7 +8,7 @@
   "devDependencies": {
     "@aztec/bb.js": "3.0.0-nightly.20251104",
     "@aztec/foundation": "^0.87.8",
-    "@noir-lang/noir_js": "1.0.0-beta.15",
+    "@noir-lang/noir_js": "1.0.0-beta.16",
     "@nomicfoundation/hardhat-ignition": "^3.0.5",
     "@nomicfoundation/hardhat-ignition-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.1",

@@ -22,7 +22,7 @@ jobs:
         run: |
           curl -L https://raw.githubusercontent.com/noir-lang/noirup/refs/heads/main/install | bash
           export PATH="$HOME/.nargo/bin:$PATH"
-          noirup --version 1.0.0-beta.15
+          noirup --version 1.0.0-beta.16
           echo "$HOME/.nargo/bin" >> $GITHUB_PATH
 
       - name: Install bb (Barretenberg)

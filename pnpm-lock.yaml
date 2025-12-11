@@ -43,8 +43,8 @@ importers:
         specifier: 3.0.0-nightly.20251104
         version: 3.0.0-nightly.20251104
       '@noir-lang/noir_js':
-        specifier: 1.0.0-beta.15
-        version: 1.0.0-beta.15
+        specifier: 1.0.0-beta.16
+        version: 1.0.0-beta.16
       '@radix-ui/react-checkbox':
         specifier: ^1.3.3
         version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -216,8 +216,8 @@ importers:
         specifier: ^0.87.8
         version: 0.87.9
       '@noir-lang/noir_js':
-        specifier: 1.0.0-beta.15
-        version: 1.0.0-beta.15
+        specifier: 1.0.0-beta.16
+        version: 1.0.0-beta.16
       '@nomicfoundation/hardhat-ignition':
         specifier: ^3.0.5
         version: 3.0.5(@nomicfoundation/hardhat-verify@3.0.7(hardhat@3.0.15(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(bufferutil@4.0.9)(hardhat@3.0.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
@@ -389,8 +389,8 @@ importers:
         specifier: 3.0.0-nightly.20251104
         version: 3.0.0-nightly.20251104
       '@noir-lang/noir_js':
-        specifier: 1.0.0-beta.15
-        version: 1.0.0-beta.15
+        specifier: 1.0.0-beta.16
+        version: 1.0.0-beta.16
       '@zkpassport/poseidon2':
         specifier: ^0.6.2
         version: 0.6.2
@@ -1010,17 +1010,17 @@ packages:
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
 
-  '@noir-lang/acvm_js@1.0.0-beta.15':
-    resolution: {integrity: sha512-WQNMycnVGj0J369BDcsa0N6n0IlISqXEznzDBHiP2yugHgTAoxiDzXizRW10K6u/w0EOVrl+bybLxNxLIPUSYQ==}
+  '@noir-lang/acvm_js@1.0.0-beta.16':
+    resolution: {integrity: sha512-2xcEE0mCFaZEvVoKVVsG5DTUgj68duFosIvV0Z19Gn5YM1Ay5pHQnFBX4xfhJPA/0Ex8yMRZA/QDE4jpMz96KQ==}
 
-  '@noir-lang/noir_js@1.0.0-beta.15':
-    resolution: {integrity: sha512-ffN3rWzcqaO+FmBF6quFqgXhEK1gyJ8TQ9V4V3A+PIKYE94BOB0L84McxofbRqt3TFuSloBymGiFrJ/Gx8Q8eQ==}
+  '@noir-lang/noir_js@1.0.0-beta.16':
+    resolution: {integrity: sha512-DHgD73WVR6ly6c+5ocrLWLooppYwTsvx4pyndloXlXm8LcJ4ouySg4dNgN8hqNLrTixqxjWu8wBy7eYiAS1iHQ==}
 
-  '@noir-lang/noirc_abi@1.0.0-beta.15':
-    resolution: {integrity: sha512-ZJ5pUSKiZ6Nyj6DcXmLkf/+OA12cApYq/XPYePxX7v1Z2mLLl1/Gj8dO/greHUYRD47ziXIgyaZQWryE3+4ifw==}
+  '@noir-lang/noirc_abi@1.0.0-beta.16':
+    resolution: {integrity: sha512-4RpTEyw34ap65B7gQQLTeXoRtFACsATd+o4fgjLgvoIBiwwftcp2+MOFGJA3icRUJyBXknmlNu+HXCOI7Vl+Xg==}
 
-  '@noir-lang/types@1.0.0-beta.15':
-    resolution: {integrity: sha512-FCydHArW6+oOSCxSIsprOExDaBMmxh0a9+ZhXigxFDZF6j96wzy3WvA0XLgczZzAjWOiBPCr4voTW1bsM0Ca2A==}
+  '@noir-lang/types@1.0.0-beta.16':
+    resolution: {integrity: sha512-QDZRdvC3NZ1USCOkmcgONoerQl5eWpl2uPreE/BN+bidgz+Q3cANW/KO9tt0ZeWWVMfLrYV2n7o6l0y8pJUV1g==}
 
   '@nomicfoundation/edr-darwin-arm64@0.12.0-next.14':
     resolution: {integrity: sha512-sl0DibKSUOS7JXhUtaQ6FJUY+nk+uq5gx+Fyd9iiqs8awZPNn6KSuvV1EbWCi+yd3mrxgZ/wO8E77C1Dxj4xQA==}
@@ -5866,20 +5866,20 @@ snapshots:
 
   '@noble/hashes@1.8.0': {}
 
-  '@noir-lang/acvm_js@1.0.0-beta.15': {}
+  '@noir-lang/acvm_js@1.0.0-beta.16': {}
 
-  '@noir-lang/noir_js@1.0.0-beta.15':
+  '@noir-lang/noir_js@1.0.0-beta.16':
     dependencies:
-      '@noir-lang/acvm_js': 1.0.0-beta.15
-      '@noir-lang/noirc_abi': 1.0.0-beta.15
-      '@noir-lang/types': 1.0.0-beta.15
+      '@noir-lang/acvm_js': 1.0.0-beta.16
+      '@noir-lang/noirc_abi': 1.0.0-beta.16
+      '@noir-lang/types': 1.0.0-beta.16
       pako: 2.1.0
 
-  '@noir-lang/noirc_abi@1.0.0-beta.15':
+  '@noir-lang/noirc_abi@1.0.0-beta.16':
     dependencies:
-      '@noir-lang/types': 1.0.0-beta.15
+      '@noir-lang/types': 1.0.0-beta.16
 
-  '@noir-lang/types@1.0.0-beta.15': {}
+  '@noir-lang/types@1.0.0-beta.16': {}
 
   '@nomicfoundation/edr-darwin-arm64@0.12.0-next.14': {}
 
