@@ -1,10 +1,10 @@
 import { AddressCard } from "@/components/account/address-card";
 import { BackupAccountModal } from "@/components/settings/backup-account-modal";
 import { DeleteAccountModal } from "@/components/settings/delete-account-modal";
-import PageContainer from "@/components/page-container";
+import PageContainer from "@/_providers/page-container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/_providers/auth-provider";
-import { PAGE_METADATA } from "@/lib/seo-config";
+import { PAGE_METADATA } from "@/_constants/seo-config";
 
 export const SettingsPage = () => {
   const { address, privateAddress, signingKey } = useAuth();

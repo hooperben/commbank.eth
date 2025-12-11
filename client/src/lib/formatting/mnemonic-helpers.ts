@@ -43,19 +43,3 @@ export async function deriveAddressesFromMnemonic(
     envelope,
   };
 }
-
-/**
- * Mock decryption function (to be implemented later)
- * @param encryptedMnemonic - The encrypted mnemonic
- * @param pin - The decryption PIN
- * @returns Decrypted mnemonic or null if invalid
- */
-export function decryptMnemonic(
-  encryptedMnemonic: string,
-  pin: string,
-): string | null {
-  // TODO: Implement actual decryption
-  // For now, just return null to simulate invalid key
-  console.log("Decrypt:", { encryptedMnemonic, pin });
-  return null;
-}

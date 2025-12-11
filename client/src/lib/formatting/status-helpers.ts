@@ -1,17 +1,16 @@
+import { getIndexerUrl } from "@/_constants/indexer";
+import { SUPPORTED_NETWORKS } from "@/_constants/networks";
 import type { SystemStatus } from "@/_types";
+import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
+import { isIndexedDBSupported } from "@/lib/db";
 import { JsonRpcProvider } from "ethers";
 import { defaultNetwork } from "shared/constants/token";
-import { CommbankDotETHAccount } from "./commbankdoteth-account";
-import { isIndexedDBSupported } from "./db";
-import { SUPPORTED_NETWORKS } from "./networks";
-import { getIndexerUrl } from "./indexer";
 
 /**
  * Get the app version from environment or build info
  * @returns App version string
  */
 export function getAppVersion(): string {
-  // TODO: Get actual version from build process
   return import.meta.env.VITE_APP_VERSION || "development";
 }
 
@@ -20,7 +19,6 @@ export function getAppVersion(): string {
  * @returns GitHub Actions link or undefined
  */
 export function getGitHubActionLink(): string | undefined {
-  // TODO: Get actual GitHub Actions run URL from build
   return import.meta.env.VITE_GITHUB_ACTION_URL;
 }
 
@@ -29,9 +27,9 @@ export function getGitHubActionLink(): string | undefined {
  * @returns Status object
  */
 export async function checkRPCStatus(): Promise<SystemStatus> {
+  const info =
+    "An RPC is what allows you to send transactions to the blockchain to be processed. commbank.eth currently uses Alchemy, but future versions of the app will allow the user to choose or input their own RPC.";
   try {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
     const chain = SUPPORTED_NETWORKS[defaultNetwork];
     const provider = new JsonRpcProvider(chain.rpc);
 
@@ -40,13 +38,14 @@ export async function checkRPCStatus(): Promise<SystemStatus> {
     return {
       type: "success",
       message: "RPC is operational",
-      info: "An RPC is what allows you to send transactions to the blockchain to be processed. commbank.eth currently uses Alchemy, but future versions of the app will allow the user to choose or input their own RPC.",
+      info,
     };
   } catch (error) {
+    console.error(error);
     return {
       type: "error",
       message: "RPC is unreachable",
-      info: "An RPC is what allows you to send transactions to the blockchain to be processed. commbank.eth currently uses Alchemy, but future versions of the app will allow the user to choose or input their own RPC.",
+      info,
     };
   }
 }
@@ -56,13 +55,17 @@ export async function checkRPCStatus(): Promise<SystemStatus> {
  * @returns Status object
  */
 export async function checkIndexerStatus(): Promise<SystemStatus> {
+  const info =
+    "commbank.eth uses an envio indexer to make it easier to retrieve and build private transactions instructions. Like RPCs, a future version of the app will support the ability to change or add custom indexers.";
+
   try {
     const indexerUrl = getIndexerUrl();
+
     if (!indexerUrl) {
       return {
         type: "warning",
         message: "Indexer URL not configured",
-        info: "commbank.eth uses an envio indexer to make it easier to retrieve and build private transactions instructions. Like RPCs, a future version of the app will support the ability to change or add custom indexers.",
+        info,
       };
     }
 
@@ -79,20 +82,21 @@ export async function checkIndexerStatus(): Promise<SystemStatus> {
       return {
         type: "success",
         message: "Indexer is operational",
-        info: "commbank.eth uses an envio indexer to make it easier to retrieve and build private transactions instructions. Like RPCs, a future version of the app will support the ability to change or add custom indexers.",
+        info,
       };
     } else {
       return {
         type: "warning",
         message: "Indexer responded with error",
-        info: "commbank.eth uses an envio indexer to make it easier to retrieve and build private transactions instructions. Like RPCs, a future version of the app will support the ability to change or add custom indexers.",
+        info,
       };
     }
   } catch (error) {
+    console.error(error);
     return {
       type: "error",
       message: "Indexer is unreachable",
-      info: "commbank.eth uses an envio indexer to make it easier to retrieve and build private transactions instructions. Like RPCs, a future version of the app will support the ability to change or add custom indexers.",
+      info,
     };
   }
 }
@@ -104,17 +108,20 @@ export async function checkIndexerStatus(): Promise<SystemStatus> {
 export function checkPasskeySupport(): SystemStatus {
   const isSupported = CommbankDotETHAccount.isSupported();
 
+  const info =
+    "commbank.eth makes use of passkey to manage account secrets securely. If your browser does not support passkey, the commbank.eth web app will not work as expected.";
+
   if (isSupported) {
     return {
       type: "success",
       message: "Passkey is supported",
-      info: "commbank.eth makes use of passkey to manage account secrets securely. If your browser does not support passkey, the commbank.eth web app will not work as expected.",
+      info,
     };
   } else {
     return {
       type: "warning",
       message: "Passkey is not supported",
-      info: "commbank.eth makes use of passkey to manage account secrets securely. If your browser does not support passkey, the commbank.eth web app will not work as expected.",
+      info,
     };
   }
 }
@@ -126,17 +133,20 @@ export function checkPasskeySupport(): SystemStatus {
 export function checkIndexedDBSupport(): SystemStatus {
   const isSupported = isIndexedDBSupported();
 
+  const info =
+    "commbank.eth uses indexdb in your browser to store and manage account state and transaction history. If your browser doesn't support indexdb, the commbank.eth web app will not work as expected.";
+
   if (isSupported) {
     return {
       type: "success",
       message: "IndexedDB is supported",
-      info: "commbank.eth uses indexdb in your browser to store and manage account state and transaction history. If your browser doesn't support indexdb, the commbank.eth web app will not work as expected.",
+      info,
     };
   } else {
     return {
       type: "warning",
       message: "IndexedDB is not supported",
-      info: "commbank.eth uses indexdb in your browser to store and manage account state and transaction history. If your browser doesn't support indexdb, the commbank.eth web app will not work as expected.",
+      info,
     };
   }
 }

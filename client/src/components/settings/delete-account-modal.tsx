@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { deleteAllAccountData } from "@/lib/account-deletion-helpers";
 import { useAuth } from "@/_providers/auth-provider";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -23,8 +22,11 @@ export function DeleteAccountModal() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState("");
 
+  const { commbankDotEthAccount } = useAuth();
+
   const handleDeleteAccount = async () => {
     try {
+      if (!commbankDotEthAccount) return;
       setIsDeleting(true);
 
       // Validate the mnemonic matches
@@ -35,8 +37,7 @@ export function DeleteAccountModal() {
         return;
       }
 
-      // Delete all data
-      await deleteAllAccountData();
+      await commbankDotEthAccount.clearStorageApplicationData();
 
       // Close modal
       setIsOpen(false);

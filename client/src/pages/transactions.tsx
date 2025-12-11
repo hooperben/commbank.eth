@@ -9,7 +9,7 @@ import {
   getAssetAddress,
   getAssetAmount,
   getTransactionVerb,
-} from "@/lib/transactions";
+} from "@/lib/formatting/transactions";
 import { formatUnits } from "ethers/utils";
 import { ArrowLeft, Search } from "lucide-react";
 import { useState } from "react";

@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAddContact } from "@/_hooks/use-contacts";
-import { isValidEthereumAddress } from "@/lib/validators";
+import { isValidEthereumAddress } from "@/lib/utils";
 import { Info, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

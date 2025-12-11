@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   deriveAddressesFromMnemonic,
   isValidMnemonic,
-} from "@/lib/mnemonic-helpers";
+} from "@/lib/formatting/mnemonic-helpers";
 import { Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

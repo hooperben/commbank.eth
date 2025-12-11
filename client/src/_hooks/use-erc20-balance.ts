@@ -1,5 +1,5 @@
 import { useAuth } from "@/_providers/auth-provider";
-import { SUPPORTED_NETWORKS } from "@/lib/networks";
+import { SUPPORTED_NETWORKS } from "@/_constants/networks";
 import { useQuery } from "@tanstack/react-query";
 import { Contract, JsonRpcProvider } from "ethers";
 import type { SupportedAsset } from "shared/constants/token";

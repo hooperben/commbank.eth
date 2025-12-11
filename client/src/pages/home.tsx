@@ -1,13 +1,13 @@
-import { BrowserNotSupportedWarning } from "@/components/browser-not-supported-warning";
+import { BrowserNotSupportedWarning } from "@/components/status/browser-not-supported-warning";
 import { Logo } from "@/components/logo";
-import PageContainer from "@/components/page-container";
-import { SignupModal } from "@/components/signup/signup-modal";
+import PageContainer from "@/_providers/page-container";
+import { SignupModal } from "@/components/sign-up/signup-modal";
 import { Button } from "@/components/ui/button";
 import { useDeviceCompatible } from "@/_hooks/use-device-compatible";
 import { useIsRegistered } from "@/_hooks/use-is-registered";
 import { useSignIn } from "@/_hooks/use-sign-in";
 import { useAuth } from "@/_providers/auth-provider";
-import { PAGE_METADATA } from "@/lib/seo-config";
+import { PAGE_METADATA } from "@/_constants/seo-config";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";

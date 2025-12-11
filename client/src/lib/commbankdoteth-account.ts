@@ -250,17 +250,18 @@ export class CommbankDotETHAccount {
     }
   }
 
-  /**
-   * DANGER: Clear all stored account data (does NOT delete the passkey itself)
-   * The passkey remains in the device's authenticator
-   * WARNING: After calling this, you will need your mnemonic backup to restore access!
-   */
-  clearStoredAccount(): void {
-    if (typeof window === "undefined") return;
+  async clearStorageApplicationData(): Promise<void> {
+    localStorage.clear();
+    sessionStorage.clear();
 
-    localStorage.removeItem(CommbankDotETHAccount.STORAGE_KEY_USERNAME);
-    localStorage.removeItem(CommbankDotETHAccount.STORAGE_KEY_ENCRYPTED);
-    localStorage.removeItem(CommbankDotETHAccount.STORAGE_KEY_CREDENTIAL);
+    const databases = await indexedDB.databases();
+
+    // Delete each database
+    for (const db of databases) {
+      if (db.name) {
+        indexedDB.deleteDatabase(db.name);
+      }
+    }
   }
 
   /**

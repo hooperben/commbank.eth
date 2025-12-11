@@ -1,17 +1,20 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import Footer from "@/components/footer";
-import PageHead from "@/components/page-head";
+import PageHead from "@/_providers/page-head";
 import {
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/_providers/auth-provider";
-import { PageTitleProvider, usePageTitle } from "@/lib/page-title-context";
+import {
+  PageTitleProvider,
+  usePageTitle,
+} from "@/_providers/page-title-context";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
-import { SettingsDropdown } from "./profile/settings-dropdown";
+import { SettingsDropdown } from "./settings/settings-dropdown";
 
 function SidebarTriggerFixed() {
   const { open, isMobile } = useSidebar();

@@ -23,7 +23,7 @@ import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultNetwork, type SupportedAsset } from "shared/constants/token";
-import { BalanceRow, PrivateBalanceRow } from "../token/balance";
+import { BalanceRow, PrivateBalanceRow } from "../account/balance";
 
 type TransferType = "public" | "private" | null;
 type Step = "select-type" | "enter-details" | "confirm";

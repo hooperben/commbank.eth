@@ -1,7 +1,7 @@
-import { usePageTitle } from "@/lib/page-title-context";
-import type { PageMetadata } from "@/lib/seo-config";
+import { usePageTitle } from "@/_providers/page-title-context";
+import type { PageMetadata } from "@/_constants/seo-config";
 import { useEffect } from "react";
-import PageHead from "./page-head";
+import PageHead from "../_providers/page-head";
 
 interface PageContainerProps extends Partial<PageMetadata> {
   children: React.ReactNode;

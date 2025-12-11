@@ -1,5 +1,5 @@
 import { AddContactModal } from "@/components/contacts/add-contact-modal";
-import PageContainer from "@/components/page-container";
+import PageContainer from "@/_providers/page-container";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useDeleteContact, useSearchContacts } from "@/_hooks/use-contacts";
-import { PAGE_METADATA } from "@/lib/seo-config";
+import { PAGE_METADATA } from "@/_constants/seo-config";
 import { ArrowLeft, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";

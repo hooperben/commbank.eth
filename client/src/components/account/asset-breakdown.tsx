@@ -1,6 +1,6 @@
-import { DecryptModal } from "@/components/decrypt/decrypt-modal";
-import { InlineEncryptConfirmation } from "@/components/encrypt/inline-encrypt-confirmation";
-import { SendModal } from "@/components/send/send-modal";
+import { DecryptModal } from "@/components/PUM/decrypt-modal";
+import { InlineEncryptConfirmation } from "@/components/PUM/inline-encrypt-confirmation";
+import { SendModal } from "@/components/PUM/private-send-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight } from "lucide-react";
@@ -11,11 +11,7 @@ import {
   sepoliaAssets,
   type SupportedAsset,
 } from "shared/constants/token";
-import {
-  BalanceRow,
-  PrivateBalanceRow,
-  TotalBalanceRow,
-} from "../token/balance";
+import { BalanceRow, PrivateBalanceRow, TotalBalanceRow } from "./balance";
 import { SyncState } from "./sync-state";
 
 export function AssetBreakdown() {

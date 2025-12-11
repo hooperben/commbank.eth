@@ -2,7 +2,7 @@ import { Banner, BannerDescription, BannerTitle } from "@/components/ui/banner";
 import {
   getInAppBrowserName,
   shouldShowInAppBrowserWarning,
-} from "@/lib/browser-detection";
+} from "@/lib/device/browser-detection";
 import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 

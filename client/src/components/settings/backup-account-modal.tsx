@@ -9,11 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/_providers/auth-provider";
-import {
-  copyToClipboard,
-  downloadAsJson,
-  encryptMnemonicWithPin,
-} from "@/lib/backup-helpers";
+import { downloadAsJson } from "@/lib/utils";
+import { copyToClipboard } from "@/lib/utils";
 import { AlertTriangle, Copy, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -23,11 +20,6 @@ export function BackupAccountModal() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [confirmExport, setConfirmExport] = useState(false);
-  const [addPin, setAddPin] = useState(true);
-  const [pin, setPin] = useState("");
-
-  // only show error if it's around the same length
-  const canExport = confirmExport;
 
   function waitForWindowFocus(): Promise<void> {
     return new Promise((resolve) => {
@@ -57,16 +49,7 @@ export function BackupAccountModal() {
         return;
       }
 
-      let exportData: string;
-
-      if (addPin && pin) {
-        // Export encrypted with PIN
-        const encrypted = encryptMnemonicWithPin(mnemonic, pin);
-        exportData = JSON.stringify({ encryptedMnemonic: encrypted }, null, 2);
-      } else {
-        // Export plain mnemonic
-        exportData = JSON.stringify({ mnemonic }, null, 2);
-      }
+      const exportData = JSON.stringify({ mnemonic }, null, 2);
 
       // Wait for window focus before copying (in case passkey dialog lost focus)
       await waitForWindowFocus();
@@ -90,16 +73,7 @@ export function BackupAccountModal() {
         return;
       }
 
-      let exportData: Record<string, string>;
-
-      if (addPin && pin) {
-        // Export encrypted with PIN
-        const encrypted = encryptMnemonicWithPin(mnemonic, pin);
-        exportData = { encryptedMnemonic: encrypted };
-      } else {
-        // Export plain mnemonic
-        exportData = { mnemonic };
-      }
+      const exportData = { mnemonic };
 
       downloadAsJson(exportData);
       toast.success("Account backup downloaded!");
@@ -113,8 +87,6 @@ export function BackupAccountModal() {
 
   const resetForm = () => {
     setConfirmExport(false);
-    setAddPin(true);
-    setPin("");
   };
 
   return (
@@ -172,7 +144,7 @@ export function BackupAccountModal() {
           <div className="grid grid-cols-2 gap-3 pt-2">
             <Button
               onClick={handleExportToClipboard}
-              disabled={!canExport}
+              disabled={!confirmExport}
               variant="outline"
               className="gap-2"
             >
@@ -181,7 +153,7 @@ export function BackupAccountModal() {
             </Button>
             <Button
               onClick={handleExportToFile}
-              disabled={!canExport}
+              disabled={!confirmExport}
               variant="outline"
               className="gap-2"
             >

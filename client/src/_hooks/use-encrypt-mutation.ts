@@ -1,6 +1,6 @@
 import { useAuth } from "@/_providers/auth-provider";
 import { addNote, addTransaction, updateTransaction } from "@/lib/db";
-import { SUPPORTED_NETWORKS } from "@/lib/networks";
+import { SUPPORTED_NETWORKS } from "@/_constants/networks";
 import { useMutation } from "@tanstack/react-query";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";

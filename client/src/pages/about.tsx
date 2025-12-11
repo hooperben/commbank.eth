@@ -1,6 +1,6 @@
-import PageContainer from "@/components/page-container";
+import PageContainer from "@/_providers/page-container";
 import { Markdown } from "@/components/markdown";
-import { PAGE_METADATA } from "@/lib/seo-config";
+import { PAGE_METADATA } from "@/_constants/seo-config";
 
 const aboutContent = `
 # commbank.eth

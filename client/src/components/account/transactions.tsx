@@ -8,7 +8,7 @@ import {
   getAssetAddress,
   getAssetAmount,
   getTransactionVerb,
-} from "@/lib/transactions";
+} from "@/lib/formatting/transactions";
 import { formatUnits } from "ethers/utils";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";

@@ -1,4 +1,4 @@
-import { ModeToggle } from "@/components/mode-toggle";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 import { FooterStatusIndicator } from "@/components/status/footer-status-indicator";
 
 export default function Footer() {

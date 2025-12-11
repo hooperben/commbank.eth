@@ -1,4 +1,7 @@
-import { arrayBufferToBase64, base64ToArrayBuffer } from "./data-formatting";
+import {
+  arrayBufferToBase64,
+  base64ToArrayBuffer,
+} from "@/lib/formatting/data-formatting";
 
 // Helper to get stored credential IDs
 const getStoredCredentialIds = (): string[] => {

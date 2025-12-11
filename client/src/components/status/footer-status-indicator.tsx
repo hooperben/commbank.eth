@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, AlertCircle } from "lucide-react";
-import { checkRPCStatus, checkIndexerStatus } from "@/lib/status-helpers";
+import {
+  checkRPCStatus,
+  checkIndexerStatus,
+} from "@/lib/formatting/status-helpers";
 
 export function FooterStatusIndicator() {
   const [isOperational, setIsOperational] = useState<boolean | null>(null);

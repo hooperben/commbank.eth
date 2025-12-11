@@ -18,6 +18,7 @@ interface AuthContextType {
   signOut: () => void;
   getMnemonic: () => Promise<string | null>;
   getEnvelopeKey: () => Promise<string | null>;
+  commbankDotEthAccount?: CommbankDotETHAccount;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -283,6 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         getMnemonic,
         getEnvelopeKey,
+        commbankDotEthAccount,
       }}
     >
       {children}

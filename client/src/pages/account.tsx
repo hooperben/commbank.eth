@@ -2,8 +2,8 @@ import { AccountNavigation } from "@/components/account/account-navigation";
 import { AssetBreakdown } from "@/components/account/asset-breakdown";
 import { BalanceCard } from "@/components/account/balance-card";
 import { Transactions } from "@/components/account/transactions";
-import PageContainer from "@/components/page-container";
-import { PAGE_METADATA } from "@/lib/seo-config";
+import PageContainer from "@/_providers/page-container";
+import { PAGE_METADATA } from "@/_constants/seo-config";
 
 export default function AccountPage() {
   return (

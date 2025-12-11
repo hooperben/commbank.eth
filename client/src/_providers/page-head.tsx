@@ -3,7 +3,7 @@ import {
   DEFAULT_SEO,
   mergeWithDefaults,
   type PageMetadata,
-} from "@/lib/seo-config";
+} from "@/_constants/seo-config";
 
 interface PageHeadProps extends Partial<PageMetadata> {
   pageTitle?: string;

@@ -1,10 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
-import { InAppBrowserWarning } from "./components/in-app-browser-warning";
+import { InAppBrowserWarning } from "./components/status/in-app-browser-warning";
 import { AppLayout } from "./components/layout";
-import { ProtectedRoute } from "./components/protected-route";
-import { ThemeProvider } from "./components/theme-provider";
+import { ProtectedRoute } from "./_providers/protected-route";
+import { ThemeProvider } from "./_providers/theme-provider";
 import { AuthProvider } from "./_providers/auth-provider";
 import { AboutPage } from "./pages/about";
 import AccountPage from "./pages/account";

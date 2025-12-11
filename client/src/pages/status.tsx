@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import PageContainer from "@/components/page-container";
+import PageContainer from "@/_providers/page-container";
 import { StatusCard } from "@/components/status/status-card";
 import { Button } from "@/components/ui/button";
 import type { SystemStatus } from "@/_types";
@@ -8,7 +8,7 @@ import {
   checkIndexerStatus,
   checkPasskeySupport,
   checkIndexedDBSupport,
-} from "@/lib/status-helpers";
+} from "@/lib/formatting/status-helpers";
 import { ExternalLink } from "lucide-react";
 
 export default function StatusPage() {
