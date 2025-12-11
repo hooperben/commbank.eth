@@ -100,13 +100,13 @@ npx hardhat verify --network "$NETWORK" "$WITHDRAW_VERIFIER_LIB" --contract cont
 
 # Verify verifier contracts
 echo "Verifying DepositVerifier..."
-npx hardhat verify --network "$NETWORK" "$DEPOSIT_VERIFIER" --libraries "contracts/verifiers/DepositVerifier.sol:ZKTranscriptLib=$DEPOSIT_VERIFIER_LIB"
+npx hardhat verify --network "$NETWORK" "$DEPOSIT_VERIFIER" 
 
 echo "Verifying TransferVerifier..."
-npx hardhat verify --network "$NETWORK" "$TRANSFER_VERIFIER" --libraries "contracts/verifiers/TransferVerifier.sol:ZKTranscriptLib=$TRANSFER_VERIFIER_LIB"
+npx hardhat verify --network "$NETWORK" "$TRANSFER_VERIFIER" 
 
 echo "Verifying WithdrawVerifier..."
-npx hardhat verify --network "$NETWORK" "$WITHDRAW_VERIFIER" --libraries "contracts/verifiers/WithdrawVerifier.sol:ZKTranscriptLib=$WITHDRAW_VERIFIER_LIB"
+npx hardhat verify --network "$NETWORK" "$WITHDRAW_VERIFIER"
 
 # Verify main contract
 echo "Verifying CommBankDotEth..."
