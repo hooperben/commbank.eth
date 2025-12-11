@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTransactionsByChainId } from "@/hooks/use-transactions";
-import { useAuth } from "@/lib/auth-context";
+import { useTransactionsByChainId } from "@/_hooks/use-transactions";
+import { useAuth } from "@/_providers/auth-provider";
 import {
   getAssetAddress,
   getAssetAmount,

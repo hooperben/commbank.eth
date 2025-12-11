@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
 import { Logo } from "./logo";
-import { useSideBarItems } from "@/hooks/use-sidebar-item";
+import { useSideBarItems } from "@/_hooks/use-sidebar-item";
 
 export function AppSidebar() {
   const { open, isMobile, setOpenMobile } = useSidebar();

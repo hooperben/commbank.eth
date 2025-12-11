@@ -1,4 +1,4 @@
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";

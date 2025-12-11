@@ -1,11 +1,11 @@
-import { fetchIndexerNotes } from "@/hooks/use-indexer-notes";
-import { useIsRegistered } from "@/hooks/use-is-registered";
+import { fetchIndexerNotes } from "@/_hooks/use-indexer-notes";
+import { useIsRegistered } from "@/_hooks/use-is-registered";
+import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
+import { addNote, getAllPayloads } from "@/lib/db";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { NoteEncryption, NoteDecryption } from "shared/classes/Note";
-import { CommbankDotETHAccount } from "./commbankdoteth-account";
-import { addNote, getAllPayloads } from "./db";
+import { NoteDecryption, NoteEncryption } from "shared/classes/Note";
 
 interface AuthContextType {
   isLoading: boolean;
@@ -117,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             );
 
             // Successfully decrypted - add to notes database
+            // TODO need to write these as hex values
             await addNote({
               id: payload.id,
               assetId: decrypted.asset_id,

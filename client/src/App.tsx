@@ -5,7 +5,7 @@ import { InAppBrowserWarning } from "./components/in-app-browser-warning";
 import { AppLayout } from "./components/layout";
 import { ProtectedRoute } from "./components/protected-route";
 import { ThemeProvider } from "./components/theme-provider";
-import { AuthProvider } from "./lib/auth-context";
+import { AuthProvider } from "./_providers/auth-provider";
 import { AboutPage } from "./pages/about";
 import AccountPage from "./pages/account";
 import ContactsPage from "./pages/contacts";

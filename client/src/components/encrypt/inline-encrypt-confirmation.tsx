@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEncryptMutation } from "@/hooks/use-encrypt-mutation";
-import { useERC20Balance } from "@/hooks/use-erc20-balance";
-import { useUserAssetNotes } from "@/hooks/use-user-asset-notes";
+import { useEncryptMutation } from "@/_hooks/use-encrypt-mutation";
+import { useERC20Balance } from "@/_hooks/use-erc20-balance";
+import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
 import { ethers } from "ethers";
 import { Check, Loader2, X } from "lucide-react";
 import { useState } from "react";

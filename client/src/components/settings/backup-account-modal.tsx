@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import {
   copyToClipboard,
   downloadAsJson,

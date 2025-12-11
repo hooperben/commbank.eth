@@ -8,9 +8,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAccountTotal } from "@/hooks/use-account-total";
-import { useAudUsdPrice, useEthUsdPrice } from "@/hooks/use-chainlink-price";
-import { usePreferredCurrency } from "@/hooks/use-preferred-currency";
+import { useAccountTotal } from "@/_hooks/use-account-total";
+import { useAudUsdPrice, useEthUsdPrice } from "@/_hooks/use-chainlink-price";
+import { usePreferredCurrency } from "@/_hooks/use-preferred-currency";
 import { Info } from "lucide-react";
 import { useState } from "react";
 import { defaultNetwork } from "shared/constants/token";

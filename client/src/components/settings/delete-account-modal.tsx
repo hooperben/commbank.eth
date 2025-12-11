@@ -9,7 +9,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { deleteAllAccountData } from "@/lib/account-deletion-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";

@@ -6,7 +6,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import { PageTitleProvider, usePageTitle } from "@/lib/page-title-context";
 import type React from "react";
 import { useEffect, useState } from "react";

@@ -1,5 +1,5 @@
 import type { Contact } from "@/_types";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import {
   addContact as addContactDB,
   deleteContact as deleteContactDB,

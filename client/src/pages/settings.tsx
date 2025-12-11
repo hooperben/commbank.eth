@@ -3,7 +3,7 @@ import { BackupAccountModal } from "@/components/settings/backup-account-modal";
 import { DeleteAccountModal } from "@/components/settings/delete-account-modal";
 import PageContainer from "@/components/page-container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import { PAGE_METADATA } from "@/lib/seo-config";
 
 export const SettingsPage = () => {

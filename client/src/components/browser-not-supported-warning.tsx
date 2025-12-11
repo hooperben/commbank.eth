@@ -1,4 +1,4 @@
-import { useDeviceCompatible } from "@/hooks/use-device-compatible";
+import { useDeviceCompatible } from "@/_hooks/use-device-compatible";
 import { AlertCircle } from "lucide-react";
 
 export const BrowserNotSupportedWarning = () => {

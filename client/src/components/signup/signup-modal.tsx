@@ -5,14 +5,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useIsRegistered } from "@/hooks/use-is-registered";
-import { useAuth } from "@/lib/auth-context";
+import { useIsRegistered } from "@/_hooks/use-is-registered";
+import { useAuth } from "@/_providers/auth-provider";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { RestoreAccount } from "./restore-account";
-import { useSignUp } from "@/hooks/use-sign-up";
+import { useSignUp } from "@/_hooks/use-sign-up";
 
 interface SignupModalProps {
   isOpen: boolean;

@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useDeleteContact, useSearchContacts } from "@/hooks/use-contacts";
+import { useDeleteContact, useSearchContacts } from "@/_hooks/use-contacts";
 import { PAGE_METADATA } from "@/lib/seo-config";
 import { ArrowLeft, Search, Trash2 } from "lucide-react";
 import { useState } from "react";

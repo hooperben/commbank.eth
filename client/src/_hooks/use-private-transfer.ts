@@ -1,5 +1,5 @@
 import type { Contact, Note } from "@/_types";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import { addNote, addTransaction, getAllTreeLeaves } from "@/lib/db";
 import { SUPPORTED_NETWORKS } from "@/lib/networks";
 import { useMutation } from "@tanstack/react-query";

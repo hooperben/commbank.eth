@@ -1,4 +1,4 @@
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import { Home, Users, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 

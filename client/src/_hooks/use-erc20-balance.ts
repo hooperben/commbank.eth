@@ -1,4 +1,4 @@
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import { SUPPORTED_NETWORKS } from "@/lib/networks";
 import { useQuery } from "@tanstack/react-query";
 import { Contract, JsonRpcProvider } from "ethers";

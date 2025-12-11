@@ -1,6 +1,6 @@
 import type { Payload, TreeLeaf } from "@/_types";
-import { useIndexerLeafs } from "@/hooks/use-indexer-leafs";
-import { useIndexerNotes } from "@/hooks/use-indexer-notes";
+import { useIndexerLeafs } from "@/_hooks/use-indexer-leafs";
+import { useIndexerNotes } from "@/_hooks/use-indexer-notes";
 import {
   addPayload,
   addTreeLeaf,

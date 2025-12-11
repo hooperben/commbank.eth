@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { useERC20Balance } from "@/hooks/use-erc20-balance";
-import { useUserAssetNotes } from "@/hooks/use-user-asset-notes";
+import { useERC20Balance } from "@/_hooks/use-erc20-balance";
+import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
 import { ethers, formatUnits } from "ethers";
 import type { SupportedAsset } from "shared/constants/token";
 

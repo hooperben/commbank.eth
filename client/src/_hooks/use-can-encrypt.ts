@@ -1,4 +1,4 @@
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 
 export const useCanEncrypt = () => {
   const { address } = useAuth();

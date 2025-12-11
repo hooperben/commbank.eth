@@ -1,4 +1,4 @@
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import { addNote, addTransaction, updateTransaction } from "@/lib/db";
 import { SUPPORTED_NETWORKS } from "@/lib/networks";
 import { useMutation } from "@tanstack/react-query";

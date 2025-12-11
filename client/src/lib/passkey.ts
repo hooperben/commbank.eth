@@ -1,9 +1,41 @@
+import { arrayBufferToBase64, base64ToArrayBuffer } from "./data-formatting";
+
+// Helper to get stored credential IDs
+const getStoredCredentialIds = (): string[] => {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem("passkeyCredentialIds");
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return [];
+  }
+};
+
+// Helper to store credential ID
+function storeCredentialId(credentialId: string): void {
+  if (typeof window === "undefined") return;
+  const existing = getStoredCredentialIds();
+  if (!existing.includes(credentialId)) {
+    existing.push(credentialId);
+    localStorage.setItem("passkeyCredentialIds", JSON.stringify(existing));
+  }
+}
+
 // Function to register a new passkey
 export async function registerPasskey(username: string): Promise<boolean> {
   try {
     // Create a new challenge
     const challenge = new Uint8Array(32);
     crypto.getRandomValues(challenge);
+
+    // Get existing credential IDs to exclude from re-registration
+    const existingCredentialIds = getStoredCredentialIds();
+    const excludeCredentials: PublicKeyCredentialDescriptor[] =
+      existingCredentialIds.map((id) => ({
+        type: "public-key" as const,
+        id: base64ToArrayBuffer(id),
+      }));
 
     // Create credential options
     const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions =
@@ -30,11 +62,12 @@ export async function registerPasskey(username: string): Promise<boolean> {
           userVerification: "required",
           residentKey: "required",
         },
+        // Exclude already registered credentials to prevent override
+        excludeCredentials:
+          excludeCredentials.length > 0 ? excludeCredentials : undefined,
         timeout: 60000,
         attestation: "none",
       };
-
-    // Remove initDB() call
 
     // Create the credential
     const credential = (await navigator.credentials.create({
@@ -45,8 +78,10 @@ export async function registerPasskey(username: string): Promise<boolean> {
       throw new Error("Failed to create credential");
     }
 
-    // Store username in localStorage for reference
+    // Store credential ID and username in localStorage for reference
     if (typeof window !== "undefined") {
+      const credentialId = arrayBufferToBase64(credential.rawId);
+      storeCredentialId(credentialId);
       localStorage.setItem("registeredUsername", username);
     }
 
@@ -135,10 +170,20 @@ export function isPasskeySupported(): boolean {
   );
 }
 
-// Check if a passkey is already registered - now using conditional UI
+// Check if a passkey is already registered
 export async function isPasskeyRegistered(): Promise<boolean> {
   try {
-    // Try to use conditional UI to see if any passkeys are available
+    // First check localStorage for stored credential IDs
+    const storedCredentialIds = getStoredCredentialIds();
+    const hasStoredUsername = localStorage.getItem("registeredUsername");
+
+    // If we have stored credentials and username, likely registered
+    if (storedCredentialIds.length > 0 && hasStoredUsername) {
+      return true;
+    }
+
+    // Fall back to checking if we can authenticate
+    // This handles cases where localStorage was cleared but passkey still exists
     const challenge = new Uint8Array(32);
     crypto.getRandomValues(challenge);
 
@@ -148,7 +193,16 @@ export async function isPasskeyRegistered(): Promise<boolean> {
         userVerification: "required",
         timeout: 5000, // Short timeout for quick check
       },
+      // Use 'silent' mediation to avoid showing UI
+      mediation: "silent" as CredentialMediationRequirement,
     });
+
+    // If we got an assertion but no stored IDs, store it now
+    if (assertion && storedCredentialIds.length === 0) {
+      const publicKeyCredential = assertion as PublicKeyCredential;
+      const credentialId = arrayBufferToBase64(publicKeyCredential.rawId);
+      storeCredentialId(credentialId);
+    }
 
     return assertion !== null;
   } catch (error) {
@@ -281,6 +335,24 @@ export async function retrieveMnemonic(): Promise<string | null> {
     console.error("Error retrieving mnemonic:", error);
     return null;
   }
+}
+
+// Get count of stored credential IDs
+export function getStoredCredentialCount(): number {
+  return getStoredCredentialIds().length;
+}
+
+// Clear all passkey data (useful for debugging or account reset)
+export function clearPasskeyData(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("passkeyCredentialIds");
+  localStorage.removeItem("registeredUsername");
+  localStorage.removeItem("encryptedMnemonic");
+}
+
+// Check if we have credential IDs stored locally
+export function hasStoredCredentials(): boolean {
+  return getStoredCredentialIds().length > 0;
 }
 
 // Use WebAuthn Conditional UI for authentication

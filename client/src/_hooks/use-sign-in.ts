@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/_providers/auth-provider";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
