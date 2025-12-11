@@ -6,8 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build-ipfs": "bun run build && bunx tsx scripts/deploy-to-ipfs.ts",
-    "deploy-ipfs": "bunx tsx scripts/deploy-to-ipfs.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },

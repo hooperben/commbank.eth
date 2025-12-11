@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "VITE_RUNNING_LOCAL_INDEXER=true pnpm --filter envio-indexer dev & pnpm --filter client dev",
     "build": "pnpm --filter client build",
-    "build-ipfs": "pnpm --filter client build-ipfs",
     "build-contracts": "pnpm --filter contracts build",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,scss,html}\"",

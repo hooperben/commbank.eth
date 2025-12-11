@@ -2,9 +2,7 @@
   "name": "contracts",
   "scripts": {
     "test:gas": "hardhat test --gas-stats",
-    "build": "./scripts/bash/build-and-export-circuits.sh",
-    "build-ipfs": "ts-node scripts/build.ts",
-    "deploy": "ts-node scripts/deploy.ts"
+    "build": "./scripts/bash/build-and-export-circuits.sh"
   },
   "type": "module",
   "devDependencies": {
