@@ -11,7 +11,7 @@ export function useUserAssetNotes(assetId: string | undefined) {
     queryFn: async () => {
       const allNotes = await getAllNotes();
       return allNotes.filter(
-        (note) => note.assetId.toLowerCase() === assetId?.toLowerCase(),
+        (note) => BigInt(note.assetId) === BigInt(assetId ?? "0"),
       );
     },
     enabled: !!assetId,

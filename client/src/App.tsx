@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Route, Routes } from "react-router-dom";
-import "./App.css";
-import { InAppBrowserWarning } from "./components/status/in-app-browser-warning";
-import { AppLayout } from "./components/layout";
-import { ProtectedRoute } from "./_providers/protected-route";
-import { ThemeProvider } from "./_providers/theme-provider";
 import { AuthProvider } from "./_providers/auth-provider";
+import { ProtectedRoute } from "./_providers/protected-route";
+import { QueryClientProvider } from "./_providers/query-client";
+import { ThemeProvider } from "./_providers/theme-provider";
+import "./App.css";
+import { AppLayout } from "./components/layout";
+import { InAppBrowserWarning } from "./components/status/in-app-browser-warning";
 import { AboutPage } from "./pages/about";
 import AccountPage from "./pages/account";
 import ContactsPage from "./pages/contacts";
@@ -17,13 +17,11 @@ import StatusPage from "./pages/status";
 import TestingPage from "./pages/testing";
 import TransactionsPage from "./pages/transactions";
 
-const queryClient = new QueryClient();
-
 function App() {
   return (
     <HashRouter>
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider>
           <AuthProvider>
             <InAppBrowserWarning />
             <AppLayout>
