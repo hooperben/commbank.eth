@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
+import { InAppBrowserWarning } from "./components/in-app-browser-warning";
 import { AppLayout } from "./components/layout";
 import { ProtectedRoute } from "./components/protected-route";
 import { ThemeProvider } from "./components/theme-provider";
@@ -24,6 +25,7 @@ function App() {
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
+            <InAppBrowserWarning />
             <AppLayout>
               <Routes>
                 <Route path="/" element={<HomePage />} />

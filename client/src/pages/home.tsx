@@ -1,3 +1,4 @@
+import { BrowserNotSupportedWarning } from "@/components/browser-not-supported-warning";
 import { Logo } from "@/components/logo";
 import PageContainer from "@/components/page-container";
 import { SignupModal } from "@/components/signup/signup-modal";
@@ -7,7 +8,7 @@ import { useIsRegistered } from "@/hooks/use-is-registered";
 import { useSignIn } from "@/hooks/use-sign-in";
 import { useAuth } from "@/lib/auth-context";
 import { PAGE_METADATA } from "@/lib/seo-config";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -57,29 +58,7 @@ export const HomePage = () => {
         </span>
       </h1>
 
-      {!isBrowserSupported && (
-        <div className="flex items-center gap-2 mb-4 p-4 rounded-lg bg-destructive/10 text-destructive max-w-xl">
-          <AlertCircle className="size-5 shrink-0" />
-          <div className="text-sm space-y-1">
-            {!isPasskeySupported && (
-              <p>
-                <strong>Passkeys not supported:</strong> Please use a modern
-                browser like Chrome, Safari, or Edge.
-              </p>
-            )}
-            {!isDBSupported && (
-              <p>
-                <strong>IndexedDB not supported:</strong> Your browser must
-                support IndexedDB to use commbank.eth.
-              </p>
-            )}
-            <p className="text-xs opacity-90">
-              commbank.eth requires both passkey authentication and IndexedDB
-              for secure, private transactions.
-            </p>
-          </div>
-        </div>
-      )}
+      <BrowserNotSupportedWarning />
 
       <div className="flex flex-row gap-2 justify-center">
         <Button size="lg" variant={"outline"} asChild>
