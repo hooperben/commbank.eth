@@ -7,22 +7,23 @@ import WithdrawVerifierModule from "./WithdrawVerifier";
 
 const CommbankDotEthModule = buildModule("commbankDotEth", (m) => {
   // Import the verifier modules
-  const { depositVerifier } = m.useModule(DepositVerifierModule);
-  const { transferVerifier } = m.useModule(TransferVerifierModule);
-  const { withdrawVerifier } = m.useModule(WithdrawVerifierModule);
+  // TODO this is a bug - the library in these modules is actually the contract
+  const { depositVerifierZKTL } = m.useModule(DepositVerifierModule);
+  const { transferVerifierZKTL } = m.useModule(TransferVerifierModule);
+  const { withdrawVerifierZKTL } = m.useModule(WithdrawVerifierModule);
 
   // Deploy CommBankDotEth with the verifier contracts (not libraries)
   const commbankDotEth = m.contract("CommBankDotEth", [
-    depositVerifier,
-    transferVerifier,
-    withdrawVerifier,
+    depositVerifierZKTL,
+    transferVerifierZKTL,
+    withdrawVerifierZKTL,
   ]);
 
   return {
     commbankDotEth,
-    depositVerifier,
-    transferVerifier,
-    withdrawVerifier,
+    depositVerifier: depositVerifierZKTL,
+    transferVerifier: transferVerifierZKTL,
+    withdrawVerifier: withdrawVerifierZKTL,
   };
 });
 

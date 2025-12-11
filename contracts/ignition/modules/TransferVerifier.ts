@@ -18,6 +18,7 @@ const TransferVerifierModule = buildModule("transferVerifier", (m) => {
 
   return {
     transferVerifier,
+    transferVerifierZKTL,
   };
 });
 

@@ -18,6 +18,7 @@ const WithdrawVerifierModule = buildModule("withdrawVerifier", (m) => {
 
   return {
     withdrawVerifier,
+    withdrawVerifierZKTL,
   };
 });
 

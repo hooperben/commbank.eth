@@ -18,6 +18,7 @@ const DepositVerifierModule = buildModule("depositVerifier", (m) => {
 
   return {
     depositVerifier,
+    depositVerifierZKTL,
   };
 });
 
