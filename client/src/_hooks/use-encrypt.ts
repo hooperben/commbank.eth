@@ -1,8 +1,8 @@
+import { SUPPORTED_NETWORKS } from "@/_constants/networks";
+import { getNoteHash, type OutputNote } from "@/_constants/notes";
 import { useAuth } from "@/_providers/auth-provider";
 import { addNote, addTransaction, updateTransaction } from "@/lib/db";
-import { SUPPORTED_NETWORKS } from "@/_constants/networks";
 import { useMutation } from "@tanstack/react-query";
-import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
 import { Deposit } from "shared/classes/Deposit";
 import { NoteEncryption } from "shared/classes/Note";
@@ -12,23 +12,6 @@ import { defaultNetwork, ETH_ADDRESS } from "shared/constants/token";
 import { getRandomInPoseidonField } from "shared/constants/zk";
 import { useCanEncrypt } from "./use-can-encrypt";
 import { useTransactionsByChainId } from "./use-transactions";
-
-async function createDepositPayload(
-  outputNote: {
-    secret: string | bigint;
-    owner: string | bigint;
-    asset_id: string | bigint;
-    asset_amount: string | bigint;
-  },
-  recipientSigner: ethers.Signer,
-): Promise<string[]> {
-  const encryptedNote = await NoteEncryption.createEncryptedNote(
-    outputNote,
-    recipientSigner,
-  );
-
-  return [encryptedNote, "0x", "0x"];
-}
 
 export const useEncryptMutation = ({
   onApprovalSuccess,
@@ -138,18 +121,17 @@ export const useEncryptMutation = ({
         }
       }
 
-      // Generate deposit proof
-      const noteHash = poseidon2Hash([
-        BigInt(assetId),
-        BigInt(assetAmount),
-        BigInt(privateAddress),
-        secret,
-      ]);
+      const outputNote: OutputNote = {
+        asset_id: assetId,
+        asset_amount: assetAmount.toString(),
+        owner: privateAddress,
+        secret: secret.toString(),
+      };
 
-      const noteHashN = BigInt(noteHash.toString());
+      const noteHash = getNoteHash(outputNote);
 
       const { witness } = await deposit.depositNoir.execute({
-        hash: noteHashN.toString(),
+        hash: noteHash,
         asset_id: BigInt(assetId).toString(),
         asset_amount: assetAmount.toString(),
         owner: privateAddress,
@@ -160,16 +142,12 @@ export const useEncryptMutation = ({
         keccakZK: true,
       });
 
-      // Create encrypted payload
-      const depositPayload = await createDepositPayload(
-        {
-          secret: secret.toString(),
-          owner: privateAddress,
-          asset_id: assetId,
-          asset_amount: assetAmount.toString(),
-        },
+      const encryptedNote = await NoteEncryption.createEncryptedNote(
+        outputNote,
         signer,
       );
+
+      const depositPayload = [encryptedNote, "0x", "0x"];
 
       if (onZkProofSuccess) {
         onZkProofSuccess();
@@ -181,7 +159,7 @@ export const useEncryptMutation = ({
         signer,
       );
 
-      // Convert publicInputs to bytes32[]
+      // TODO don't think this is needed
       const publicInputsBytes32 = proof.publicInputs.map((input: string) => {
         // Ensure it's a bytes32 (pad if needed)
         return ethers.zeroPadValue(ethers.getBytes(input), 32);
@@ -263,15 +241,9 @@ export const useEncryptMutation = ({
           } catch (dbError) {
             console.error("Failed to log deposit transaction:", dbError);
           }
-          // TODO make this real
-          // if (onConfirmationSuccess) {
-          //   onConfirmationSuccess();
-          // }
         }
-
         return {
           txHash: depositTx.hash,
-          proof,
         };
       } catch (err) {
         console.log("Error Encrypting:", err);

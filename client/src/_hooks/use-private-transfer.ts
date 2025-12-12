@@ -1,7 +1,16 @@
-import type { Contact, Note } from "@/_types";
-import { useAuth } from "@/_providers/auth-provider";
-import { addNote, addTransaction, getAllTreeLeaves } from "@/lib/db";
 import { SUPPORTED_NETWORKS } from "@/_constants/networks";
+import {
+  createSpendableNote,
+  EMPTY_INPUT_NOTE,
+  EMPTY_OUTPUT_NOTE,
+  getNoteHash,
+  getNullifier,
+  type InputNote,
+  type OutputNote,
+} from "@/_constants/notes";
+import { useAuth } from "@/_providers/auth-provider";
+import type { Contact, Note } from "@/_types";
+import { addNote, addTransaction, getAllTreeLeaves } from "@/lib/db";
 import { useMutation } from "@tanstack/react-query";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
@@ -87,31 +96,20 @@ export function usePrivateTransfer({
       console.log("Change amount:", changeAmount.toString());
 
       // Create input notes for the circuit
-      const HEIGHT = 12;
-      const emptyInputNote = {
-        asset_id: "0",
-        asset_amount: "0",
-        owner: "0",
-        owner_secret: "0",
-        secret: "0",
-        leaf_index: "0",
-        path: Array(HEIGHT - 1).fill("0"),
-        path_indices: Array(HEIGHT - 1).fill("0"),
-      };
-
-      const inputNotes = await Promise.all(
+      const inputNotes: InputNote[] = await Promise.all(
         selectedInputs.map(async (note) => {
-          const noteHash = poseidon2Hash([
-            BigInt(note.assetId),
-            BigInt(note.assetAmount),
-            BigInt(owner),
-            BigInt(note.secret),
-          ]);
+          const parsedNote = {
+            assetId: note.assetId,
+            assetAmount: note.assetAmount,
+            secret: note.secret,
+            owner: note.entity_id,
+          };
+          const noteHash = getNoteHash(parsedNote);
 
           const leafs = await getAllTreeLeaves();
 
           const [leaf] = leafs.filter(
-            (item) => BigInt(item.leafValue) === noteHash,
+            (item) => BigInt(item.leafValue) === BigInt(noteHash),
           );
 
           if (!leaf) {
@@ -120,33 +118,22 @@ export function usePrivateTransfer({
 
           const merkleProof = await tree.getProof(Number(leaf.leafIndex));
 
-          return {
-            asset_id: note.assetId,
-            asset_amount: note.assetAmount,
-            owner: owner.toString(),
-            owner_secret: ownerSecret.toString(),
-            secret: note.secret,
-            leaf_index: leaf.leafIndex.toString(),
-            path: merkleProof.siblings.map((s) => s.toString()),
-            path_indices: merkleProof.indices.map((i) => i.toString()),
-          };
+          return createSpendableNote(
+            ownerSecret,
+            parsedNote,
+            leaf,
+            merkleProof,
+          );
         }),
       );
 
       // Pad with empty notes
       while (inputNotes.length < 3) {
-        inputNotes.push(emptyInputNote);
+        inputNotes.push(EMPTY_INPUT_NOTE);
       }
 
       // Create output notes
-      const emptyOutputNote = {
-        owner: "0",
-        secret: "0",
-        asset_id: "0",
-        asset_amount: "0",
-      };
-
-      const outputNotes = [];
+      const outputNotes: OutputNote[] = [];
 
       // Output note for recipient
       const recipientSecret = getRandomInPoseidonField();
@@ -172,31 +159,14 @@ export function usePrivateTransfer({
 
       // Pad with empty notes
       while (outputNotes.length < 3) {
-        outputNotes.push(emptyOutputNote);
+        outputNotes.push(EMPTY_OUTPUT_NOTE);
       }
 
-      const nullifiers = inputNotes.map((item) => {
-        // For empty input notes, return "0" instead of computing hash
-        if (item.owner === "0") return "0";
-
-        const nullifier = poseidon2Hash([
-          BigInt(item.leaf_index),
-          BigInt(item.owner),
-          BigInt(item.secret),
-          BigInt(item.asset_id),
-          BigInt(item.asset_amount),
-        ]);
-        return nullifier.toString();
-      });
+      const nullifiers = inputNotes.map((item) => getNullifier(item));
 
       const outputHashes = outputNotes.map((note) => {
         if (note.owner === "0") return "0";
-        return poseidon2Hash([
-          BigInt(note.asset_id),
-          BigInt(note.asset_amount),
-          BigInt(note.owner),
-          BigInt(note.secret),
-        ]).toString();
+        return getNoteHash(note);
       });
 
       console.log("Nullifiers:", nullifiers);
@@ -211,7 +181,9 @@ export function usePrivateTransfer({
 
       const { witness } = await transact.transactNoir.execute({
         root: root.toString(),
+        // @ts-expect-error -- Noir needs better generics I think?
         input_notes: inputNotes,
+        // @ts-expect-error -- Noir needs better generics I think?
         output_notes: outputNotes,
         nullifiers,
         output_hashes: outputHashes,
@@ -232,18 +204,12 @@ export function usePrivateTransfer({
           encryptedPayload.push("0x");
         } else {
           // Determine the recipient's public key
-          let recipientPublicKey: string;
+          const recipientPublicKey =
+            i === 0 && recipient.envelopeAddress
+              ? recipient.envelopeAddress
+              : await NoteEncryption.getPublicKeyFromAddress(wallet);
 
-          if (i === 0 && recipient.envelopeAddress) {
-            // First output note is for the recipient
-            recipientPublicKey = recipient.envelopeAddress;
-          } else {
-            // Change note for sender - use sender's wallet
-            recipientPublicKey =
-              await NoteEncryption.getPublicKeyFromAddress(wallet);
-          }
-
-          // Encrypt the entire note (secret, owner, asset_id, asset_amount)
+          // Encrypt the note
           const encryptedNote = await NoteEncryption.encryptNoteData(
             {
               secret: note.secret,
@@ -281,20 +247,6 @@ export function usePrivateTransfer({
         chain.CommBankDotEth,
         commbankDotEthAbi,
         signer,
-      );
-
-      console.log({
-        proof: proof.proof,
-        public: proof.publicInputs,
-        encryptedPayload,
-      });
-
-      console.log(
-        await commbankDotEthContract.transfer.populateTransaction(
-          proof.proof,
-          proof.publicInputs,
-          encryptedPayload,
-        ),
       );
 
       // Call transfer on the contract
