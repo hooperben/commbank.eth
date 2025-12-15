@@ -1,6 +1,6 @@
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
-import { useEncryptMutation } from "@/_hooks/use-encrypt-mutation";
+import { useEncryptMutation } from "@/_hooks/use-encrypt";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
 import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
 import { ethers } from "ethers";
