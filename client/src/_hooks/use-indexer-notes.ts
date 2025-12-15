@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import type { IndexerNotePayload } from "@/_types";
+import { defaultNetwork } from "shared/constants/token";
 
 interface NotePayloadResponse {
   envio_Commbankdoteth_NotePayload: IndexerNotePayload[];
@@ -10,7 +11,7 @@ export const fetchIndexerNotes = async (
   limit: number = 50,
   offset: number = 0,
 ): Promise<IndexerNotePayload[]> => {
-  const restUrl = `https://hasura-production-0b6a.up.railway.app/api/rest/Commbankdoteth_NotePayload/${limit}/${offset}`;
+  const restUrl = `https://hasura-production-0b6a.up.railway.app/api/rest/Commbankdoteth_NotePayload/${defaultNetwork}_/${limit}/${offset}`;
 
   const response = await axios.get<NotePayloadResponse>(restUrl, {
     headers: {

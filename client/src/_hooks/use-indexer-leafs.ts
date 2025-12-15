@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import type { IndexerLeafInserted } from "@/_types";
+import { defaultNetwork } from "shared/constants/token";
 
 interface LeafInsertedResponse {
   envio_Commbankdoteth_LeafInserted: IndexerLeafInserted[];
@@ -10,7 +11,7 @@ const fetchIndexerLeafs = async (
   limit: number = 50,
   offset: number = 0,
 ): Promise<IndexerLeafInserted[]> => {
-  const restUrl = `https://hasura-production-0b6a.up.railway.app/api/rest/Commbankdoteth_LeafInserted/${limit}/${offset}`;
+  const restUrl = `https://hasura-production-0b6a.up.railway.app/api/rest/Commbankdoteth_LeafInserted/${defaultNetwork}_/${limit}/${offset}`;
 
   const response = await axios.get<LeafInsertedResponse>(restUrl, {
     headers: {
