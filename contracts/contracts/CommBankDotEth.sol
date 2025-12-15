@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+
+import "./PoseidonMerkleTree.sol";
+import {IVerifier} from "./verifiers/DepositVerifier.sol";
+
 //                             ___.                  __               __  .__
 //   ____  ____   _____   _____\_ |__ _____    ____ |  | __     _____/  |_|  |__
 // _/ ___\/  _ \ /     \ /     \| __ \\__  \  /    \|  |/ /   _/ __ \   __\  |  \
@@ -8,16 +14,6 @@ pragma solidity ^0.8.24;
 //  \___  >____/|__|_|  /__|_|  /___  (____  /___|  /__|_ \ /\ \___  >__| |___|  /
 //      \/            \/      \/    \/     \/     \/     \/ \/     \/          \/
 //
-// author: benhooper.eth
-
-import "./PoseidonMerkleTree.sol";
-
-import {IVerifier} from "./verifiers/DepositVerifier.sol";
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-
 contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
   address public depositVerifier;
   address public transferVerifier;
@@ -56,7 +52,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     uint256 _amount, // with decimals
     bytes calldata _proof,
     bytes32[] calldata _publicInputs,
-    bytes[] calldata _payload
+    bytes[] calldata _payload // TODO this probably doesn't need to be an array
   ) public onlyRole(DEPOSIT_ROLE) {
     bool depositTransfer = IERC20(_erc20).transferFrom(
       msg.sender,
@@ -65,14 +61,14 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     );
     require(depositTransfer, "failed to transfer deposit");
 
-    // VERIFY PROOF
+    // verify proof
     bool isValidProof = IVerifier(depositVerifier).verify(
       _proof,
       _publicInputs
     );
     require(isValidProof, "Invalid deposit proof!");
 
-    // CHECK INPUT ADDRESS AND AMOUNT MATCH PROOF INPUTS
+    // check input input asset address and amount match proof inputs
     require(
       _erc20 == address(uint160(uint256(_publicInputs[1]))),
       "ERC20 address mismatch"
@@ -82,9 +78,10 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
       "Address amount incorrect"
     );
 
-    // INSERT NOTE INTO TREE
+    // insert note
     _insert(uint256(_publicInputs[0]));
 
+    // TODO this probably doesn't need to be a loop
     for (uint256 i = 0; i < 3 && i < _payload.length; i++) {
       if (_payload[i].length != 0) {
         emit NotePayload(_payload[i]);
@@ -95,9 +92,9 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
   function depositNative(
     bytes calldata _proof,
     bytes32[] calldata _publicInputs,
-    bytes[] calldata _payload
+    bytes[] calldata _payload // TODO this probably doesn't need to be an array
   ) public payable onlyRole(DEPOSIT_ROLE) {
-    // VERIFY PROOF
+    // verify proof
     bool isValidProof = IVerifier(depositVerifier).verify(
       _proof,
       _publicInputs
@@ -112,10 +109,10 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     // check that msg.value matches amount in proof
     require(msg.value == uint64(uint256(_publicInputs[2])), "Amount incorrect");
 
-    // Insert note into tree
+    // insert note
     _insert(uint256(_publicInputs[0]));
 
-    // Emit encrypted payloads
+    // TODO this probably doesn't need to be a loop
     for (uint256 i = 0; i < 3 && i < _payload.length; i++) {
       if (_payload[i].length != 0) {
         emit NotePayload(_payload[i]);
@@ -153,7 +150,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
       }
     }
 
-    // and insert output note commitments
+    // and insert output notes
     for (
       uint256 i = NOTES_INPUT_LENGTH + 1;
       i < NOTES_INPUT_LENGTH + 1 + NOTES_INPUT_LENGTH;

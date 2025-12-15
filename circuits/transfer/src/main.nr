@@ -1,9 +1,9 @@
+use poseidon::poseidon2::{self, Poseidon2Hasher};
+use pum_lib::{self, compute_merkle_root, compute_nullifier, reconstruct_leaf};
+use std::{collections::map::HashMap, hash::BuildHasherDefault};
+
 global HEIGHT: u32 = 12;
 global NOTE_COUNT: u32 = 3;
-
-use poseidon::poseidon2::{self, Poseidon2Hasher};
-
-use std::{collections::map::HashMap, hash::BuildHasherDefault};
 
 struct InputNote {
     asset_id: Field,
@@ -21,38 +21,6 @@ struct OutputNote {
     secret: Field,
     asset_id: Field,
     asset_amount: Field,
-}
-
-fn compute_merkle_root(
-    leaf: Field,
-    path: [Field; HEIGHT - 1],
-    path_indices: [Field; HEIGHT - 1],
-) -> Field {
-    let mut current = leaf;
-    for i in 0..HEIGHT - 1 {
-        let path_bit = path_indices[i];
-        let (hash_left, hash_right) = if path_bit == 0 {
-            (path[i], current)
-        } else {
-            (current, path[i])
-        };
-        current = poseidon2::Poseidon2::hash([hash_left, hash_right], 2);
-    }
-    current
-}
-
-fn compute_nullifier(
-    leaf_index: Field,
-    owner: Field,
-    secret: Field,
-    asset_id: Field,
-    asset_amount: Field,
-) -> Field {
-    poseidon2::Poseidon2::hash([leaf_index, owner, secret, asset_id, asset_amount], 5)
-}
-
-fn reconstruct_leaf(asset_id: Field, asset_amount: Field, owner: Field, secret: Field) -> Field {
-    poseidon2::Poseidon2::hash([asset_id, asset_amount, owner, secret], 4)
 }
 
 fn main(

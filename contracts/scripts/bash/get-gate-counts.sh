@@ -9,9 +9,9 @@ bb gates -b ../circuits/deposit/target/deposit.json -v -s ultra_honk
 echo "----------------------------------"
 
 echo "Transfer circuit gate count:"
-bb gates -b ../circuits/transfer/target/transfer.json
+bb gates -b ../circuits/transfer/target/transfer.json -v -s ultra_honk
 echo "----------------------------------"
 
 echo "Withdraw circuit gate count:"
-bb gates -b ../circuits/withdraw/target/withdraw.json
+bb gates -b ../circuits/withdraw/target/withdraw.json -v -s ultra_honk
 echo "----------------------------------"
