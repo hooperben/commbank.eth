@@ -18,4 +18,8 @@ export default defineConfig({
     },
     dedupe: ["react", "react-dom"],
   },
+  // handy for ngrok
+  // server: {
+  //   allowedHosts: ["*],
+  // },
 });

@@ -79,7 +79,7 @@ This is a Bun workspace monorepo with the following packages:
 
 ### `circuits/` - Zero-Knowledge Circuits (Noir)
 
-- **Tech Stack:** Noir language v1.0.0-beta.15
+- **Tech Stack:** Noir language v1.0.0-beta.16
 - **Purpose:** ZK-SNARK circuit definitions for private operations
 - **Circuits:**
   - `deposit/` - Prove deposit commitment without revealing amount
@@ -174,8 +174,6 @@ bun run lint     # ESLint check
 cd contracts
 bun run build                # Build verifiers from circuits (primary build command)
 bun run build-bb            # Compile Noir circuits to bytecode
-bun run build-ipfs          # Build and upload to IPFS
-bun run deploy              # Deploy contracts (ts-node scripts/deploy.ts)
 
 # Testing
 npx hardhat test            # Run all tests
@@ -387,7 +385,7 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 
 ### Circuits
 
-- **Language:** Noir v1.0.0-beta.15
+- **Language:** Noir v1.0.0-beta.16
 - **Dependencies:** Poseidon (noir-lang/poseidon)
 - **Proving:** Aztec Barretenberg backend via bb.js
 
