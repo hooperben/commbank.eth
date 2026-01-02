@@ -4,3 +4,4 @@ packages:
   - "indexer/generated"
   - "contracts"
   - "shared"
+  - "relayer"

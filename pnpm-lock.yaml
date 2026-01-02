@@ -419,6 +419,12 @@ importers:
         specifier: 17.7.2
         version: 17.7.2
 
+  relayer:
+    dependencies:
+      express:
+        specifier: 4.19.2
+        version: 4.19.2
+
   shared:
     dependencies:
       '@aztec/bb.js':
