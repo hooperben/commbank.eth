@@ -40,7 +40,8 @@ export const useERC20Balance = (asset?: SupportedAsset | null) => {
     queryFn: async () => {
       if (!asset || !address) return 0n;
 
-      return await getBalance(asset, address);
+      const balance = await getBalance(asset, address);
+      return balance;
     },
     enabled: !!address && !!asset,
   });

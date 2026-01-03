@@ -15,7 +15,7 @@ export const BalanceRow = ({
 
   const formatBalance = (balance: bigint) => {
     const formatted = ethers.formatUnits(balance, asset.decimals);
-    if (asset.roundTo !== undefined) {
+    if (asset.roundTo !== undefined && balance != 0n) {
       return parseFloat(formatted).toFixed(asset.roundTo);
     }
     return formatted;
@@ -24,10 +24,10 @@ export const BalanceRow = ({
   return (
     <div>
       {isLoading && <Skeleton className="w-24 h-8" />}
-      {data && !isLoading && (
+      {!isLoading && (
         <div className="text-right">
-          <div className="font-medium text-sm text-foreground">
-            {formatBalance(data)}
+          <div className="font-medium text-xs text-foreground">
+            {formatBalance(data ?? 0n)}
             {description && <span>{description}</span>}
           </div>
         </div>
@@ -56,7 +56,7 @@ export const PrivateBalanceRow = ({
       {isLoading && <Skeleton className="w-24 h-8" />}
       {assetNotes && !isLoading && (
         <div className="text-right">
-          <div className="font-medium text-sm text-foreground">
+          <div className="font-medium text-xs text-foreground">
             {assetTotal && formatUnits(assetTotal, asset.decimals)}
             {description && <span>{description}</span>}
           </div>
@@ -69,13 +69,13 @@ export const PrivateBalanceRow = ({
 export const TotalBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
   const { data: assetNotes, isLoading } = useUserAssetNotes(asset.address);
 
-  const assetTotal = assetNotes
+  const privateAssetTotal = assetNotes
     ? assetNotes.reduce((acc, curr) => {
         return acc + BigInt(curr.assetAmount);
       }, 0n)
-    : undefined;
+    : 0n;
 
-  const { data } = useERC20Balance(asset);
+  const { data: erc20BalanceData } = useERC20Balance(asset);
 
   const sumAndFormatBalances = (
     publicBalance: bigint,
@@ -94,10 +94,13 @@ export const TotalBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
   return (
     <div>
       {isLoading && <Skeleton className="w-24 h-8" />}
+
       {assetNotes && !isLoading && (
         <div className="text-right">
           <div className="font-medium text-sm text-foreground">
-            {assetTotal && data && sumAndFormatBalances(data, assetTotal)}
+            {erc20BalanceData &&
+              sumAndFormatBalances(erc20BalanceData, privateAssetTotal)}{" "}
+            {asset.symbol}
           </div>
         </div>
       )}

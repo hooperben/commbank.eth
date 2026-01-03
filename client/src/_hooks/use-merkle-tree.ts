@@ -32,8 +32,6 @@ export function useMerkleTree() {
 
         // Insert each leaf from the database into the tree
         for (const leaf of dbLeaves) {
-          console.log("inserting db notes into tree");
-          console.log(dbLeaves);
           await loadedTree.insert(leaf.leafValue, Number(leaf.leafIndex));
         }
 

@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/_components/ui/card";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
 import {
   defaultNetwork,
@@ -18,6 +18,7 @@ import {
 } from "shared/constants/token";
 import { BalanceRow, PrivateBalanceRow, TotalBalanceRow } from "./balance";
 import { SyncState } from "./sync-state";
+import { Separator } from "../ui/separator";
 
 export function AssetBreakdown() {
   const assets: SupportedAsset[] =
@@ -35,15 +36,16 @@ export function AssetBreakdown() {
     setEncryptingAsset(asset.symbol);
   };
 
-  const handleDecryptClick = (asset: SupportedAsset) => {
-    setSelectedAsset(asset);
-    setDecryptModalOpen(true);
-  };
+  // TODO readd
+  // const handleDecryptClick = (asset: SupportedAsset) => {
+  //   setSelectedAsset(asset);
+  //   setDecryptModalOpen(true);
+  // };
 
-  const handleSendClick = (asset: SupportedAsset) => {
-    setSelectedAsset(asset);
-    setSendModalOpen(true);
-  };
+  // const handleSendClick = (asset: SupportedAsset) => {
+  //   setSelectedAsset(asset);
+  //   setSendModalOpen(true);
+  // };
 
   const handleCancelEncrypt = () => {
     setEncryptingAsset(null);
@@ -67,18 +69,6 @@ export function AssetBreakdown() {
         <CardContent className="px-3 md:px-6">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3 font-semibold">Asset</th>
-                  <th className="text-center p-3 font-semibold">
-                    Public Balance
-                  </th>
-                  <th className="text-center p-3 font-semibold">
-                    Private Balance
-                  </th>
-                  <th className="text-right p-3 font-semibold">Total</th>
-                </tr>
-              </thead>
               <tbody>
                 {assets.map((asset) => (
                   <>
@@ -86,55 +76,60 @@ export function AssetBreakdown() {
                       key={asset.symbol}
                       className="border-b hover:bg-muted/50 transition-colors"
                     >
-                      <td className="p-3 font-semibold text-left">
-                        {asset.symbol}
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <BalanceRow
-                            key={`${asset.address}${asset.chainId}`}
-                            asset={asset}
+                      <td className="p-2 font-semibold text-left">
+                        <div className="flex flex-row items-center gap-2">
+                          <img
+                            src={asset.logo}
+                            className={`h-8 w-8 ${asset.symbol === "AUDD" && "invert"}`}
                           />
+                          <span className="text-lg">{asset.symbol}</span>
+                        </div>
+                      </td>
+
+                      <td className="p-3 font-medium">
+                        <div className="flex items-center gap-4">
+                          <div className="w-[120px] text-right">
+                            <TotalBalanceRow
+                              key={`${asset.address}${asset.chainId}`}
+                              asset={asset}
+                            />
+                          </div>
+
+                          <Separator
+                            orientation="vertical"
+                            className="h-[20px]! bg-primary/30"
+                          />
+
+                          <div className="flex flex-col min-w-[100px]">
+                            <div className="flex text-xs flex-row justify-between items-center gap-2">
+                              <span className="text-muted-foreground">
+                                Public:
+                              </span>
+                              <BalanceRow
+                                key={`${asset.address}${asset.chainId}`}
+                                asset={asset}
+                              />
+                            </div>
+
+                            <div className="flex text-xs flex-row justify-between items-center gap-3">
+                              <span className="text-muted-foreground">
+                                Private:
+                              </span>
+                              <PrivateBalanceRow asset={asset} />
+                            </div>
+                          </div>
+
                           <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
+                            size="icon"
                             onClick={() => handleEncryptClick(asset)}
-                          >
-                            encrypt
-                          </Button>
-                        </div>
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <PrivateBalanceRow asset={asset} />
-                          <Button
                             variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => handleDecryptClick(asset)}
                           >
-                            decrypt
+                            <ArrowRightLeft className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </td>
-                      <td className="p-3 text-right font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            onClick={() => handleSendClick(asset)}
-                          >
-                            <ArrowUpRight className="h-4 w-4" />
-                          </Button>
-                          <TotalBalanceRow
-                            key={`${asset.address}${asset.chainId}`}
-                            asset={asset}
-                          />
                         </div>
                       </td>
                     </tr>
+
                     {encryptingAsset === asset.symbol && selectedAsset && (
                       <tr key={`${asset.symbol}-encrypt`}>
                         <td colSpan={4} className="p-3">

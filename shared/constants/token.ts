@@ -7,6 +7,7 @@ export interface SupportedAsset {
   decimals: number;
   isNative?: boolean;
   roundTo?: number;
+  logo: string;
 }
 
 export const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -19,6 +20,7 @@ export const mainnetAssets: SupportedAsset[] = [
     symbol: "AUDD",
     address: "0x4cCe605eD955295432958d8951D0B176C10720d5",
     decimals: 6,
+    logo: "audd-logo.png",
   },
   {
     chainId: 1,
@@ -28,7 +30,8 @@ export const mainnetAssets: SupportedAsset[] = [
     address: ETH_ADDRESS,
     decimals: 18,
     isNative: true,
-    roundTo: 8,
+    roundTo: 5,
+    logo: "usdc-logo.png",
   },
 ];
 
@@ -41,6 +44,7 @@ export const sepoliaAssets: SupportedAsset[] = [
     address: "0x237eEeE66266c72DBb7Ee2Aa84811666cE4EB815",
     decimals: 6,
     roundTo: 2,
+    logo: "usdc-logo.png",
   },
   {
     chainId: 11155111,
@@ -50,6 +54,7 @@ export const sepoliaAssets: SupportedAsset[] = [
     address: "0xd794125Bc226895b987845Ef768B8C104fAbecD5",
     decimals: 6,
     roundTo: 2,
+    logo: "audd-logo.png",
   },
   {
     chainId: 11155111,
@@ -59,7 +64,8 @@ export const sepoliaAssets: SupportedAsset[] = [
     address: ETH_ADDRESS,
     decimals: 18,
     isNative: true,
-    roundTo: 8,
+    roundTo: 5,
+    logo: "eth-logo.png",
   },
 ];
 
