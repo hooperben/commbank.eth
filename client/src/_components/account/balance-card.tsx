@@ -16,6 +16,7 @@ import {
 import { useAccountTotal } from "@/_hooks/use-account-total";
 import { useAudUsdPrice, useEthUsdPrice } from "@/_hooks/use-chainlink-price";
 import { usePreferredCurrency } from "@/_hooks/use-preferred-currency";
+import { formatDollarAmount } from "@/lib/formatting/data-formatting";
 import { Info } from "lucide-react";
 import { useState } from "react";
 import { defaultNetwork } from "shared/constants/token";
@@ -44,14 +45,14 @@ export const BalanceCard = () => {
   // Calculate ETH value in AUD (ETH/USD / AUD/USD)
   const ethAudValue =
     ethUsdPrice && audUsdPrice
-      ? (
+      ? formatDollarAmount(
           parseFloat(ethUsdPrice.formattedPrice) /
-          parseFloat(audUsdPrice.formattedPrice)
-        ).toFixed(2)
+            parseFloat(audUsdPrice.formattedPrice),
+        )
       : null;
 
   const ethUsdValue = ethUsdPrice
-    ? parseFloat(ethUsdPrice.formattedPrice).toFixed(2)
+    ? formatDollarAmount(parseFloat(ethUsdPrice.formattedPrice))
     : null;
 
   const isPriceLoading = isLoadingEthUsd || isLoadingAudUsd;
@@ -68,8 +69,8 @@ export const BalanceCard = () => {
               <>
                 <CardTitle className="text-4xl md:text-5xl font-bold">
                   {currency === "AUD"
-                    ? `$${totalAud.toFixed(2)}`
-                    : `$${totalUsd.toFixed(2)}`}
+                    ? `$${formatDollarAmount(totalAud)}`
+                    : `$${formatDollarAmount(totalUsd)}`}
                 </CardTitle>
                 <CardTitle className="text-4xl md:text-5xl font-bold text-muted-foreground">
                   {currency === "AUD" ? "AUD" : "USD"}
@@ -129,6 +130,7 @@ export const BalanceCard = () => {
                     variant="outline"
                     size="sm"
                     className="h-5 w-5 p-0 shrink-0"
+                    aria-label="info"
                   >
                     <Info className="h-3 w-3" />
                   </Button>

@@ -17,3 +17,11 @@ export const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
   }
   return bytes.buffer;
 };
+
+// helper used to format dollar values to comma separated strings
+export const formatDollarAmount = (amount: number) => {
+  return amount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
