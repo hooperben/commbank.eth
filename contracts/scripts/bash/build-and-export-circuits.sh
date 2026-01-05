@@ -4,7 +4,7 @@ ORIGINAL_DIR=$(pwd)
 
 echo "$ORIGINAL_DIR"
 
-echo "building deposit verifier (1/3)"
+echo "building deposit verifier (1/4)"
 cd ../circuits/deposit/
 
 nargo compile
@@ -22,7 +22,7 @@ sed -i '' 's/contract HonkVerifier/contract DepositVerifier/g' ../../contracts/c
 echo "Deposit copied to contracts/verifiers/DepositVerifier.sol"
 
 # -------------------------------------------
-echo "building deposit verifier (2/3)"
+echo "building deposit verifier (2/4)"
 
 cd "../transfer"
 
@@ -39,7 +39,24 @@ echo "transfer copied to contracts/verifiers/TransferVerifier.sol"
 
 # -------------------------------------------
 
-echo "building withdraw verifier (3/3)"
+echo "building transfer external verifier (3/4)"
+
+cd "../transfer_external"
+
+nargo compile
+bb write_vk -b ./target/transfer_external.json -o ./target --oracle_hash keccak
+bb write_solidity_verifier -k ./target/vk -o ./target/contract.sol
+
+mv ./target/contract.sol ../../contracts/contracts/verifiers/TransferExternalVerifier.sol || { echo "Error: Failed to copy contract.sol"; exit 1; }
+
+# Replace 'contract HonkVerifier' with 'contract TransferExternalVerifier' in the generated contract
+sed -i '' 's/contract HonkVerifier/contract TransferExternalVerifier/g' ../../contracts/contracts/verifiers/TransferExternalVerifier.sol
+
+echo "Withdraw copied to contracts/verifiers/TransferExternalVerifier.sol"
+
+# -------------------------------------------
+
+echo "building withdraw verifier (4/4)"
 
 cd "../withdraw"
 
