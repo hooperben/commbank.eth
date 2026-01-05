@@ -36,13 +36,15 @@ export const createOutputNote = (
   secret: bigint | string,
   assetId: bigint | string,
   assetAmount: bigint | string,
+  externalAddress?: bigint | string,
 ) => {
   return {
     owner: owner.toString(),
     secret: secret.toString(),
     asset_id: assetId.toString(),
     asset_amount: assetAmount.toString(),
+    external_address: (externalAddress ?? 0n).toString(),
   };
 };
 
-export const emptyOutputNote = createOutputNote(0n, 0n, 0n, 0n);
+export const emptyOutputNote = createOutputNote(0n, 0n, 0n, 0n, 0n);

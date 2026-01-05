@@ -103,3 +103,72 @@ export const createDepositPayload = async (
 
   return await encodeEncryptedPayload([encryptedNote, "0x", "0x"]);
 };
+
+export const getTransferExternalDetails = async (
+  tree: PoseidonMerkleTree,
+  inputNotes: InputNote[],
+  nullifiers: (bigint | string)[],
+  outputNotes: OutputNote[],
+  outputHashes: (bigint | string)[],
+  exitAssets: (bigint | string)[],
+  exitAmounts: (bigint | string)[],
+  exitAddresses: (bigint | string)[],
+  exitAddressHashes: (bigint | string)[],
+) => {
+  const { transferExternalNoir, transferExternalBackend } = getNoirClasses();
+
+  const root = await tree.getRoot();
+
+  const { witness: transferExternalWitness } =
+    await transferExternalNoir.execute({
+      root: root.toString(),
+      input_notes: inputNotes as any,
+      output_notes: outputNotes as any,
+      nullifiers: nullifiers.map((item) => item.toString()),
+      output_hashes: outputHashes.map((item) => item.toString()),
+      exit_assets: exitAssets.map((item) => item.toString()),
+      exit_amounts: exitAmounts.map((item) => item.toString()),
+      exit_addresses: exitAddresses.map((item) => item.toString()),
+      exit_address_hashes: exitAddressHashes.map((item) => item.toString()),
+    });
+
+  const transferExternalProof = await transferExternalBackend.generateProof(
+    transferExternalWitness,
+    {
+      keccakZK: true,
+    },
+  );
+
+  return {
+    proof: transferExternalProof,
+  };
+};
+
+export const transferExternal = async (
+  commbankDotEth: CommBankDotEth,
+  proof: ProofData,
+  runner: ethers.Signer,
+  encryptedNotes?: (EncryptedNote | "0x")[],
+) => {
+  const payload: string[] = [];
+
+  if (encryptedNotes) {
+    for (const note of encryptedNotes) {
+      if (note === "0x" || !note) {
+        payload.push("0x");
+      } else {
+        const encodedNote = ethers.AbiCoder.defaultAbiCoder().encode(
+          ["string", "string", "string", "string"],
+          [note.encryptedSecret, note.owner, note.asset_id, note.asset_amount],
+        );
+        payload.push(encodedNote);
+      }
+    }
+  }
+
+  const tx = await commbankDotEth
+    .connect(runner)
+    .transferExternal(proof.proof, proof.publicInputs, payload);
+
+  return tx;
+};
