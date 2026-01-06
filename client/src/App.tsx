@@ -2,6 +2,7 @@ import { AppLayout } from "@/_components/layout";
 import { InAppBrowserWarning } from "@/_components/status/in-app-browser-warning";
 import { AboutPage } from "@/pages/about";
 import AccountPage from "@/pages/account";
+import AccountsPage from "@/pages/accounts";
 import ContactsPage from "@/pages/contacts";
 import { HomePage } from "@/pages/home";
 import NotFoundPage from "@/pages/not-found";
@@ -32,6 +33,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <AccountPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/accounts"
+                  element={
+                    <ProtectedRoute>
+                      <AccountsPage />
                     </ProtectedRoute>
                   }
                 />
