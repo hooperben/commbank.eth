@@ -17,7 +17,7 @@ import { NoteEncryption } from "@/helpers/note-sharing";
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers, Wallet } from "ethers";
-import { network } from "hardhat";
+import { expect } from "chai";
 
 describe("Testing Transfer External functionality", () => {
   let Signers: ethers.Signer[];
@@ -30,9 +30,7 @@ describe("Testing Transfer External functionality", () => {
   let deployer1Secret: string;
 
   beforeEach(async () => {
-    const { ethers } = await network.connect();
-    Signers = await ethers.getSigners();
-    ({ usdcDeployment, commbankDotEth, tree, deployer1Secret } =
+    ({ Signers, usdcDeployment, commbankDotEth, tree, deployer1Secret } =
       await getTestingAPI());
   });
 
@@ -178,6 +176,7 @@ describe("Testing Transfer External functionality", () => {
 
     // Verify Bob received the external withdrawal
     const bobBalanceAfter = await usdcDeployment.balanceOf(bobExternalAddress);
-    // expect(bobBalanceAfter).to.equal(bobBalanceBefore + bobAmount);
+
+    expect(bobBalanceAfter).to.equal(bobBalanceBefore + bobAmount);
   });
 });
