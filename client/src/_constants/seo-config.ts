@@ -119,6 +119,21 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
       "privacy account",
     ],
   },
+  accounts: {
+    header: "Accounts",
+    title: "commbank.eth | Accounts",
+    description: "Manage your commbank.eth accounts.",
+    path: "/accounts",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
+    keywords: [
+      "account management",
+      "user dashboard",
+      "crypto wallet",
+      "DeFi account",
+      "privacy account",
+    ],
+  },
   about: {
     title: "commbank.eth | About",
     description:

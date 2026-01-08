@@ -1,12 +1,21 @@
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/_components/ui/tabs";
 import { useEncryptMutation } from "@/_hooks/use-encrypt";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
+import { usePrivateBalance } from "@/_hooks/use-private-balance";
 import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
 import { ethers } from "ethers";
-import { Check, Loader2, X } from "lucide-react";
 import { useState } from "react";
 import type { SupportedAsset } from "shared/constants/token";
+import { Decrypt } from "./decrypt";
+import { Encrypt } from "./encrpyt";
+import type { EncryptionStep } from "./step";
 
 interface InlineEncryptConfirmationProps {
   asset: SupportedAsset;
@@ -14,22 +23,17 @@ interface InlineEncryptConfirmationProps {
   onSuccess: () => void;
 }
 
-export type EncryptionStep =
-  | "review"
-  | "approval"
-  | "proof-generation"
-  | "deposit"
-  | "complete";
-
 export function InlineEncryptConfirmation({
   asset,
   onCancel,
   // onSuccess,
 }: InlineEncryptConfirmationProps) {
+  const [activeTab, setActiveTab] = useState<"encrypt" | "decrypt">("encrypt");
   const [amount, setAmount] = useState<string>("");
-  const { data: balanceData } = useERC20Balance(asset);
+  const [decryptAmount, setDecryptAmount] = useState<string>("");
 
   const [encryptionStep, setEncryptionStep] = useState<EncryptionStep>();
+  const [decryptionStep, setDecryptionStep] = useState<EncryptionStep>();
   const { refetch: retchUserAssetNotes } = useUserAssetNotes(asset.address);
 
   const onTxSuccess = () => {
@@ -47,17 +51,25 @@ export function InlineEncryptConfirmation({
     onTxSuccess: onTxSuccess,
   });
 
-  const balance = balanceData
+  // public balance data
+  const { data: balanceData } = useERC20Balance(asset);
+  const formattedBalance = balanceData
     ? parseFloat(ethers.formatUnits(balanceData, asset.decimals))
     : 0;
 
+  // private balance data
+  const { assetTotal: privateBalance } = usePrivateBalance(asset);
+  const formattedPrivateBalance = privateBalance
+    ? parseFloat(ethers.formatUnits(privateBalance, asset.decimals))
+    : 0;
+
   const amountNum = parseFloat(amount) || 0;
-  const hasError = amountNum > balance || amountNum <= 0;
+  const hasError = amountNum > formattedBalance || amountNum <= 0;
   const errorMessage =
     amountNum <= 0
       ? "Amount must be greater than 0"
-      : amountNum > balance
-        ? `Insufficient balance. You have ${balance} ${asset.symbol}`
+      : amountNum > formattedBalance
+        ? `Insufficient balance. You have ${formattedBalance} ${asset.symbol}`
         : "";
 
   const handleNext = () => {
@@ -87,156 +99,239 @@ export function InlineEncryptConfirmation({
     );
   };
 
-  const StepIndicator = ({
-    label,
-    step,
-  }: {
-    label: string;
-    step: EncryptionStep;
-  }) => {
-    const isComplete = step === "complete";
-    const isCurrent = encryptionStep === step && !isComplete;
-    const hasError = error && isCurrent;
+  // TODO: Implement decrypt mutation hook
+  const handleDecrypt = async () => {
+    if (decryptHasError) return;
+    setDecryptionStep("review");
 
-    return (
-      <div className="flex gap-2 text-sm">
-        <span className="w-4 min-w-[1rem]">
-          {hasError ? (
-            <X className="h-4 w-4 text-red-500" />
-          ) : isComplete ? (
-            <Check className="h-4 w-4 text-green-500" />
-          ) : isCurrent ? (
-            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-          ) : null}
-        </span>
-        <span className={hasError ? "text-red-500" : ""}>{label}</span>
-      </div>
-    );
+    // TODO: Implement actual decrypt logic
+    console.log("Decrypt functionality to be implemented", {
+      assetId: asset.address,
+      chainId: asset.chainId,
+      amount: decryptAmountNum,
+      decimals: asset.decimals,
+    });
   };
+
+  const handleDecryptConfirm = async () => {
+    if (decryptHasError) return;
+    setDecryptionStep("approval");
+
+    // TODO: Call decrypt mutation when implemented
+    console.log("Decrypt confirm - to be implemented");
+  };
+
+  const decryptAmountNum = parseFloat(decryptAmount) || 0;
+  const decryptHasError =
+    decryptAmountNum > (privateBalance ?? 0n) || decryptAmountNum <= 0;
+  const decryptErrorMessage =
+    decryptAmountNum <= 0
+      ? "Amount must be greater than 0"
+      : decryptAmountNum > (privateBalance ?? 0n)
+        ? `Insufficient private balance. You have ${privateBalance} ${asset.symbol}`
+        : "";
 
   return (
     <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-4">
-      {!encryptionStep && (
-        <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-4 text-left">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold">Encrypt {asset.symbol}</p>
-          </div>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as "encrypt" | "decrypt")}
+      >
+        <TabsList className="w-full">
+          <TabsTrigger value="encrypt" className="flex-1">
+            Encrypt
+          </TabsTrigger>
+          <TabsTrigger value="decrypt" className="flex-1">
+            Decrypt
+          </TabsTrigger>
+        </TabsList>
 
-          <div className="space-y-2">
-            <label htmlFor="amount" className="text-xs font-medium">
-              Amount
-            </label>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="text-sm"
-              disabled={isPending}
-              aria-invalid={amount !== "" && hasError}
-            />
-            {amount !== "" && hasError && (
-              <p className="text-xs text-destructive">{errorMessage}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Available: {balance} {asset.symbol}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {encryptionStep !== undefined &&
-        amount !== "" &&
-        !hasError &&
-        amountNum > 0 && (
-          <div className="bg-background/50 p-4 rounded">
-            <div className="grid grid-cols-2 gap-8 relative">
-              {/* Left column - Transaction summary */}
-              <div className="space-y-2 text-left flex flex-col justify-center text-sm">
-                <p className="font-medium text-center">
-                  Once this transaction is complete:
-                </p>
-                <p className="text-muted-foreground text-center">
-                  Public: {(balance - amountNum).toFixed(asset.roundTo ?? 2)}{" "}
-                  {asset.symbol}
-                </p>
-                <p className="text-muted-foreground text-center">
-                  Private: {amountNum} {asset.symbol}
-                </p>
+        <TabsContent value="encrypt" className="space-y-4">
+          {!encryptionStep && (
+            <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-4 text-left">
+              <div className="space-y-2">
+                <p className="text-md font-semibold">Encrypt {asset.symbol}</p>
               </div>
 
-              {/* Vertical divider */}
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border -ml-4" />
-
-              {/* Right column - Steps */}
-              <div className="space-y-2 text-left text-xs">
-                <StepIndicator
-                  label={`1. Token Approval (if ERC20 token)`}
-                  step="approval"
+              <div className="space-y-2">
+                <label htmlFor="amount" className="text-xs font-medium">
+                  Amount
+                </label>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="0"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="text-sm"
+                  disabled={isPending}
+                  aria-invalid={amount !== "" && hasError}
                 />
-                <StepIndicator
-                  label="2. Generate Zero Knowledge proof of deposit details"
-                  step="proof-generation"
-                />
-                <StepIndicator
-                  label="3. Call deposit() on commbank.eth's PrivateUnstoppableMoney contract"
-                  step="deposit"
-                />
+                {amount !== "" && hasError && (
+                  <p className="text-xs text-destructive">{errorMessage}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Public Balance: {formattedBalance} {asset.symbol}
+                </p>
               </div>
             </div>
+          )}
+
+          {encryptionStep !== undefined &&
+            amount !== "" &&
+            !hasError &&
+            amountNum > 0 && (
+              <Encrypt
+                asset={asset}
+                formattedBalance={formattedBalance}
+                formattedPrivateBalance={formattedPrivateBalance}
+                amount={amountNum}
+                encryptionStep={encryptionStep}
+                error={error}
+              />
+            )}
+
+          <div className="flex gap-2">
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              disabled={isPending && encryptionStep !== "complete"}
+            >
+              {encryptionStep === "complete" ? "Close" : "Cancel"}
+            </Button>
+            {!encryptionStep && (
+              <Button
+                onClick={handleNext}
+                size="sm"
+                className="flex-1"
+                disabled={hasError || amount === "" || isPending}
+              >
+                Next
+              </Button>
+            )}
+            {encryptionStep && (
+              <Button
+                onClick={handleConfirm}
+                size="sm"
+                className="flex-1"
+                disabled={
+                  hasError ||
+                  amount === "" ||
+                  isPending ||
+                  encryptionStep === "complete"
+                }
+              >
+                Confirm
+              </Button>
+            )}
           </div>
-        )}
 
-      <div className="flex gap-2">
-        <Button
-          onClick={onCancel}
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          disabled={isPending && encryptionStep !== "complete"}
-        >
-          {encryptionStep === "complete" ? "Close" : "Cancel"}
-        </Button>
-        {!encryptionStep && (
-          <Button
-            onClick={handleNext}
-            size="sm"
-            className="flex-1"
-            disabled={hasError || amount === "" || isPending}
-          >
-            Next
-          </Button>
-        )}
-        {encryptionStep && (
-          <Button
-            onClick={handleConfirm}
-            size="sm"
-            className="flex-1"
-            disabled={
-              hasError ||
-              amount === "" ||
-              isPending ||
-              encryptionStep === "complete"
-            }
-          >
-            Confirm
-          </Button>
-        )}
-      </div>
+          {error && (
+            <div className="text-xs text-red-500 bg-red-500/10 p-2 rounded">
+              Error: {error.message}
+            </div>
+          )}
 
-      {error && (
-        <div className="text-xs text-red-500 bg-red-500/10 p-2 rounded">
-          Error: {error.message}
-        </div>
-      )}
+          {/* TODO make this prettier */}
+          {encryptionStep === "complete" && (
+            <div className="text-xs text-green-500 bg-green-500/10 p-2 rounded">
+              Funds encrypted! You can view all encrypted funds in your
+              transaction history.
+            </div>
+          )}
+        </TabsContent>
 
-      {encryptionStep === "complete" && (
-        <div className="text-xs text-green-500 bg-green-500/10 p-2 rounded">
-          Funds encrypted! You can view all encrypted funds in your transaction
-          history.
-        </div>
-      )}
+        <TabsContent value="decrypt" className="space-y-4">
+          {!decryptionStep && (
+            <div className="p-4 bg-muted/30 border border-border rounded-lg space-y-4 text-left">
+              <div className="space-y-2">
+                <p className="text-md font-semibold">Decrypt {asset.symbol}</p>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="decrypt-amount" className="text-xs font-medium">
+                  Amount
+                </label>
+                <Input
+                  id="decrypt-amount"
+                  type="number"
+                  placeholder="0"
+                  value={decryptAmount}
+                  onChange={(e) => setDecryptAmount(e.target.value)}
+                  className="text-sm"
+                  aria-invalid={decryptAmount !== "" && decryptHasError}
+                />
+                {decryptAmount !== "" && decryptHasError && (
+                  <p className="text-xs text-destructive">
+                    {decryptErrorMessage}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Private Balance: {formattedPrivateBalance} {asset.symbol}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {decryptionStep !== undefined &&
+            decryptAmount !== "" &&
+            !decryptHasError &&
+            decryptAmountNum > 0 && (
+              <Decrypt
+                asset={asset}
+                formattedBalance={formattedBalance}
+                formattedPrivateBalance={formattedPrivateBalance}
+                decryptAmountNum={amountNum}
+                decryptionStep={decryptionStep}
+                error={error}
+              />
+            )}
+
+          <div className="flex gap-2">
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              {decryptionStep === "complete" ? "Close" : "Cancel"}
+            </Button>
+            {!decryptionStep && (
+              <Button
+                onClick={handleDecrypt}
+                size="sm"
+                className="flex-1"
+                disabled={decryptHasError || decryptAmount === ""}
+              >
+                Next
+              </Button>
+            )}
+            {decryptionStep && (
+              <Button
+                onClick={handleDecryptConfirm}
+                size="sm"
+                className="flex-1"
+                disabled={
+                  decryptHasError ||
+                  decryptAmount === "" ||
+                  decryptionStep === "complete"
+                }
+              >
+                Confirm
+              </Button>
+            )}
+          </div>
+
+          {/* TODO make this prettier */}
+          {decryptionStep === "complete" && (
+            <div className="text-xs text-green-500 bg-green-500/10 p-2 rounded">
+              Funds decrypted! You can view your updated balance above.
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

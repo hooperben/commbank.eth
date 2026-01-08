@@ -8,8 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/_components/ui/card";
-import { ArrowRightLeft } from "lucide-react";
+import { Separator } from "@/_components/ui/separator";
+import { ArrowRight, ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   defaultNetwork,
   mainnetAssets,
@@ -17,14 +19,12 @@ import {
   type SupportedAsset,
 } from "shared/constants/token";
 import { BalanceRow, PrivateBalanceRow, TotalBalanceRow } from "./balance";
-import { SyncState } from "./sync-state";
-import { Separator } from "../ui/separator";
 
 export function AssetBreakdown() {
+  const navigate = useNavigate();
   const assets: SupportedAsset[] =
     defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
 
-  const [encryptingAsset, setEncryptingAsset] = useState<string | null>(null);
   const [decryptModalOpen, setDecryptModalOpen] = useState(false);
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<SupportedAsset | null>(
@@ -32,8 +32,11 @@ export function AssetBreakdown() {
   );
 
   const handleEncryptClick = (asset: SupportedAsset) => {
-    setSelectedAsset(asset);
-    setEncryptingAsset(asset.symbol);
+    if (selectedAsset) {
+      setSelectedAsset(asset === selectedAsset ? null : asset);
+    } else {
+      setSelectedAsset(asset);
+    }
   };
 
   // TODO readd
@@ -48,12 +51,10 @@ export function AssetBreakdown() {
   // };
 
   const handleCancelEncrypt = () => {
-    setEncryptingAsset(null);
     setSelectedAsset(null);
   };
 
   const handleEncryptSuccess = () => {
-    setEncryptingAsset(null);
     setSelectedAsset(null);
   };
 
@@ -63,7 +64,14 @@ export function AssetBreakdown() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">Accounts</CardTitle>
-            <SyncState />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/accounts")}
+            >
+              View Portfolio
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="px-3 md:px-6">
@@ -80,13 +88,13 @@ export function AssetBreakdown() {
                         <div className="flex flex-row items-center gap-2">
                           <img
                             src={asset.logo}
-                            className={`h-8 w-8 ${asset.symbol === "AUDD" && "invert"}`}
+                            className={`h-6 w-6 md:h-8 md:w-8 ${asset.symbol === "AUDD" && "invert dark:invert-0"}`}
                           />
-                          <span className="text-lg">{asset.symbol}</span>
+                          <span className="md:text-lg">{asset.symbol}</span>
                         </div>
                       </td>
 
-                      <td className="p-3 font-medium">
+                      <td className="md:p-3 font-medium">
                         <div className="flex items-center gap-4">
                           <div className="w-[120px] text-right">
                             <TotalBalanceRow
@@ -123,14 +131,15 @@ export function AssetBreakdown() {
                             size="icon"
                             onClick={() => handleEncryptClick(asset)}
                             variant="outline"
+                            className="hidden sm:inline-flex"
                           >
-                            <ArrowRightLeft className="h-4 w-4" />
+                            <ArrowRightLeft className="h-4 w-4 rotate-90" />
                           </Button>
                         </div>
                       </td>
                     </tr>
 
-                    {encryptingAsset === asset.symbol && selectedAsset && (
+                    {selectedAsset && selectedAsset.symbol === asset.symbol && (
                       <tr key={`${asset.symbol}-encrypt`}>
                         <td colSpan={4} className="p-3">
                           <InlineEncryptConfirmation

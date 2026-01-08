@@ -1,6 +1,6 @@
 import { Skeleton } from "@/_components/ui/skeleton";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
-import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
+import { usePrivateBalance } from "@/_hooks/use-private-balance";
 import { ethers, formatUnits } from "ethers";
 import type { SupportedAsset } from "shared/constants/token";
 
@@ -43,13 +43,7 @@ export const PrivateBalanceRow = ({
   asset: SupportedAsset;
   description?: string;
 }) => {
-  const { data: assetNotes, isLoading } = useUserAssetNotes(asset.address);
-
-  const assetTotal = assetNotes
-    ? assetNotes.reduce((acc, curr) => {
-        return acc + BigInt(curr.assetAmount);
-      }, 0n)
-    : undefined;
+  const { assetNotes, isLoading, assetTotal } = usePrivateBalance(asset);
 
   return (
     <div>
@@ -67,13 +61,11 @@ export const PrivateBalanceRow = ({
 };
 
 export const TotalBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
-  const { data: assetNotes, isLoading } = useUserAssetNotes(asset.address);
-
-  const privateAssetTotal = assetNotes
-    ? assetNotes.reduce((acc, curr) => {
-        return acc + BigInt(curr.assetAmount);
-      }, 0n)
-    : 0n;
+  const {
+    assetNotes,
+    isLoading,
+    assetTotal: privateAssetTotal,
+  } = usePrivateBalance(asset);
 
   const { data: erc20BalanceData } = useERC20Balance(asset);
 
@@ -95,7 +87,7 @@ export const TotalBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
     <div>
       {isLoading && <Skeleton className="w-24 h-8" />}
 
-      {assetNotes && !isLoading && (
+      {assetNotes && !isLoading && privateAssetTotal !== undefined && (
         <div className="text-right">
           <div className="font-medium text-sm text-foreground">
             {erc20BalanceData &&
