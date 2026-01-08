@@ -39,7 +39,7 @@ const defaultMockAuth: AuthContextType = {
   isLoading: false,
   isSignedIn: true,
   token: "mock-jwt-token",
-  address: "0x742d35Cc6634C0532925a3b844Bc9e7595f5bB91",
+  address: "0x6e400024D346e8874080438756027001896937E3",
   privateAddress: "0x1234567890abcdef1234567890abcdef12345678",
   signingKey: "0xmocksigningkey",
   signIn: async () => {},
