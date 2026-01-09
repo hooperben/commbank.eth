@@ -60,16 +60,15 @@ export default function ContactsPage() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-2xl">Contacts</CardTitle>
-                <CardDescription>
-                  Manage your saved commbank.eth contacts
-                </CardDescription>
-              </div>
+            <div className="flex flex-row justify-between">
+              <CardTitle className="text-2xl">Contacts</CardTitle>
               <AddContactModal />
             </div>
+            <CardDescription>
+              Manage your saved commbank.eth contacts
+            </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-4">
             {/* Search Bar */}
             <div className="relative">

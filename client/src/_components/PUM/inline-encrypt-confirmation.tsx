@@ -171,7 +171,8 @@ export function InlineEncryptConfirmation({
                   <p className="text-xs text-destructive">{errorMessage}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Public Balance: {formattedBalance} {asset.symbol}
+                  Public Balance: {formattedBalance.toFixed(asset.roundTo)}{" "}
+                  {asset.symbol}
                 </p>
               </div>
             </div>
@@ -269,7 +270,9 @@ export function InlineEncryptConfirmation({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Private Balance: {formattedPrivateBalance} {asset.symbol}
+                  Private Balance:{" "}
+                  {formattedPrivateBalance.toFixed(asset.roundTo)}{" "}
+                  {asset.symbol}
                 </p>
               </div>
             </div>

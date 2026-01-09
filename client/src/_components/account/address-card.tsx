@@ -55,7 +55,7 @@ export function AddressCard({
                 <p className="text-xs text-muted-foreground mb-1">
                   Ethereum Address
                 </p>
-                <p className="font-mono text-sm break-all">{publicAddress}</p>
+                <p className="text-sm break-all">{publicAddress}</p>
               </div>
               <Button
                 variant="ghost"
@@ -81,28 +81,16 @@ export function AddressCard({
                 <p className="text-xs text-muted-foreground mb-1">
                   Private Addresses
                 </p>
-                <div className="space-y-4 font-mono text-sm break-all">
+                <div className="space-y-4 text-sm break-all">
                   <div className="flex flex-row items-center gap-2">
-                    <p className="font-mono text-xs break-all">
-                      {privateAddress}
-                    </p>
-                    <Badge
-                      variant="secondary"
-                      className="bg-blue-500 text-xs font-semibold text-white"
-                    >
-                      Owner Address
-                    </Badge>
+                    <p className="text-xs break-all">{privateAddress}</p>
+                    <Badge>Owner Address</Badge>
                   </div>
 
                   <div className="flex flex-row items-start gap-2">
-                    <p className="font-mono text-xs break-all">{signingKey}</p>
+                    <p className="text-xs break-all">{signingKey}</p>
 
-                    <Badge
-                      variant="secondary"
-                      className="bg-green-500 text-xs font-semibold text-primary-foreground"
-                    >
-                      Envelope Address
-                    </Badge>
+                    <Badge variant="secondary">Envelope Address</Badge>
                   </div>
                 </div>
               </div>

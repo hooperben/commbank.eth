@@ -10,7 +10,7 @@ import {
 } from "@/_components/ui/card";
 import { Separator } from "@/_components/ui/separator";
 import { ArrowRight, ArrowRightLeft } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   defaultNetwork,
@@ -63,7 +63,7 @@ export function AssetBreakdown() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold">Accounts</CardTitle>
+            <CardTitle className="text-xl font-bold">Accounts</CardTitle>
             <Button
               variant="ghost"
               size="sm"
@@ -74,15 +74,14 @@ export function AssetBreakdown() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="px-3 md:px-6">
+        <CardContent className="px-3 md:px-6 py-2">
           <div className="overflow-x-auto">
             <table className="w-full">
               <tbody>
-                {assets.map((asset) => (
-                  <>
+                {assets.map((asset, i) => (
+                  <Fragment key={`${asset.address}-${asset.chainId}`}>
                     <tr
-                      key={asset.symbol}
-                      className="border-b hover:bg-muted/50 transition-colors"
+                      className={`${i !== assets.length - 1 && "border-b"} hover:bg-muted/50 transition-colors`}
                     >
                       <td className="p-2 font-semibold text-left">
                         <div className="flex flex-row items-center gap-2">
@@ -150,7 +149,7 @@ export function AssetBreakdown() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
