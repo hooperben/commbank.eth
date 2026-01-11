@@ -1,12 +1,11 @@
 {
-  "depositVerifier#DepositVerifierLib": "0x4AD5C3d68C5038AfE010EcF9d3041Aa068Da6D11",
-  "transferVerifier#TransferVerifierLib": "0xA7edA38ae0Ebb9150172A72Aed3c94e1b7b75369",
-  "withdrawVerifier#WithdrawVerifierLib": "0xeBfD88f112cC69c3cd02C846f4eAD8759B4aE7F3",
-  "depositVerifier#DepositVerifier": "0x44C4589Ceb6C358044014CC4120D02495b68C2F7",
-  "transferVerifier#TransferVerifier": "0x4875435f82a0B2abda43BF6E5fA2A66FEc25746B",
-  "withdrawVerifier#WithdrawVerifier": "0x05796fA1Df106917cbC82DDB3B3449CEDed43734",
-  "commbankDotEth#CommBankDotEth": "0x582E8C09955727112014B50A4eB3978697CDCB77",
-  "tokens#AUDD": "0xd794125Bc226895b987845Ef768B8C104fAbecD5",
-  "tokens#FourDEC": "0xbc4c167c1Ce11292CFb93FF8e9363d841d1ac97F",
-  "tokens#USDC": "0x49479Db3A172F9D5E190C994C5fB0B8d2099E1a9"
+  "depositVerifier#DepositVerifierLib": "0xdf7f5aDf4E8a8740635D03aD0855615fFE71F6D1",
+  "transferExternalVerifier#TransferVerifierLib": "0x4A9431e4297735acd7D135dD0e0B471e7d774292",
+  "transferVerifier#TransferVerifierLib": "0x76E19231aF236D9333c3AEe38A97d4AA21E9E825",
+  "withdrawVerifier#WithdrawVerifierLib": "0x71a706971eF0d4167aECC2768635a8B52825e80C",
+  "depositVerifier#DepositVerifier": "0x217E72589e9E743EdFF209637c68c96C11467c55",
+  "transferExternalVerifier#TransferExternalVerifier": "0x83391c1DA57d12fdB17A65eb479f14307FA42518",
+  "transferVerifier#TransferVerifier": "0xBdd8cf66F78c18F01CA032Bb70282b901B2ad241",
+  "withdrawVerifier#WithdrawVerifier": "0xE8cF466496808C8643c4cA4175766ac126eFc490",
+  "commbankDotEth#CommBankDotEth": "0x5C0EE420423cB0d7d39d413c313D8B0fe3bD0789"
 }
