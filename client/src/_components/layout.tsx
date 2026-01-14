@@ -92,14 +92,19 @@ function MobileHeader() {
   if (!isMobile || isHomePage || !isSignedIn) return null;
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 h-10 flex items-center">
-      <Link to="/" className="flex items-center gap-0.5">
-        <Logo height={48} width={48} />
-        <span className="text-xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70 ml-[-12px]">
-          commbank.eth
-        </span>
-      </Link>
-    </div>
+    <>
+      {/* Background gradient that fades to transparent */}
+      <div className="fixed top-0 left-0 right-0 z-40 h-20 bg-gradient-to-b from-background via-background/95 to-transparent pointer-events-none" />
+      {/* Header content */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 h-10 flex items-center">
+        <Link to="/" className="flex items-center gap-0.5">
+          <Logo height={48} width={48} />
+          <span className="text-xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70 ml-[-12px]">
+            commbank.eth
+          </span>
+        </Link>
+      </div>
+    </>
   );
 }
 

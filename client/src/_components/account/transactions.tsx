@@ -1,4 +1,5 @@
-import { Badge } from "@/_components/ui/badge";
+import { TransactionAccordionItem } from "@/_components/account/transaction-accordion-item";
+import { Accordion } from "@/_components/ui/accordion";
 import { Button } from "@/_components/ui/button";
 import {
   Card,
@@ -9,18 +10,9 @@ import {
 import { Skeleton } from "@/_components/ui/skeleton";
 import { useTransactionsByChainId } from "@/_hooks/use-transactions";
 import { useAuth } from "@/_providers/auth-provider";
-import {
-  getAssetAddress,
-  getAssetAmount,
-  getTransactionVerb,
-} from "@/lib/formatting/transactions";
-import { formatUnits } from "ethers/utils";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import {
-  defaultNetwork,
-  defaultNetworkAssetByAddress,
-} from "shared/constants/token";
+import { defaultNetwork } from "shared/constants/token";
 
 export const Transactions = () => {
   const { isSignedIn } = useAuth();
@@ -64,67 +56,11 @@ export const Transactions = () => {
             )}
           </div>
         ) : (
-          <div className="space-y-2">
+          <Accordion type="single" collapsible className="w-full">
             {recentTransactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="flex items-center justify-between p-3 md:p-4 border rounded-lg hover:bg-accent transition-colors gap-3 max-w-full"
-              >
-                <div className="flex flex-col gap-1 min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="outline" className="shrink-0">
-                      {getTransactionVerb(tx.type)}
-                    </Badge>
-                    <h2 className="font-medium">
-                      {defaultNetworkAssetByAddress[getAssetAddress(tx)]
-                        ?.symbol ?? "ETH"}
-                    </h2>
-                    <span className="hidden md:inline text-sm font-mono text-muted-foreground">
-                      {tx.transactionHash.slice(0, 10)}...
-                      {tx.transactionHash.slice(-8)}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(tx.timestamp).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {tx.value && Number(tx.value) > 0 && (
-                    <span className="text-sm font-medium tabular-nums">
-                      {(parseFloat(tx.value) / 1e18).toFixed(4)} ETH
-                    </span>
-                  )}
-
-                  {tx.type === "Deposit" && !tx.value && (
-                    <span className="text-sm font-medium tabular-nums">
-                      {formatUnits(
-                        getAssetAmount(tx),
-                        defaultNetworkAssetByAddress[getAssetAddress(tx)]
-                          .decimals,
-                      )}{" "}
-                      {defaultNetworkAssetByAddress[getAssetAddress(tx)].symbol}
-                    </span>
-                  )}
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="shrink-0"
-                  >
-                    <a
-                      href={`https://${defaultNetwork !== 1 && "sepolia."}etherscan.io/tx/${tx.transactionHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs"
-                    >
-                      View →
-                    </a>
-                  </Button>
-                </div>
-              </div>
+              <TransactionAccordionItem key={tx.id} transaction={tx} />
             ))}
-          </div>
+          </Accordion>
         )}
       </CardContent>
     </Card>

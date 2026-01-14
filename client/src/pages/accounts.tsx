@@ -13,7 +13,7 @@ export default function AccountsPage() {
       header="Accounts"
       description="Manage your commbank.eth assets"
     >
-      <div className="container mx-auto p-6 max-w-6xl space-y-6 text-left">
+      <div className="container mx-auto p-2 max-w-6xl space-y-6 text-left">
         {/* Back Button */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" asChild>

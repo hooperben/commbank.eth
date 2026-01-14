@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/_components/ui/select";
+import { Separator } from "@/_components/ui/separator";
 import { useContacts } from "@/_hooks/use-contacts";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
 import { useMerkleTree } from "@/_hooks/use-merkle-tree";
@@ -22,7 +23,7 @@ import { usePrivateTransfer } from "@/_hooks/use-private-transfer";
 import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
 import PageContainer from "@/_providers/page-container";
 import { ethers, parseUnits } from "ethers";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
@@ -190,8 +191,8 @@ export default function SendPage() {
     onTxSuccess: () => {
       setTransferStatus("(3/4) Submitted, Awaiting Confirmation");
     },
-    onReceiptSuccess: () => {
-      refetchUserAssets();
+    onReceiptSuccess: async () => {
+      await refetchUserAssets();
       setTransferStatus("(4/4) Transfer complete");
     },
   });
@@ -249,7 +250,7 @@ export default function SendPage() {
       title="commbank.eth | Send"
       description="Send assets privately or publicly"
     >
-      <div className="container mx-auto p-6 max-w-6xl space-y-6 text-left">
+      <div className="container mx-auto p-2 max-w-6xl space-y-6 text-left">
         {/* Back Button */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" asChild>
@@ -270,7 +271,11 @@ export default function SendPage() {
               {selectedAsset?.symbol}
             </CardTitle>
             <CardDescription>
-              Send assets to a contact publicly or privately
+              {!transferType &&
+                "Send assets to a contact publicly or privately"}
+              {transferType && transferType == "private"
+                ? "Send assets privately to one of your contacts"
+                : "Send assets publicly to one of your contacts"}
             </CardDescription>
           </CardHeader>
 
@@ -315,22 +320,22 @@ export default function SendPage() {
 
             {/* Step 1: Select Transfer Type */}
             {step === "select-type" && (
-              <div className="flex flex-row w-full justify-center gap-2">
+              <div className="grid grid-cols-2 gap-3 w-full">
                 <Button
                   variant="outline"
-                  className="w-56 h-16 text-lg font-semibold flex-col gap-1"
+                  className="h-16 text-lg font-semibold flex-col gap-1"
                   onClick={() => handleSelectType("public")}
                 >
                   <ArrowUpRight className="h-5 w-5" />
-                  <span className="text-sm">Send Publicly</span>
+                  <span className="text-sm">Public Transfer</span>
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-56 h-16 text-lg font-semibold flex-col gap-1"
+                  className="h-16 text-lg font-semibold flex-col gap-1"
                   onClick={() => handleSelectType("private")}
                 >
                   <ArrowUpRight className="h-5 w-5" />
-                  <span className="text-sm">Send Privately</span>
+                  <span className="text-sm">Private Transfer</span>
                 </Button>
               </div>
             )}
@@ -389,9 +394,9 @@ export default function SendPage() {
                       to="/contacts"
                       className="underline hover:text-foreground"
                     >
-                      Contacts page
-                    </Link>
-                    .
+                      Contacts
+                    </Link>{" "}
+                    page.
                   </p>
                 </div>
 
@@ -402,12 +407,12 @@ export default function SendPage() {
                       {transferType === "public" ? (
                         <BalanceRow
                           asset={selectedAsset}
-                          description=" available"
+                          description={` ${selectedAsset.symbol} available`}
                         />
                       ) : (
                         <PrivateBalanceRow
                           asset={selectedAsset}
-                          description=" available"
+                          description={` ${selectedAsset.symbol} available`}
                         />
                       )}
                     </span>
@@ -453,13 +458,9 @@ export default function SendPage() {
               <div className="space-y-4">
                 <div className="space-y-3 p-4 bg-muted rounded-lg">
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Type</span>
-                    <span className="text-sm font-medium capitalize">
-                      {transferType} Transfer
+                    <span className="text-sm text-muted-foreground">
+                      Sending
                     </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Asset</span>
                     <span className="text-sm font-medium">
                       {selectedAsset?.symbol}
                     </span>
@@ -472,6 +473,9 @@ export default function SendPage() {
                       {amount} {selectedAsset?.symbol}
                     </span>
                   </div>
+
+                  <Separator className="w-full" />
+
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">To</span>
                     <span className="text-sm font-medium">
@@ -512,7 +516,10 @@ export default function SendPage() {
                 </div>
 
                 {transferStatus && (
-                  <div className="text-sm text-primary bg-primary/10 p-3 rounded-md">
+                  <div className="text-sm text-primary bg-primary/10 p-3 rounded-md flex items-center gap-2">
+                    {privateTransferMutation.isPending && (
+                      <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                    )}
                     {transferStatus}
                   </div>
                 )}
@@ -537,11 +544,18 @@ export default function SendPage() {
                   <Button
                     onClick={handleConfirm}
                     className="flex-1"
-                    disabled={privateTransferMutation.isPending}
+                    disabled={
+                      privateTransferMutation.isPending ||
+                      privateTransferMutation.isSuccess
+                    }
                   >
-                    {privateTransferMutation.isPending
-                      ? transferStatus.split(" ")[1] || "Processing..."
-                      : "Confirm"}
+                    {!privateTransferMutation.isPending &&
+                      !privateTransferMutation.isSuccess &&
+                      "Confirm"}
+                    {privateTransferMutation.isPending && "Submitting..."}
+                    {!privateTransferMutation.isPending &&
+                      privateTransferMutation.isSuccess &&
+                      "Complete"}
                   </Button>
                 </div>
               </div>

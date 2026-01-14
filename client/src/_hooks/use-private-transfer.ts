@@ -238,7 +238,9 @@ export function usePrivateTransfer({
 
       // Get current gas price from RPC
       const feeData = await provider.getFeeData();
-      const gasPrice = feeData.gasPrice;
+
+      const gasPrice =
+        chain.id === 1 ? feeData.gasPrice : (feeData.gasPrice ?? 0n * 2n);
 
       // Initialize contract
       const commbankDotEthContract = new ethers.Contract(

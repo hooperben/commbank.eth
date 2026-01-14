@@ -134,6 +134,20 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
       "privacy account",
     ],
   },
+  transactions: {
+    title: "commbank.eth | Transactions",
+    description: "View your commbank.eth transaction history.",
+    path: "/transactions",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
+    keywords: [
+      "account management",
+      "user dashboard",
+      "crypto wallet",
+      "DeFi account",
+      "privacy account",
+    ],
+  },
   about: {
     title: "commbank.eth | About",
     description:

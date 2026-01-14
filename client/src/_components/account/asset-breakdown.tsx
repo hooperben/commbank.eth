@@ -46,7 +46,7 @@ export function AssetBreakdown({ isPortfolio }: { isPortfolio?: boolean }) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold">Accounts</CardTitle>
+          <CardTitle className="text-2xl font-bold">Accounts</CardTitle>
           {!isPortfolio && (
             <Button
               variant="ghost"
