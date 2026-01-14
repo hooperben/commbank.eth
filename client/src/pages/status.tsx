@@ -43,13 +43,13 @@ export default function StatusPage() {
   return (
     <PageContainer
       title="System Status"
-      description="Check the status of commbank.eth services and browser compatibility"
+      description="Monitor the health of commbank.eth services and check your browser compatibility."
     >
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl space-y-6 text-left">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">System Status</h1>
           <p className="text-muted-foreground">
-            Monitor the health of commbank.eth services and check browser
+            Monitor the health of commbank.eth services and check your browser
             compatibility.
           </p>
         </div>

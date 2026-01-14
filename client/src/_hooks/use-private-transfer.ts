@@ -240,7 +240,7 @@ export function usePrivateTransfer({
       const feeData = await provider.getFeeData();
 
       const gasPrice =
-        chain.id === 1 ? feeData.gasPrice : (feeData.gasPrice ?? 0n * 2n);
+        chain.id === 1 ? feeData.gasPrice : (feeData.gasPrice ?? 0n * 3n);
 
       // Initialize contract
       const commbankDotEthContract = new ethers.Contract(

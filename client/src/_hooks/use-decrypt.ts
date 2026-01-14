@@ -293,80 +293,77 @@ export function useDecrypt({
         signer,
       );
 
-      // Call transferExternal on the contract
-      const withdrawTx = await commbankDotEthContract.transferExternal(
-        proof.proof,
-        proof.publicInputs,
-        encryptedPayload,
-        { gasPrice },
-      );
-
-      console.log("Withdraw transaction submitted:", withdrawTx.hash);
-
-      if (onTxSuccess) {
-        onTxSuccess();
-      }
-
-      // Wait for transaction receipt
-      const withdrawReceipt = await withdrawTx.wait();
-
-      console.log("Withdraw transaction confirmed:", withdrawReceipt.hash);
-
       // Log transaction to IndexedDB
-      if (withdrawReceipt) {
-        try {
-          await addTransaction({
-            id: withdrawReceipt.hash,
-            chainId: defaultNetwork,
-            transactionHash: withdrawReceipt.hash,
-            type: "Withdraw",
-            to: chain.CommBankDotEth,
-            data: withdrawTx.data,
-            timestamp: Date.now(),
-          });
+      try {
+        // Call transferExternal on the contract
+        const withdrawTx = await commbankDotEthContract.transferExternal(
+          proof.proof,
+          proof.publicInputs,
+          encryptedPayload,
+          { gasPrice },
+        );
 
-          // Mark input notes as used
-          for (const input of selectedInputs) {
-            await addNote({
-              ...input,
-              isUsed: true,
-            });
-          }
+        console.log("Withdraw transaction submitted:", withdrawTx.hash);
 
-          // Add change note to database if it exists
-          if (changeAmount > 0n && privateAddress) {
-            const changeNote = outputNotes[1]; // Change note is second output
-            await addNote({
-              id: outputHashes[1],
-              assetId: changeNote.asset_id,
-              assetAmount: changeNote.asset_amount,
-              nullifier: outputHashes[1],
-              secret: changeNote.secret,
-              entity_id: privateAddress,
-              isUsed: false,
-            });
-          }
-
-          // Refetch transactions to update UI
-          await refetchTransactions();
-        } catch (dbError) {
-          console.error("Failed to log transaction to database:", dbError);
+        if (onTxSuccess) {
+          onTxSuccess();
         }
-      }
 
-      if (onReceiptSuccess) {
-        onReceiptSuccess();
-      }
+        // Wait for transaction receipt
+        const withdrawReceipt = await withdrawTx.wait();
 
-      return {
-        txHash: withdrawTx.hash,
-        proof,
-        inputNotes,
-        outputNotes,
-        nullifiers,
-        outputHashes,
-        encryptedPayload,
-      };
+        console.log("Withdraw transaction confirmed:", withdrawReceipt.hash);
+        await addTransaction({
+          id: withdrawReceipt.hash,
+          chainId: defaultNetwork,
+          transactionHash: withdrawReceipt.hash,
+          type: "Withdraw",
+          to: chain.CommBankDotEth,
+          data: withdrawTx.data,
+          timestamp: Date.now(),
+        });
+
+        // Mark input notes as used
+        for (const input of selectedInputs) {
+          await addNote({
+            ...input,
+            isUsed: true,
+          });
+        }
+
+        // Add change note to database if it exists
+        if (changeAmount > 0n && privateAddress) {
+          const changeNote = outputNotes[1]; // Change note is second output
+          await addNote({
+            id: outputHashes[1],
+            assetId: changeNote.asset_id,
+            assetAmount: changeNote.asset_amount,
+            nullifier: outputHashes[1],
+            secret: changeNote.secret,
+            entity_id: privateAddress,
+            isUsed: false,
+          });
+        }
+
+        // Refetch transactions to update UI
+        await refetchTransactions();
+
+        if (onReceiptSuccess) {
+          onReceiptSuccess();
+        }
+
+        return {
+          txHash: withdrawTx.hash,
+          proof,
+          inputNotes,
+          outputNotes,
+          nullifiers,
+          outputHashes,
+          encryptedPayload,
+        };
+      } catch (dbError) {
+        console.error("Failed to log transaction to database:", dbError);
+      }
     },
   });
 }

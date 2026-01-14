@@ -250,7 +250,7 @@ export default function SendPage() {
       title="commbank.eth | Send"
       description="Send assets privately or publicly"
     >
-      <div className="container mx-auto p-2 max-w-6xl space-y-6 text-left">
+      <div className="container max-w-full space-y-6 text-left">
         {/* Back Button */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" asChild>
