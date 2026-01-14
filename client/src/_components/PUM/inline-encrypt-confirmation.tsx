@@ -48,7 +48,8 @@ export function InlineEncryptConfirmation({
   } = useEncryptMutation({
     onApprovalSuccess: () => setEncryptionStep("proof-generation"),
     onZkProofSuccess: () => setEncryptionStep("deposit"),
-    onTxSuccess: onTxSuccess,
+    onTxReceiptSuccess: () => onTxSuccess(),
+    // onTxSuccess: TODO readd
   });
 
   // public balance data

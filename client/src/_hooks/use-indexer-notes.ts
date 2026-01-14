@@ -11,7 +11,9 @@ export const fetchIndexerNotes = async (
   limit: number = 50,
   offset: number = 0,
 ): Promise<IndexerNotePayload[]> => {
-  const restUrl = `https://hasura-production-0b6a.up.railway.app/api/rest/Commbankdoteth_NotePayload/${defaultNetwork}_/${limit}/${offset}`;
+  // URL-encode the % wildcard as %25
+  const chainIdPattern = encodeURIComponent(`${defaultNetwork}_%`);
+  const restUrl = `https://hasura-production-0b6a.up.railway.app/api/rest/Commbankdoteth_NotePayload/${chainIdPattern}/${limit}/${offset}`;
 
   const response = await axios.get<NotePayloadResponse>(restUrl, {
     headers: {

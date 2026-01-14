@@ -1,4 +1,4 @@
-import { AccountsList } from "@/_components/account/accounts-list";
+import { AssetBreakdown } from "@/_components/account/asset-breakdown";
 import { PortfolioChartWithTooltip } from "@/_components/account/portfolio-chart";
 import { Button } from "@/_components/ui/button";
 import { PAGE_METADATA } from "@/_constants/seo-config";
@@ -7,22 +7,6 @@ import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function AccountsPage() {
-  const handleSendClick = () => {
-    console.log("Send button clicked");
-  };
-
-  const handleReceiveClick = () => {
-    console.log("Receive button clicked");
-  };
-
-  const handleEncryptClick = () => {
-    console.log("Encrypt button clicked");
-  };
-
-  const handleDecryptClick = () => {
-    console.log("Decrypt button clicked");
-  };
-
   return (
     <PageContainer
       {...PAGE_METADATA.accounts}
@@ -43,44 +27,8 @@ export default function AccountsPage() {
         {/* Portfolio Chart */}
         <PortfolioChartWithTooltip />
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleSendClick}
-            className="h-14 text-xl"
-          >
-            Send
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleReceiveClick}
-            className="h-14 text-xl"
-          >
-            Receive
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleEncryptClick}
-            className="h-14 text-xl"
-          >
-            Encrypt
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleDecryptClick}
-            className="h-14 text-xl"
-          >
-            Decrypt
-          </Button>
-        </div>
-
-        {/* Accounts List */}
-        <AccountsList />
+        {/* Accounts Section */}
+        <AssetBreakdown isPortfolio />
       </div>
     </PageContainer>
   );

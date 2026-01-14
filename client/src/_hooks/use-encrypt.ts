@@ -49,8 +49,7 @@ export const useEncryptMutation = ({
       if (!chain) throw new Error("Misconfigured");
 
       // Check if this is a native ETH deposit
-      const isNativeDeposit =
-        assetId.toLowerCase() === ETH_ADDRESS.toLowerCase();
+      const isNativeDeposit = BigInt(assetId) === BigInt(ETH_ADDRESS);
 
       // Get wallet from auth (getMnemonic is from useAuth hook)
       const mnemonic = await getMnemonic();
@@ -63,7 +62,10 @@ export const useEncryptMutation = ({
 
       // Get current gas price from RPC
       const feeData = await provider.getFeeData();
-      const gasPrice = feeData.gasPrice;
+      console.log("feeData:", feeData);
+
+      const gasPrice =
+        chain.id === 1 ? feeData.gasPrice : (feeData.gasPrice ?? 0n) * 2n;
 
       // Initialize deposit circuit
       const deposit = new Deposit();

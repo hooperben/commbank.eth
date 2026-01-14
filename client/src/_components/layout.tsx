@@ -103,6 +103,29 @@ function MobileHeader() {
   );
 }
 
+function MainContent({ children }: { children: React.ReactNode }) {
+  const { open, isMobile } = useSidebar();
+
+  // On desktop, offset content to keep it visually centered when sidebar collapses
+  // When collapsed, content area expands - add positive margin to compensate
+  const sidebarDiff =
+    "calc((var(--sidebar-width) - var(--sidebar-width-icon)) / 2)";
+  const offsetStyle = !isMobile
+    ? {
+        marginLeft: open ? "0" : sidebarDiff,
+        transition: "margin-left 200ms ease-out",
+      }
+    : {};
+
+  return (
+    <main className="flex-1 p-6 md:p-8 pt-24 md:pt-20">
+      <div className="mx-auto w-full max-w-4xl" style={offsetStyle}>
+        {children}
+      </div>
+    </main>
+  );
+}
+
 export function AppLayout({
   children,
 }: Readonly<{
@@ -129,11 +152,7 @@ export function AppLayout({
             <SidebarTriggerFixed />
             <MobileHeader />
             <SettingsDropdown />
-            <main className="flex-1 p-6 md:p-8 pt-24 md:pt-20">
-              <div className="mx-auto w-full max-w-5xl lg:mx-0 lg:max-w-none">
-                {children}
-              </div>
-            </main>
+            <MainContent>{children}</MainContent>
             <Footer />
           </div>
           <Toaster />

@@ -15,11 +15,11 @@ commbank.eth uses next generation cryptography to encrypt and decrypt your (curr
 
 commbank.eth's first privacy enhancing technology is Private Unstoppable Money.
 
-Private Unstoppable Money is a library of ethereum smart contracts and zero knowledge proof circuits that facilitate the transfer of assets between commbank.eth compatible accounts completely anonymously.
+Private Unstoppable Money is a library of ethereum smart contracts and zero knowledge proof circuits that facilitate the transfer of assets between commbank.eth compatible accounts completely anonymously on the ethereum network.
 
 ### commbank.eth Core Components
 
-In order to power Private Unstoppable Money, the following components are needed:
+In order to power commbank.eth and Private Unstoppable Money specifically, the following components are needed:
 
 - web app (what you're reading this in)
 - commbank.eth account model
@@ -67,7 +67,11 @@ An RPC is what is used to send transactions and read balances from the blockchai
 
 ### Disclaimer
 
-Your use of this software is your own choice, just like everything else. It might have some bugs, so don't do anything unless it looks good and makes sense. Found a bug? Create an issue in the Github or @ the project on twitter (@commbankdoteth).
+Your use of this software is your own choice, just like everything else. It might have some bugs, so don't do anything unless it looks good and makes sense. 
+
+If you're curious about how commbank.eth works - you can look at **all** of the [source code in github](https://github.com/hooperben/commbank.eth), all of which is free to use - **forever**.
+
+Found a bug? Create an issue in the Github or @ the project on twitter (@commbankdoteth).
 `;
 
 export const AboutPage = () => {

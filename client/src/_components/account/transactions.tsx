@@ -57,7 +57,7 @@ export const Transactions = () => {
             <Skeleton className="h-16 w-full" />
           </div>
         ) : recentTransactions.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-4 text-muted-foreground">
             <p>No recent transactions</p>
             {!isSignedIn && (
               <p className="text-sm mt-2">Sign in to view transactions</p>

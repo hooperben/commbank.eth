@@ -11,7 +11,9 @@ const fetchIndexerLeafs = async (
   limit: number = 50,
   offset: number = 0,
 ): Promise<IndexerLeafInserted[]> => {
-  const restUrl = `https://hasura-production-0b6a.up.railway.app/api/rest/Commbankdoteth_LeafInserted/${defaultNetwork}_/${limit}/${offset}`;
+  // URL-encode the % wildcard as %25
+  const chainIdPattern = encodeURIComponent(`${defaultNetwork}_%`);
+  const restUrl = `https://hasura-production-0b6a.up.railway.app/api/rest/Commbankdoteth_LeafInserted/${chainIdPattern}/${limit}/${offset}`;
 
   const response = await axios.get<LeafInsertedResponse>(restUrl, {
     headers: {

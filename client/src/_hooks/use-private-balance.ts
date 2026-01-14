@@ -10,7 +10,7 @@ export const usePrivateBalance = (asset: SupportedAsset | undefined) => {
 
   const assetTotal = assetNotes
     ? assetNotes.reduce((acc, curr) => {
-        return acc + BigInt(curr.assetAmount);
+        return acc + (curr.isUsed ? 0n : BigInt(curr.assetAmount));
       }, 0n)
     : undefined;
 

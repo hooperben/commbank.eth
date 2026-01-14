@@ -94,79 +94,81 @@ export function PortfolioChart() {
   const displayTotal = currency === "AUD" ? totalAud : totalUsd;
   const { formatted, full } = formatCompactCurrency(displayTotal);
 
-  if (isLoadingTotal || isLoadingAssets) {
-    return <Skeleton className="h-48 w-48 rounded-full" />;
-  }
-
   return (
     <ChartContainer
       config={chartConfig}
       className="mx-auto aspect-square max-h-[250px]"
     >
-      <PieChart>
-        <ChartTooltip
-          cursor={false}
-          content={<ChartTooltipContent hideLabel />}
-        />
-        <Pie
-          data={chartData}
-          dataKey="value"
-          nameKey="asset"
-          innerRadius={60}
-          strokeWidth={5}
-        >
-          <Label
-            content={({ viewBox }) => {
-              if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                return (
-                  <text
-                    x={viewBox.cx}
-                    y={viewBox.cy}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                  >
-                    {formatted === full ? (
-                      <>
-                        <tspan
-                          x={viewBox.cx}
-                          y={viewBox.cy}
-                          className="fill-foreground text-xl font-bold"
-                        >
-                          {formatted}
-                        </tspan>
-                        <tspan
-                          x={viewBox.cx}
-                          y={(viewBox.cy || 0) + 24}
-                          className="fill-muted-foreground text-sm"
-                        >
-                          {currency}
-                        </tspan>
-                      </>
-                    ) : (
-                      <>
-                        <tspan
-                          x={viewBox.cx}
-                          y={viewBox.cy}
-                          className="fill-foreground text-xl font-bold"
-                        >
-                          {formatted}
-                        </tspan>
-                        <tspan
-                          x={viewBox.cx}
-                          y={(viewBox.cy || 0) + 24}
-                          className="fill-muted-foreground text-sm"
-                        >
-                          {currency}
-                        </tspan>
-                      </>
-                    )}
-                  </text>
-                );
-              }
-            }}
+      {isLoadingTotal || isLoadingAssets ? (
+        <div className="w-full flex justify-center mt-4">
+          <Skeleton className="h-48 w-48 rounded-full" />
+        </div>
+      ) : (
+        <PieChart>
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent hideLabel />}
           />
-        </Pie>
-      </PieChart>
+          <Pie
+            data={chartData}
+            dataKey="value"
+            nameKey="asset"
+            innerRadius={60}
+            strokeWidth={5}
+          >
+            <Label
+              content={({ viewBox }) => {
+                if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                  return (
+                    <text
+                      x={viewBox.cx}
+                      y={viewBox.cy}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      {formatted === full ? (
+                        <>
+                          <tspan
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            className="fill-foreground text-xl font-bold"
+                          >
+                            {formatted}
+                          </tspan>
+                          <tspan
+                            x={viewBox.cx}
+                            y={(viewBox.cy || 0) + 24}
+                            className="fill-muted-foreground text-sm"
+                          >
+                            {currency}
+                          </tspan>
+                        </>
+                      ) : (
+                        <>
+                          <tspan
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            className="fill-foreground text-xl font-bold"
+                          >
+                            {formatted}
+                          </tspan>
+                          <tspan
+                            x={viewBox.cx}
+                            y={(viewBox.cy || 0) + 24}
+                            className="fill-muted-foreground text-sm"
+                          >
+                            {currency}
+                          </tspan>
+                        </>
+                      )}
+                    </text>
+                  );
+                }
+              }}
+            />
+          </Pie>
+        </PieChart>
+      )}
     </ChartContainer>
   );
 }

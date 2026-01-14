@@ -33,13 +33,15 @@ export function AppSidebar() {
                 className={`flex flex-row justify-center items-center mt-4`}
               >
                 <div className="ml-3">
-                  <Logo />
+                  <Logo height={48} width={48} />
                 </div>
 
                 {(open || isMobile) && (
-                  <div className="flex flex-row items-baseline">
-                    <h1 className="font-primary">commbank.eth</h1>
-                    <span className="ml-2 text-xs bg-primary text-white dark:text-secondary px-2 py-0.5 rounded">
+                  <div className="flex flex-row items-center">
+                    <span className="text-xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70 ml-[-6px]">
+                      commbank.eth
+                    </span>
+                    <span className="ml-2 text-xs font-primary bg-primary text-white dark:text-secondary px-2 py-0.5 rounded">
                       beta
                     </span>
                   </div>

@@ -131,6 +131,23 @@ export const ShareProfile = ({
           <DialogTitle>Share your commbank.eth details</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="nickname" className="text-sm font-medium">
+              My Contact Name (optional)
+            </Label>
+            <Input
+              id="nickname"
+              placeholder="Enter a nickname"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+            />
+            <div className="flex items-start gap-2 rounded-md bg-muted p-1 border border-border">
+              <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <p className="text-[12px] text-muted-foreground leading-relaxed">
+                Anyone you share your details with will see this name.
+              </p>
+            </div>
+          </div>
           <div className="space-y-3">
             <Label
               className="hover:bg-accent/50 flex items-start gap-3 rounded-md border border-input p-3 transition-colors data-[state=checked]:border-blue-600"
@@ -148,7 +165,7 @@ export const ShareProfile = ({
                 <p className="text-sm leading-none font-medium">
                   Public Addresses
                 </p>
-                <AddressField label="EVM" value={address} />
+                <AddressField label="Ethereum" value={address} />
               </div>
             </Label>
 
@@ -172,24 +189,6 @@ export const ShareProfile = ({
                 <AddressField label="Envelope" value={signingKey} />
               </div>
             </Label>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="nickname" className="text-sm font-medium">
-              My Contact Name (optional)
-            </Label>
-            <Input
-              id="nickname"
-              placeholder="Enter a nickname"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-            />
-            <div className="flex items-start gap-2 rounded-md bg-muted p-3 border border-border">
-              <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Anyone you send the link to will save your contact as this name.
-              </p>
-            </div>
           </div>
 
           <Button

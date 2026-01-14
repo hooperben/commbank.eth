@@ -4,8 +4,11 @@ import { AboutPage } from "@/pages/about";
 import AccountPage from "@/pages/account";
 import AccountsPage from "@/pages/accounts";
 import ContactsPage from "@/pages/contacts";
+import DecryptPage from "@/pages/decrypt";
+import EncryptPage from "@/pages/encrypt";
 import { HomePage } from "@/pages/home";
 import NotFoundPage from "@/pages/not-found";
+import SendPage from "@/pages/send";
 import { SettingsPage } from "@/pages/settings";
 import SharePage from "@/pages/share";
 import StatusPage from "@/pages/status";
@@ -65,6 +68,30 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <TransactionsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/send"
+                  element={
+                    <ProtectedRoute>
+                      <SendPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/encrypt"
+                  element={
+                    <ProtectedRoute>
+                      <EncryptPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/decrypt"
+                  element={
+                    <ProtectedRoute>
+                      <DecryptPage />
                     </ProtectedRoute>
                   }
                 />

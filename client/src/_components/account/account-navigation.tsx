@@ -40,31 +40,37 @@ export const AccountNavigation = () => {
         </Button>
       </div>
 
-      {/* Bottom row: encrypt, send, receive */}
+      {/* Bottom row: send, encrypt, decrypt */}
       <div className="grid grid-cols-3 gap-4">
         <Button
           variant="outline"
           className="h-16 text-lg font-semibold flex-col gap-1"
-          disabled
+          asChild
         >
-          <ArrowUpRight className="h-5 w-5" />
-          <span className="text-sm">send</span>
+          <Link to="/send">
+            <ArrowUpRight className="h-5 w-5" />
+            <span className="text-sm">send</span>
+          </Link>
         </Button>
         <Button
           variant="outline"
           className="h-16 text-lg font-semibold flex-col gap-1"
-          disabled
+          asChild
         >
-          <LockKeyhole className="h-5 w-5" />
-          <span className="text-sm">encrypt</span>
+          <Link to="/encrypt">
+            <LockKeyhole className="h-5 w-5" />
+            <span className="text-sm">encrypt</span>
+          </Link>
         </Button>
         <Button
           variant="outline"
           className="h-16 text-lg font-semibold flex-col gap-1"
-          disabled
+          asChild
         >
-          <LockKeyholeOpen className="h-5 w-5" />
-          <span className="text-sm">decrypt</span>
+          <Link to="/decrypt">
+            <LockKeyholeOpen className="h-5 w-5" />
+            <span className="text-sm">decrypt</span>
+          </Link>
         </Button>
       </div>
     </div>
