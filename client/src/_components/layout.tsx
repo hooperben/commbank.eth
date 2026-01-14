@@ -1,18 +1,20 @@
 import { AppSidebar } from "@/_components/app-sidebar";
 import Footer from "@/_components/footer";
-import PageHead from "@/_providers/page-head";
+import { Logo } from "@/_components/logo";
 import {
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
 } from "@/_components/ui/sidebar";
 import { useAuth } from "@/_providers/auth-provider";
+import PageHead from "@/_providers/page-head";
 import {
   PageTitleProvider,
   usePageTitle,
 } from "@/_providers/page-title-context";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { SettingsDropdown } from "./settings/settings-dropdown";
 
@@ -46,7 +48,7 @@ function SidebarTriggerFixed() {
       <SidebarTrigger
         className={`
           group relative overflow-hidden
-          ${isMobile ? "h-14 w-14" : "h-10 w-10"}
+          h-10 w-10
           rounded-2xl
           backdrop-blur-xl
           bg-background/40
@@ -80,6 +82,27 @@ function SidebarTriggerFixed() {
   );
 }
 
+function MobileHeader() {
+  const { isMobile } = useSidebar();
+  const { isSignedIn } = useAuth();
+  const location = useLocation();
+
+  // Hide on home page or when not signed in
+  const isHomePage = location.pathname === "/" || location.pathname === "";
+  if (!isMobile || isHomePage || !isSignedIn) return null;
+
+  return (
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 h-10 flex items-center">
+      <Link to="/" className="flex items-center gap-0.5">
+        <Logo height={48} width={48} />
+        <span className="text-xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70 ml-[-12px]">
+          commbank.eth
+        </span>
+      </Link>
+    </div>
+  );
+}
+
 export function AppLayout({
   children,
 }: Readonly<{
@@ -104,6 +127,7 @@ export function AppLayout({
           <AppSidebar />
           <div className="flex flex-col w-full min-h-screen">
             <SidebarTriggerFixed />
+            <MobileHeader />
             <SettingsDropdown />
             <main className="flex-1 p-6 md:p-8 pt-24 md:pt-20">
               <div className="mx-auto w-full max-w-5xl lg:mx-0 lg:max-w-none">

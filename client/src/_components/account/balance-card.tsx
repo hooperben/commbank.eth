@@ -1,5 +1,3 @@
-import { ShareProfile } from "@/_components/account/share-profile";
-import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import {
   Card,
@@ -17,13 +15,8 @@ import { useAccountTotal } from "@/_hooks/use-account-total";
 import { useAudUsdPrice, useEthUsdPrice } from "@/_hooks/use-chainlink-price";
 import { usePreferredCurrency } from "@/_hooks/use-preferred-currency";
 import { formatDollarAmount } from "@/lib/formatting/data-formatting";
-import { Info } from "lucide-react";
-import { useState } from "react";
-import { defaultNetwork } from "shared/constants/token";
 
 export const BalanceCard = () => {
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-
   // Fetch price data from Chainlink
   const { data: ethUsdPrice, isLoading: isLoadingEthUsd } = useEthUsdPrice();
   const { data: audUsdPrice, isLoading: isLoadingAudUsd } = useAudUsdPrice();
@@ -93,26 +86,6 @@ export const BalanceCard = () => {
               </>
             )}
           </div>
-
-          {/* Badges */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {defaultNetwork !== 1 ? (
-              <Badge variant="outline" className="text-sm bg-green-400">
-                testnet
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="text-sm">
-                available
-              </Badge>
-            )}
-
-            <ShareProfile
-              isShareDialogOpen={isShareDialogOpen}
-              setIsShareDialogOpen={() =>
-                setIsShareDialogOpen(!isShareDialogOpen)
-              }
-            />
-          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -121,24 +94,29 @@ export const BalanceCard = () => {
             <Skeleton className="h-5 w-64" />
           ) : ethAudValue && ethUsdValue ? (
             <>
-              <span className="tabular-nums">
+              <span className="tabular-nums text-xs">
                 1 ETH = {ethAudValue} AUD / {ethUsdValue} USD
               </span>
+              {/* Desktop: tooltip on hover */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-5 w-5 p-0 shrink-0"
-                    aria-label="info"
-                  >
-                    <Info className="h-3 w-3" />
-                  </Button>
+                  <span className="shrink-0 hidden md:inline">
+                    <img
+                      src="/link-logo.png"
+                      alt="Chainlink"
+                      className="h-4 w-4"
+                    />
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Pricing data provided by Chainlink pricing feeds</p>
                 </TooltipContent>
               </Tooltip>
+              {/* Mobile: inline text */}
+              <span className="flex items-center gap-1 text-[11px] md:hidden">
+                <img src="/link-logo.png" alt="Chainlink" className="h-3 w-3" />
+                prices provided by ChainLink
+              </span>
             </>
           ) : null}
         </div>

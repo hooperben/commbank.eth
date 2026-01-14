@@ -1,3 +1,4 @@
+import { SUPPORTED_NETWORKS } from "@/_constants/networks";
 import { useQuery } from "@tanstack/react-query";
 import { Contract, JsonRpcProvider } from "ethers";
 
@@ -37,8 +38,7 @@ export const PRICE_FEEDS = {
   AUD_USD: "0x77F9710E7d0A19669A13c055F62cd80d313dF022",
 } as const;
 
-const MAINNET_RPC =
-  "https://eth-mainnet.g.alchemy.com/v2/Xq2kgRj8MHmXSE3sbThrHfr9R4-5HPWg";
+const MAINNET_RPC = SUPPORTED_NETWORKS[1].rpc;
 
 interface ChainlinkPriceData {
   price: bigint;

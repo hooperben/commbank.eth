@@ -4,16 +4,17 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/_components/ui/dialog";
 import { Input } from "@/_components/ui/input";
 import { Label } from "@/_components/ui/label";
 import { useAuth } from "@/_providers/auth-provider";
 import { addNicknameHash } from "@/lib/formatting/nickname-hash";
-import { Check, Copy, Info, Share2 } from "lucide-react";
-import { useState } from "react";
+import { Check, Copy, Info } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
+
+const NICKNAME_STORAGE_KEY = "shareProfileNickname";
 
 interface AddressFieldProps {
   label: string;
@@ -71,11 +72,22 @@ export const ShareProfile = ({
   isShareDialogOpen: boolean;
   setIsShareDialogOpen: () => void;
 }) => {
-  const { isSignedIn, address, signingKey, privateAddress } = useAuth();
+  const { address, signingKey, privateAddress } = useAuth();
 
-  const [sharePublic, setSharePublic] = useState(false);
+  const [sharePublic, setSharePublic] = useState(true);
   const [sharePrivate, setSharePrivate] = useState(true);
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem(NICKNAME_STORAGE_KEY) || "";
+  });
+
+  // Save nickname to localStorage when it changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (nickname.trim()) {
+      localStorage.setItem(NICKNAME_STORAGE_KEY, nickname.trim());
+    }
+  }, [nickname]);
 
   const handleCopyProfileURL = async () => {
     try {
@@ -114,17 +126,6 @@ export const ShareProfile = ({
 
   return (
     <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          disabled={!isSignedIn}
-        >
-          share
-          <Share2 className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share your commbank.eth details</DialogTitle>
@@ -167,7 +168,7 @@ export const ShareProfile = ({
                 <p className="text-sm leading-none font-medium">
                   Private Addresses
                 </p>
-                <AddressField label="Owner Address" value={privateAddress} />
+                <AddressField label="Poseidon Address" value={privateAddress} />
                 <AddressField label="Envelope" value={signingKey} />
               </div>
             </Label>
@@ -197,6 +198,13 @@ export const ShareProfile = ({
             variant="outline"
           >
             Copy Profile URL
+          </Button>
+          <Button
+            onClick={() => setIsShareDialogOpen()}
+            className="w-full"
+            variant="ghost"
+          >
+            Cancel
           </Button>
         </div>
       </DialogContent>

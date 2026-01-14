@@ -23,7 +23,7 @@ export const BalanceRow = ({
 
   return (
     <div>
-      {isLoading && <Skeleton className="w-24 h-8" />}
+      {isLoading && <Skeleton className="w-12 h-3" />}
       {!isLoading && (
         <div className="text-right">
           <div className="font-medium text-xs text-foreground">
@@ -47,7 +47,7 @@ export const PrivateBalanceRow = ({
 
   return (
     <div>
-      {isLoading && <Skeleton className="w-24 h-8" />}
+      {isLoading && <Skeleton className="w-12 h-3" />}
       {assetNotes && !isLoading && (
         <div className="text-right">
           <div className="font-medium text-xs text-foreground">
@@ -85,14 +85,17 @@ export const TotalBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
 
   return (
     <div>
-      {isLoading && <Skeleton className="w-24 h-8" />}
+      {isLoading && <Skeleton className="ml-auto w-20 h-4" />}
 
       {assetNotes && !isLoading && privateAssetTotal !== undefined && (
         <div className="text-right">
           <div className="font-medium text-sm text-foreground">
-            {erc20BalanceData &&
-              sumAndFormatBalances(erc20BalanceData, privateAssetTotal)}{" "}
-            {asset.symbol}
+            {erc20BalanceData && (
+              <>
+                {sumAndFormatBalances(erc20BalanceData, privateAssetTotal)}{" "}
+                {asset.symbol}
+              </>
+            )}
           </div>
         </div>
       )}

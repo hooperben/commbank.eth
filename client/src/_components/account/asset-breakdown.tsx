@@ -93,8 +93,8 @@ export function AssetBreakdown() {
                         </div>
                       </td>
 
-                      <td className="md:p-3 font-medium">
-                        <div className="flex items-center gap-4">
+                      <td className="md:p-3 font-medium w-full">
+                        <div className="flex items-center gap-4 justify-end">
                           <div className="w-[120px] text-right">
                             <TotalBalanceRow
                               key={`${asset.address}${asset.chainId}`}

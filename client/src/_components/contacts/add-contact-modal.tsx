@@ -11,6 +11,7 @@ import { Input } from "@/_components/ui/input";
 import { Label } from "@/_components/ui/label";
 import { useAddContact } from "@/_hooks/use-contacts";
 import { isValidEthereumAddress } from "@/lib/utils";
+import { DialogDescription } from "@radix-ui/react-dialog";
 import { Info, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -125,8 +126,20 @@ export function AddContactModal({ children }: AddContactModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Contact</DialogTitle>
+          <DialogDescription className="flex flex-col text-xs gap-1">
+            <p>
+              It&apos;s always easier to have a contact send your their
+              commbank.eth details, but you can manually enter contact details
+              below.
+            </p>
+
+            <p>
+              When adding or editing a contact, you&apos;ll have to approve
+              account changes with a passkey approval.
+            </p>
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 pb-4">
           {/* Contact Name */}
           <div className="space-y-2">
             <Label htmlFor="nickname" className="text-sm font-medium">
@@ -199,7 +212,7 @@ export function AddContactModal({ children }: AddContactModalProps) {
                       htmlFor="private-address"
                       className="text-xs text-muted-foreground"
                     >
-                      Owner Address:
+                      Poseidon Address:
                     </Label>
                     <Input
                       id="private-address"
