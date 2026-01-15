@@ -71,7 +71,7 @@ export default function TransactionsPage() {
       {...PAGE_METADATA.transactions}
       description="View your commbank.eth transactions."
     >
-      <div className="container text-left py-8 px-4 max-w-6xl">
+      <div className="container mx-auto max-w-6xl space-y-6 text-left">
         <div className="mb-6">
           <Button variant="ghost" asChild>
             <Link to="/account">

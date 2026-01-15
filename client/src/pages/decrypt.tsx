@@ -225,7 +225,7 @@ export default function DecryptPage() {
       title="commbank.eth | Decrypt"
       description="Decrypt your private assets"
     >
-      <div className="container mx-auto p-6 max-w-6xl space-y-6 text-left">
+      <div className="container mx-auto max-w-6xl space-y-6 text-left">
         {/* Back Button */}
         <div className="flex items-center gap-4">
           <Button
@@ -249,7 +249,7 @@ export default function DecryptPage() {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="p-4">
             <CardTitle className="text-2xl">
               Decrypt {selectedAsset.symbol}
             </CardTitle>

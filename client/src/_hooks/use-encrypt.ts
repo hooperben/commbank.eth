@@ -62,7 +62,7 @@ export const useEncryptMutation = ({
       const signer = wallet.connect(provider);
 
       // Get adjusted gas price (doubled on Sepolia)
-      const gasPrice = await getAdjustedGasPrice(provider, chain.id);
+      const gasPrice = await getAdjustedGasPrice(provider);
 
       // Initialize deposit circuit
       const deposit = new Deposit();
@@ -112,6 +112,7 @@ export const useEncryptMutation = ({
                 timestamp: Date.now(),
                 inputNotes: [],
                 outputNotes: [],
+                // TODO add asset here
               });
               await refetchTransactions();
             } catch (dbError) {

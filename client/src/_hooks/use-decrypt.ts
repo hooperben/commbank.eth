@@ -362,7 +362,7 @@ export function useDecrypt({
         const signer = wallet.connect(provider);
 
         // Get adjusted gas price (doubled on Sepolia)
-        const gasPrice = await getAdjustedGasPrice(provider, chain.id);
+        const gasPrice = await getAdjustedGasPrice(provider);
 
         // Initialize contract
         const commbankDotEthContract = new ethers.Contract(

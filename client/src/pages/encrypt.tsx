@@ -235,7 +235,7 @@ export default function EncryptPage() {
       title="commbank.eth | Encrypt"
       description="Encrypt your assets for private transactions"
     >
-      <div className="container mx-auto p-2 max-w-6xl text-left">
+      <div className="container mx-auto max-w-6xl space-y-6 text-left">
         {/* Back Button */}
         <div className="flex items-center gap-4">
           <Button

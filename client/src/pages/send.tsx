@@ -313,7 +313,7 @@ export default function SendPage() {
       title="commbank.eth | Send"
       description="Send assets privately or publicly"
     >
-      <div className="container max-w-full space-y-6 text-left">
+      <div className="container mx-auto max-w-6xl space-y-6 text-left">
         {/* Back Button */}
         <div className="flex items-center gap-4">
           <Button
@@ -348,9 +348,10 @@ export default function SendPage() {
             <CardDescription>
               {!transferType &&
                 "Send assets to a contact publicly or privately"}
-              {transferType && transferType == "private"
-                ? "Send assets privately to one of your contacts"
-                : "Send assets publicly to one of your contacts"}
+              {transferType == "private" &&
+                "Send assets privately to one of your contacts"}
+              {transferType == "public" &&
+                "Send assets publicly to one of your contacts"}
             </CardDescription>
           </CardHeader>
 
