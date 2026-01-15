@@ -8,7 +8,7 @@
 - `contracts/`: the EVM smart contracts required to facilitate Private Unstoppable Money
 - `circuits/`: Private Unstoppable Money Zero Knowledge circuits
 - `indexer/`: a data indexer used to cache Private Unstoppable Money transactions more efficiently
-- `relayer/`: a rust based transaction relayer
+- `relayer/`: an expressJS based backend that forwards RPC requests and works as a transaction relayer
 
 ## Development
 
