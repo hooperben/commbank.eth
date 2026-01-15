@@ -44,7 +44,7 @@ export default function TransactionsPage() {
       const asset = defaultNetworkAssetByAddress[getAssetAddress(tx)];
 
       return (
-        tx.transactionHash.toLowerCase().includes(query) ||
+        tx.transactionHash?.toLowerCase().includes(query) ||
         tx.type.toLowerCase().includes(query) ||
         asset?.symbol.toLowerCase().includes(query) ||
         asset?.name.toLowerCase().includes(query)

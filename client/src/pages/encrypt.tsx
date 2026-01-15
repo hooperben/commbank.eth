@@ -1,3 +1,6 @@
+import { Encrypt } from "@/_components/PUM/encrpyt";
+import type { EncryptionStep } from "@/_components/PUM/step";
+import { Alert, AlertDescription } from "@/_components/ui/alert";
 import { Button } from "@/_components/ui/button";
 import {
   Card,
@@ -14,17 +17,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/_components/ui/select";
-import { Encrypt } from "@/_components/PUM/encrpyt";
-import type { EncryptionStep } from "@/_components/PUM/step";
+import { useCanEncrypt } from "@/_hooks/use-can-encrypt";
 import { useEncryptMutation } from "@/_hooks/use-encrypt";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
 import { usePrivateBalance } from "@/_hooks/use-private-balance";
 import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
 import PageContainer from "@/_providers/page-container";
 import { ethers } from "ethers";
-import { ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import {
+  defaultNetwork,
+  mainnetAssets,
+  sepoliaAssets,
+  type SupportedAsset,
+} from "shared/constants/token";
 
 // Helper to extract a user-friendly error message
 function getSimplifiedErrorMessage(error: Error): string {
@@ -59,12 +67,6 @@ function getSimplifiedErrorMessage(error: Error): string {
 
   return message;
 }
-import {
-  defaultNetwork,
-  mainnetAssets,
-  sepoliaAssets,
-  type SupportedAsset,
-} from "shared/constants/token";
 
 const assets: SupportedAsset[] =
   defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
@@ -103,6 +105,8 @@ export default function EncryptPage() {
   );
 
   const { refetch: refetchERC20Balance } = useERC20Balance(selectedAsset);
+
+  const { canEncrypt, isLoading: isLoadingCanEncrypt } = useCanEncrypt();
 
   const onTxSuccess = async () => {
     await refetchERC20Balance();
@@ -305,6 +309,16 @@ export default function EncryptPage() {
               </div>
             )}
 
+            {/* Authorization Alert */}
+            {!canEncrypt && !isLoadingCanEncrypt && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  You are currently not authorised to encrypt funds.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
               {encryptionStep === "complete" ? (
@@ -324,7 +338,9 @@ export default function EncryptPage() {
                 <Button
                   onClick={handleNext}
                   className="flex-1"
-                  disabled={hasError || amount === "" || isPending}
+                  disabled={
+                    hasError || amount === "" || isPending || !canEncrypt
+                  }
                 >
                   Next
                 </Button>
@@ -332,7 +348,9 @@ export default function EncryptPage() {
                 <Button
                   onClick={handleConfirm}
                   className="flex-1"
-                  disabled={hasError || amount === "" || isPending}
+                  disabled={
+                    hasError || amount === "" || isPending || !canEncrypt
+                  }
                 >
                   {isPending ? "Processing..." : "Confirm"}
                 </Button>

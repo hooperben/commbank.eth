@@ -122,10 +122,10 @@ export default function DecryptPage() {
     onProofSuccess: () => {
       setDecryptionStep("deposit"); // "deposit" step in UI means tx submission
     },
-    onTxSuccess: () => {
-      // Transaction submitted
+    onTxSubmitted: () => {
+      // Transaction submitted - user can now safely navigate away
     },
-    onReceiptSuccess: async () => {
+    onTxConfirmed: async () => {
       await refetchERC20Balance();
       await refetchUserAssetNotes();
       setDecryptionStep("complete");

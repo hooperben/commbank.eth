@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from "@/_components/ui/alert";
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
 import {
@@ -6,11 +7,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/_components/ui/tabs";
+import { useCanEncrypt } from "@/_hooks/use-can-encrypt";
 import { useEncryptMutation } from "@/_hooks/use-encrypt";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
 import { usePrivateBalance } from "@/_hooks/use-private-balance";
 import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
 import { ethers } from "ethers";
+import { AlertCircle } from "lucide-react";
 import { useState } from "react";
 import type { SupportedAsset } from "shared/constants/token";
 import { Decrypt } from "./decrypt";
@@ -35,6 +38,7 @@ export function InlineEncryptConfirmation({
   const [encryptionStep, setEncryptionStep] = useState<EncryptionStep>();
   const [decryptionStep, setDecryptionStep] = useState<EncryptionStep>();
   const { refetch: retchUserAssetNotes } = useUserAssetNotes(asset.address);
+  const { canEncrypt, isLoading: isLoadingCanEncrypt } = useCanEncrypt();
 
   const onTxSuccess = () => {
     retchUserAssetNotes();
@@ -193,6 +197,16 @@ export function InlineEncryptConfirmation({
               />
             )}
 
+          {/* Authorization Alert */}
+          {!canEncrypt && !isLoadingCanEncrypt && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You are currently not authorised to encrypt funds.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="flex gap-2">
             <Button
               onClick={onCancel}
@@ -208,7 +222,7 @@ export function InlineEncryptConfirmation({
                 onClick={handleNext}
                 size="sm"
                 className="flex-1"
-                disabled={hasError || amount === "" || isPending}
+                disabled={hasError || amount === "" || isPending || !canEncrypt}
               >
                 Next
               </Button>
@@ -222,7 +236,8 @@ export function InlineEncryptConfirmation({
                   hasError ||
                   amount === "" ||
                   isPending ||
-                  encryptionStep === "complete"
+                  encryptionStep === "complete" ||
+                  !canEncrypt
                 }
               >
                 Confirm

@@ -1,7 +1,8 @@
 import { fetchIndexerNotes } from "@/_hooks/use-indexer-notes";
 import { useIsRegistered } from "@/_hooks/use-is-registered";
 import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
-import { addNote, getAllPayloads } from "@/lib/db";
+import { addNote, getAllPayloads, migrateTransactionsToV4 } from "@/lib/db";
+import { transactionMonitor } from "@/lib/transaction-monitor";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { ethers } from "ethers";
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -44,6 +45,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setCommbankDotEthAccount(new CommbankDotETHAccount());
 
+    // Run database migration for v4 schema
+    migrateTransactionsToV4().catch((error) => {
+      console.error("Failed to migrate transactions:", error);
+    });
+
     const storedToken = sessionStorage.getItem("authToken");
 
     if (storedToken) {
@@ -66,6 +72,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoading(false);
   }, []);
+
+  // Start/stop transaction monitor based on auth state
+  useEffect(() => {
+    if (isSignedIn && address && privateAddress) {
+      transactionMonitor.start();
+    } else {
+      transactionMonitor.stop();
+    }
+
+    return () => {
+      transactionMonitor.stop();
+    };
+  }, [isSignedIn, address, privateAddress]);
 
   const signIn = async (providedMnemonic?: string) => {
     try {
@@ -262,6 +281,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = () => {
+    // Stop transaction monitor
+    transactionMonitor.stop();
+
     setToken(null);
     setAddress(null);
     setIsSignedIn(false);

@@ -188,10 +188,10 @@ export default function SendPage() {
     onProofSuccess: () => {
       setTransferStatus("(2/4) Submitting Transaction");
     },
-    onTxSuccess: () => {
+    onTxSubmitted: () => {
       setTransferStatus("(3/4) Submitted, Awaiting Confirmation");
     },
-    onReceiptSuccess: async () => {
+    onTxConfirmed: async () => {
       await refetchUserAssets();
       setTransferStatus("(4/4) Transfer complete");
     },

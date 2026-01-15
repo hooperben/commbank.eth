@@ -2,6 +2,7 @@ import { SUPPORTED_NETWORKS } from "@/_constants/networks";
 import { getNoteHash, type OutputNote } from "@/_constants/notes";
 import { useAuth } from "@/_providers/auth-provider";
 import { addNote, addTransaction, updateTransaction } from "@/lib/db";
+import { getAdjustedGasPrice } from "@/lib/gas";
 import { useMutation } from "@tanstack/react-query";
 import { ethers } from "ethers";
 import { Deposit } from "shared/classes/Deposit";
@@ -29,7 +30,7 @@ export const useEncryptMutation = ({
   const { refetch: refetchTransactions } =
     useTransactionsByChainId(defaultNetwork);
 
-  const canEncrypt = useCanEncrypt();
+  const { canEncrypt } = useCanEncrypt();
 
   const mutationFn = useMutation({
     mutationFn: async ({
@@ -60,12 +61,8 @@ export const useEncryptMutation = ({
       const provider = new ethers.JsonRpcProvider(chain.rpc);
       const signer = wallet.connect(provider);
 
-      // Get current gas price from RPC
-      const feeData = await provider.getFeeData();
-      console.log("feeData:", feeData);
-
-      const gasPrice =
-        chain.id === 1 ? feeData.gasPrice : (feeData.gasPrice ?? 0n) * 2n;
+      // Get adjusted gas price (doubled on Sepolia)
+      const gasPrice = await getAdjustedGasPrice(provider, chain.id);
 
       // Initialize deposit circuit
       const deposit = new Deposit();
@@ -107,10 +104,14 @@ export const useEncryptMutation = ({
                 chainId,
                 transactionHash: approvalReceipt.hash,
                 type: "Approval",
+                status: "confirmed",
                 to: assetId,
                 data: approveTx.data,
                 value: "0",
+                createdAt: Date.now(),
                 timestamp: Date.now(),
+                inputNotes: [],
+                outputNotes: [],
               });
               await refetchTransactions();
             } catch (dbError) {
@@ -202,10 +203,14 @@ export const useEncryptMutation = ({
           chainId,
           transactionHash: depositTx.hash,
           type: "Deposit-Pending",
+          status: "pending",
           to: chain.CommBankDotEth,
           data: depositTx.data,
           value: isNativeDeposit ? assetAmount.toString() : undefined,
+          createdAt: txSubmittedAt,
           timestamp: txSubmittedAt,
+          inputNotes: [],
+          outputNotes: [],
         });
         await refetchTransactions();
 
@@ -224,10 +229,15 @@ export const useEncryptMutation = ({
               chainId,
               transactionHash: depositReceipt.hash,
               type: "Deposit",
+              status: "confirmed",
               to: chain.CommBankDotEth,
               data: depositTx.data,
               value: isNativeDeposit ? assetAmount.toString() : undefined,
+              createdAt: txSubmittedAt,
+              confirmedAt: Date.now(),
               timestamp: txSubmittedAt,
+              inputNotes: [],
+              outputNotes: [],
             });
             await refetchTransactions();
 
