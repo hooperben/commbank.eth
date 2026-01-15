@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/_components/ui/tooltip";
-import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import { CheckCircle, Loader2, RefreshCw, XCircle } from "lucide-react";
 import { useState } from "react";
 
 type SyncState = "syncing" | "complete" | "error";
@@ -20,11 +20,13 @@ type SyncState = "syncing" | "complete" | "error";
 interface SyncButtonProps {
   state: SyncState;
   errorMessage?: string;
+  onSync?: () => void;
 }
 
 export function SyncButton({
   state,
   errorMessage = "An error occurred during sync",
+  onSync,
 }: SyncButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -38,14 +40,8 @@ export function SyncButton({
         {state === "syncing" && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                disabled
-                variant="outline"
-                size="icon"
-                className="h-10 w-10"
-                aria-label="Syncing"
-              >
-                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+              <Button disabled variant="outline" aria-label="Syncing">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Scanning for new private balances</TooltipContent>
@@ -56,16 +52,19 @@ export function SyncButton({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                disabled
                 variant="outline"
-                size="icon"
-                className="h-10 w-10"
-                aria-label="Sync complete"
+                aria-label="Sync complete - Click to sync again"
+                onClick={onSync}
               >
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <RefreshCw className="h-4 w-4 text-green-500" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Account Synced</TooltipContent>
+            <TooltipContent>
+              <div className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-green-500" />
+                <span>Synced - Click to refresh</span>
+              </div>
+            </TooltipContent>
           </Tooltip>
         )}
 
@@ -74,16 +73,14 @@ export function SyncButton({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
                   size="icon"
-                  className="h-10 w-10 hover:bg-destructive/10"
                   onClick={handleErrorClick}
                   aria-label="Sync error, click for details"
                 >
-                  <XCircle className="h-5 w-5 text-red-500" />
+                  <XCircle className="h-4 w-4 text-red-500" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Error Syncing</TooltipContent>
+              <TooltipContent>Error Syncing - Click for details</TooltipContent>
             </Tooltip>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -92,6 +89,19 @@ export function SyncButton({
                   <DialogTitle>Sync Error</DialogTitle>
                   <DialogDescription>{errorMessage}</DialogDescription>
                 </DialogHeader>
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsDialogOpen(false);
+                      onSync?.();
+                    }}
+                    className="gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Retry Sync
+                  </Button>
+                </div>
               </DialogContent>
             </Dialog>
           </>

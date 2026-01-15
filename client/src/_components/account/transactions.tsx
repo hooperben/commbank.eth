@@ -28,7 +28,7 @@ export const Transactions = () => {
 
   return (
     <Card className="text-left">
-      <CardHeader>
+      <CardHeader className="p-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-2xl font-bold">
             Recent Transactions

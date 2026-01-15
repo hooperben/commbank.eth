@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
-import PageContainer from "@/_providers/page-container";
 import { StatusCard } from "@/_components/status/status-card";
 import { Button } from "@/_components/ui/button";
+import PageContainer from "@/_providers/page-container";
 import type { SystemStatus } from "@/_types";
 import {
-  checkRPCStatus,
+  checkIndexedDBSupport,
   checkIndexerStatus,
   checkPasskeySupport,
-  checkIndexedDBSupport,
+  checkRelayerStatus,
+  checkRPCStatus,
 } from "@/lib/formatting/status-helpers";
 import { ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function StatusPage() {
   const [rpcStatus, setRpcStatus] = useState<SystemStatus>({
@@ -19,6 +20,10 @@ export default function StatusPage() {
   const [indexerStatus, setIndexerStatus] = useState<SystemStatus>({
     type: "loading",
     message: "Checking indexer status...",
+  });
+  const [relayerStatus, setRelayerStatus] = useState<SystemStatus>({
+    type: "loading",
+    message: "Checking relayer status...",
   });
 
   const githubBuildUrl = import.meta.env.VITE_GITHUB_ACTION_BUILD_URL;
@@ -38,6 +43,9 @@ export default function StatusPage() {
 
     // Check indexer status
     checkIndexerStatus().then(setIndexerStatus);
+
+    // Check relayer status
+    checkRelayerStatus().then(setRelayerStatus);
   }, []);
 
   return (
@@ -75,6 +83,7 @@ export default function StatusPage() {
           </StatusCard>
           <StatusCard title="RPC Status" status={rpcStatus} />
           <StatusCard title="Indexer Status" status={indexerStatus} />
+          <StatusCard title="Relayer Status" status={relayerStatus} />
           <StatusCard title="Passkey Support" status={passkeyStatus} />
           <StatusCard title="IndexedDB Support" status={indexedDBStatus} />
         </div>

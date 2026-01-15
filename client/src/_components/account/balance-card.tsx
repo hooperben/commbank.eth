@@ -1,10 +1,15 @@
-import { Button } from "@/_components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/_components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/_components/ui/select";
 import { Skeleton } from "@/_components/ui/skeleton";
 import {
   Tooltip,
@@ -13,8 +18,13 @@ import {
 } from "@/_components/ui/tooltip";
 import { useAccountTotal } from "@/_hooks/use-account-total";
 import { useAudUsdPrice, useEthUsdPrice } from "@/_hooks/use-chainlink-price";
-import { usePreferredCurrency } from "@/_hooks/use-preferred-currency";
+import {
+  usePreferredCurrency,
+  type Currency,
+} from "@/_hooks/use-preferred-currency";
 import { formatDollarAmount } from "@/lib/formatting/data-formatting";
+import { BadgeDollarSign } from "lucide-react";
+import { SyncState } from "./sync-state";
 
 export const BalanceCard = () => {
   // Fetch price data from Chainlink
@@ -23,7 +33,7 @@ export const BalanceCard = () => {
 
   const {
     currency,
-    toggleCurrency,
+    setCurrency,
     isLoading: isLoadingCurrency,
   } = usePreferredCurrency();
 
@@ -53,39 +63,40 @@ export const BalanceCard = () => {
   return (
     <Card>
       <CardHeader className="flex flex-row w-full justify-between">
-        <div className="space-y-4">
+        <div>
           {/* Total Value */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 flex-wrap">
             {isLoadingTotal || isLoadingCurrency ? (
-              <Skeleton className="h-12 w-64" />
+              <Skeleton className="h-10 w-52" />
             ) : (
-              <>
+              <div className="flex flex-row gap-1 items-center">
                 <CardTitle className="text-4xl md:text-5xl font-bold">
                   {currency === "AUD"
                     ? `$${formatDollarAmount(totalAud)}`
                     : `$${formatDollarAmount(totalUsd)}`}
                 </CardTitle>
-                <CardTitle className="text-4xl md:text-5xl font-bold text-muted-foreground">
-                  {currency === "AUD" ? "AUD" : "USD"}
-                </CardTitle>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-lg shrink-0"
-                      onClick={toggleCurrency}
-                    >
-                      {currency !== "AUD" ? "🇦🇺" : "🇺🇸"}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Change currency</p>
-                  </TooltipContent>
-                </Tooltip>
-              </>
+                <span className="text-4xl md:text-5xl font-bold text-muted-foreground">
+                  {currency}
+                </span>
+                <Select
+                  value={currency}
+                  onValueChange={(value: Currency) => setCurrency(value)}
+                >
+                  <SelectTrigger className="p-2 h-8 w-8 border-0 bg-transparent shadow-none hover:bg-transparent focus:ring-0 dark:bg-transparent dark:hover:bg-transparent [&>svg:last-child]:hidden flex items-center justify-center">
+                    <BadgeDollarSign className="h-5 w-5 text-muted-foreground" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AUD">AUD</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
+        </div>
+        {/* TODO readd */}
+        <div className="flex-row gap-1 items-center hidden">
+          <SyncState />
         </div>
       </CardHeader>
       <CardContent className="space-y-2">

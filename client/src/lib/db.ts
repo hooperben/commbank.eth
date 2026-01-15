@@ -352,6 +352,35 @@ export async function clearAllData(): Promise<void> {
 }
 
 /**
+ * Reset app data for re-sync
+ * Clears notes, tree leaves, payloads, and private transactions
+ * Keeps meta, contacts, and approval transactions
+ */
+export async function resetAppData(): Promise<void> {
+  // Clear notes, tree, and payloads
+  await Promise.all([clearNotes(), clearTree(), clearPayloads()]);
+
+  // Clear private transactions (keep approvals and other non-private txs)
+  const privateTransactionTypes = [
+    "Deposit",
+    "Deposit-Pending",
+    "Withdraw",
+    "Transfer",
+    "PrivateTransfer",
+  ];
+
+  const allTransactions = await getAllTransactions();
+  const transactionsToDelete = allTransactions.filter((tx) =>
+    privateTransactionTypes.includes(tx.type),
+  );
+
+  await Promise.all(transactionsToDelete.map((tx) => deleteTransaction(tx.id)));
+
+  // Reset meta last_id
+  await updateMeta({ last_id: 0 });
+}
+
+/**
  * Get database statistics
  */
 export async function getDBStats(): Promise<{

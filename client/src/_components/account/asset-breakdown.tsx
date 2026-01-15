@@ -44,8 +44,8 @@ export function AssetBreakdown({ isPortfolio }: { isPortfolio?: boolean }) {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+      <CardHeader className="p-4">
+        <div className="flex items-baseline justify-between">
           <CardTitle className="text-2xl font-bold">Accounts</CardTitle>
           {!isPortfolio && (
             <Button
@@ -54,7 +54,7 @@ export function AssetBreakdown({ isPortfolio }: { isPortfolio?: boolean }) {
               onClick={() => navigate("/accounts")}
             >
               View Portfolio
-              <ArrowRight className="h-4 w-4 ml-2" />
+              <ArrowRight className="h-4 w-4" />
             </Button>
           )}
         </div>
@@ -66,9 +66,9 @@ export function AssetBreakdown({ isPortfolio }: { isPortfolio?: boolean }) {
               {assets.map((asset, i) => (
                 <Fragment key={`${asset.address}-${asset.chainId}`}>
                   <tr
-                    className={`${i !== assets.length - 1 && "border-b"} hover:bg-muted/50 transition-colors`}
+                    className={`${i !== assets.length - 1 && "border-b-2"} hover:bg-muted/50 transition-colors`}
                   >
-                    <td className="p-2 font-semibold text-left">
+                    <td className="py-4 px-2 font-semibold text-left align-top sm:align-middle">
                       <div className="flex flex-row items-center gap-2">
                         <img
                           src={asset.logo}
@@ -78,9 +78,9 @@ export function AssetBreakdown({ isPortfolio }: { isPortfolio?: boolean }) {
                       </div>
                     </td>
 
-                    <td className="md:p-3 font-medium w-full">
-                      <div className="flex items-center gap-4 justify-end">
-                        <div className="w-[120px] text-right">
+                    <td className="py-4 px-2 md:p-3 font-medium w-full">
+                      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 justify-end">
+                        <div className="w-full sm:w-[120px] text-right">
                           <TotalBalanceRow
                             key={`${asset.address}${asset.chainId}`}
                             asset={asset}
@@ -88,8 +88,12 @@ export function AssetBreakdown({ isPortfolio }: { isPortfolio?: boolean }) {
                         </div>
 
                         <Separator
+                          orientation="horizontal"
+                          className="max-w-[120px] sm:hidden bg-primary/30"
+                        />
+                        <Separator
                           orientation="vertical"
-                          className="h-[20px]! bg-primary/30"
+                          className="hidden sm:block h-[20px]! bg-primary/30"
                         />
 
                         <div className="flex flex-col min-w-[100px]">

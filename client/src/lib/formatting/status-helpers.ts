@@ -150,3 +150,46 @@ export function checkIndexedDBSupport(): SystemStatus {
     };
   }
 }
+
+const RELAYER_URL = "https://relayer-production-91b9.up.railway.app";
+
+/**
+ * Check relayer status by pinging health endpoint
+ * @returns Status object
+ */
+export async function checkRelayerStatus(): Promise<SystemStatus> {
+  const info =
+    "The relayer enables gasless transactions by submitting proofs on behalf of users. When operational, users can perform private transfers without needing ETH for gas.";
+
+  try {
+    const response = await fetch(`${RELAYER_URL}/health`, {
+      method: "GET",
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        type: "success",
+        message:
+          data.status === "ok"
+            ? "Relayer is operational"
+            : "Relayer is responding",
+        info,
+      };
+    } else {
+      return {
+        type: "warning",
+        message: "Relayer responded with error",
+        info,
+      };
+    }
+  } catch (error) {
+    console.error("Relayer status check failed:", error);
+    return {
+      type: "error",
+      message: "Relayer is unreachable",
+      info,
+    };
+  }
+}
