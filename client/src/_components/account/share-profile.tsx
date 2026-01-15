@@ -85,6 +85,7 @@ export const ShareProfile = ({
     if (typeof window === "undefined") return "";
     return localStorage.getItem(NICKNAME_STORAGE_KEY) || "";
   });
+  const [isInputReadOnly, setIsInputReadOnly] = useState(true);
 
   // Save nickname to localStorage when it changes
   useEffect(() => {
@@ -93,6 +94,13 @@ export const ShareProfile = ({
       localStorage.setItem(NICKNAME_STORAGE_KEY, nickname.trim());
     }
   }, [nickname]);
+
+  // Reset input readOnly state when dialog closes
+  useEffect(() => {
+    if (!isShareDialogOpen) {
+      setIsInputReadOnly(true);
+    }
+  }, [isShareDialogOpen]);
 
   // Generate the profile URL
   const profileUrl = useMemo(() => {
@@ -156,6 +164,8 @@ export const ShareProfile = ({
               placeholder="Enter a nickname"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
+              readOnly={isInputReadOnly}
+              onFocus={() => setIsInputReadOnly(false)}
             />
             <div className="flex items-start gap-2 rounded-md bg-muted p-1 border border-border">
               <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />

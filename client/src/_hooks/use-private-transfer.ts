@@ -8,6 +8,7 @@ import {
   type InputNote,
   type OutputNote,
 } from "@/_constants/notes";
+import { POSEIDON_MAX } from "@/_constants/numbers";
 import { useAuth } from "@/_providers/auth-provider";
 import type { Contact, Note, Transaction } from "@/_types";
 import {
@@ -69,7 +70,7 @@ export function usePrivateTransfer({
       }
 
       const wallet = ethers.Wallet.fromPhrase(mnemonic);
-      const ownerSecret = BigInt(wallet.privateKey);
+      const ownerSecret = BigInt(wallet.privateKey) % POSEIDON_MAX;
       const owner = poseidon2Hash([ownerSecret]);
 
       // 2. Check for locked notes and filter them out
