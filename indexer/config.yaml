@@ -1,25 +1,11 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 name: envio-indexer
 networks:
-  - id: 11155111
-    start_block: 0
-    contracts:
-      - name: commbankdoteth
-        address:
-          - 0x3b4eEb695754F868DF6BaF0c0B788cC6E553DbdA
-        handler: src/EventHandlers.ts
-        events:
-          - event: LeafInserted(uint256 indexed leafIndex, bytes32 indexed leafValue)
-          - event: NotePayload(bytes encryptedNote)
-          - event: NullifierUsed(bytes32 indexed nullifier)
-          - event: RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
-          - event: RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
-          - event: RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
   # ARB SEPOLIA
   - id: 421614
     start_block: 0
     contracts:
-      - name: commbankdoteth
+      - name: commbankdoteth_arb_sepolia
         address:
           - 0xC0e0C9DC1DE67B7f6434FfdDf2A33300ed6f49E3
         handler: src/EventHandlers.ts
