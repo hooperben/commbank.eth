@@ -26,7 +26,7 @@ import PageContainer from "@/_providers/page-container";
 import { ethers, parseUnits } from "ethers";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   defaultNetwork,
   mainnetAssets,
@@ -99,6 +99,7 @@ const assets: SupportedAsset[] =
   defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
 
 export default function SendPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Asset selection
@@ -532,7 +533,7 @@ export default function SendPage() {
             {/* Step 3: Confirm */}
             {step === "confirm" && selectedContact && (
               <div className="space-y-4">
-                {!isProcessing ? (
+                {!isProcessing && !isComplete && (
                   <>
                     <div className="space-y-3 p-4 bg-muted rounded-lg">
                       <div className="flex justify-between">
@@ -595,52 +596,6 @@ export default function SendPage() {
                       )}
                     </div>
 
-                    {transferType === "private" && (
-                      <Card className="border-border/30 bg-muted/30">
-                        <CardContent className="grid gap-6 p-6 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium text-muted-foreground">
-                              Transfer Details:
-                            </p>
-                            <div className="space-y-1">
-                              <p className="text-sm">
-                                <span className="text-muted-foreground">
-                                  Amount:
-                                </span>{" "}
-                                <span className="font-medium">
-                                  {amount} {selectedAsset?.symbol}
-                                </span>
-                              </p>
-                              <p className="text-sm">
-                                <span className="text-muted-foreground">
-                                  To:
-                                </span>{" "}
-                                <span className="font-medium">
-                                  {selectedContact.nickname || "Anonymous"}
-                                </span>
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2 border-l border-border/30 pl-6">
-                            <ol className="space-y-2 text-sm">
-                              {privateTransferSteps.map((step) => (
-                                <li
-                                  key={step.id}
-                                  className="text-muted-foreground"
-                                >
-                                  <span className="font-medium text-foreground">
-                                    {step.id}.
-                                  </span>{" "}
-                                  {step.description}
-                                </li>
-                              ))}
-                            </ol>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
                     {privateTransferMutation.error && (
                       <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md break-words overflow-hidden">
                         Error:{" "}
@@ -686,7 +641,8 @@ export default function SendPage() {
                       </Button>
                     </div>
                   </>
-                ) : (
+                )}
+                {(isProcessing || isComplete) && (
                   <div className="flex flex-col items-center justify-center py-12">
                     <CircularProgress
                       progress={
@@ -719,9 +675,18 @@ export default function SendPage() {
                       )}
 
                     {isComplete && (
-                      <p className="mt-8 text-sm font-medium text-green-500">
-                        Transaction Complete!
-                      </p>
+                      <>
+                        <p className="mt-8 text-sm font-medium text-green-500">
+                          Transaction Complete!
+                        </p>
+                        <Button
+                          onClick={() => navigate("/account")}
+                          variant="outline"
+                          className="mt-4"
+                        >
+                          Back to Account Page
+                        </Button>
+                      </>
                     )}
 
                     {/* Error Display */}

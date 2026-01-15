@@ -346,7 +346,8 @@ export function InlineEncryptConfirmation({
           {/* TODO make this prettier */}
           {decryptionStep === "complete" && (
             <div className="text-xs text-green-500 bg-green-500/10 p-2 rounded">
-              Funds decrypted! You can view your updated balance above.
+              Funds decrypted! You can view your updated balance on the account
+              page.
             </div>
           )}
         </TabsContent>

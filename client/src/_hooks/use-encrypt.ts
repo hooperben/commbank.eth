@@ -1,6 +1,7 @@
 import { SUPPORTED_NETWORKS } from "@/_constants/networks";
 import { getNoteHash, type OutputNote } from "@/_constants/notes";
 import { useAuth } from "@/_providers/auth-provider";
+import type { TransactionAssetDetails } from "@/_types";
 import { addNote, addTransaction, updateTransaction } from "@/lib/db";
 import { getAdjustedGasPrice } from "@/lib/gas";
 import { useMutation } from "@tanstack/react-query";
@@ -9,7 +10,11 @@ import { Deposit } from "shared/classes/Deposit";
 import { NoteEncryption } from "shared/classes/Note";
 import { commbankDotEthAbi } from "shared/constants/abi/commbankdoteth";
 import { erc20Abi } from "shared/constants/abi/erc20abi";
-import { defaultNetwork, ETH_ADDRESS } from "shared/constants/token";
+import {
+  defaultNetwork,
+  defaultNetworkAssetByAddress,
+  ETH_ADDRESS,
+} from "shared/constants/token";
 import { getRandomInPoseidonField } from "shared/constants/zk";
 import { useCanEncrypt } from "./use-can-encrypt";
 import { useTransactionsByChainId } from "./use-transactions";
@@ -74,6 +79,16 @@ export const useEncryptMutation = ({
       // Convert amount to proper units (with decimals)
       const assetAmount = ethers.parseUnits(amount.toString(), decimals);
 
+      // Build asset details for transaction history
+      const assetInfo = defaultNetworkAssetByAddress[assetId];
+      const assetDetails: TransactionAssetDetails = {
+        address: assetId,
+        symbol: assetInfo?.symbol ?? (isNativeDeposit ? "ETH" : "Unknown"),
+        decimals: assetInfo?.decimals ?? decimals,
+        amount: assetAmount.toString(),
+        formattedAmount: amount.toString(),
+      };
+
       if (!privateAddress) throw new Error("Missing auth");
 
       // Approve ERC20 token (only if needed and not native ETH)
@@ -112,7 +127,7 @@ export const useEncryptMutation = ({
                 timestamp: Date.now(),
                 inputNotes: [],
                 outputNotes: [],
-                // TODO add asset here
+                asset: assetDetails,
               });
               await refetchTransactions();
             } catch (dbError) {
@@ -212,6 +227,7 @@ export const useEncryptMutation = ({
           timestamp: txSubmittedAt,
           inputNotes: [],
           outputNotes: [],
+          asset: assetDetails,
         });
         await refetchTransactions();
 
@@ -239,6 +255,7 @@ export const useEncryptMutation = ({
               timestamp: txSubmittedAt,
               inputNotes: [],
               outputNotes: [],
+              asset: assetDetails,
             });
             await refetchTransactions();
 

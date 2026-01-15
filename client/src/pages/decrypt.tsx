@@ -25,7 +25,7 @@ import PageContainer from "@/_providers/page-container";
 import { ethers } from "ethers";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   defaultNetwork,
   mainnetAssets,
@@ -86,6 +86,7 @@ function getSimplifiedErrorMessage(error: Error): string {
 }
 
 export default function DecryptPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Asset selection
@@ -259,7 +260,7 @@ export default function DecryptPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {!isProcessing ? (
+            {!isProcessing && !isComplete && (
               <>
                 {/* Asset Selector */}
                 <div className="space-y-2">
@@ -267,9 +268,11 @@ export default function DecryptPage() {
                   <Select
                     value={selectedAsset.address}
                     onValueChange={handleAssetChange}
-                    disabled={isPending || isComplete}
+                    disabled={
+                      isPending || isComplete || decryptionStep === "review"
+                    }
                   >
-                    <SelectTrigger className="bg-background/50">
+                    <SelectTrigger className="bg-background/50 w-full">
                       <SelectValue>
                         <div className="flex items-center gap-2">
                           <img
@@ -361,19 +364,6 @@ export default function DecryptPage() {
                           </p>
                         </div>
                       </div>
-
-                      <div className="space-y-2 border-l border-border/30 pl-6">
-                        <ol className="space-y-2 text-sm">
-                          {decryptSteps.map((step) => (
-                            <li key={step.id} className="text-muted-foreground">
-                              <span className="font-medium text-foreground">
-                                {step.id}.
-                              </span>{" "}
-                              {step.description}
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -388,21 +378,14 @@ export default function DecryptPage() {
                 {/* Success Message */}
                 {isComplete && (
                   <div className="text-sm text-green-500 bg-green-500/10 p-3 rounded-md">
-                    Funds decrypted! You can view your updated balance above.
+                    Funds decrypted! You can view your updated balance on the
+                    account page.
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 pt-4">
-                  {isComplete ? (
-                    <Button
-                      onClick={handleConfirm}
-                      className="flex-1"
-                      disabled={true}
-                    >
-                      Complete
-                    </Button>
-                  ) : !decryptionStep ? (
+                <div className="flex gap-2 pt-2">
+                  {!decryptionStep ? (
                     <Button
                       onClick={handleNext}
                       className="flex-1"
@@ -411,17 +394,27 @@ export default function DecryptPage() {
                       Next
                     </Button>
                   ) : (
-                    <Button
-                      onClick={handleConfirm}
-                      className="flex-1"
-                      disabled={hasError || amount === "" || isPending}
-                    >
-                      {isPending ? "Processing..." : "Confirm"}
-                    </Button>
+                    <div className="flex flex-col flex-1 gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setDecryptionStep(undefined)}
+                      >
+                        Back
+                      </Button>
+
+                      <Button
+                        onClick={handleConfirm}
+                        className=""
+                        disabled={hasError || amount === "" || isPending}
+                      >
+                        {isPending ? "Processing..." : "Confirm"}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </>
-            ) : (
+            )}
+            {(isProcessing || isComplete) && (
               <div className="flex flex-col items-center justify-center py-12">
                 <CircularProgress
                   progress={(currentStepIndex / decryptSteps.length) * 100}
@@ -448,9 +441,18 @@ export default function DecryptPage() {
                   )}
 
                 {isComplete && (
-                  <p className="mt-8 text-sm font-medium text-green-500">
-                    Transaction Complete!
-                  </p>
+                  <>
+                    <p className="mt-8 text-sm font-medium text-green-500">
+                      Transaction Complete!
+                    </p>
+                    <Button
+                      onClick={() => navigate("/account")}
+                      variant="outline"
+                      className="mt-4"
+                    >
+                      Back to Account Page
+                    </Button>
+                  </>
                 )}
 
                 {/* Error Display */}

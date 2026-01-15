@@ -26,7 +26,7 @@ import PageContainer from "@/_providers/page-container";
 import { ethers } from "ethers";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   defaultNetwork,
   mainnetAssets,
@@ -92,6 +92,7 @@ const encryptSteps: Step[] = [
 ];
 
 export default function EncryptPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Asset selection
@@ -131,7 +132,7 @@ export default function EncryptPage() {
   const onTxSuccess = async () => {
     await refetchERC20Balance();
     await refetchUserAssetNotes();
-    // setEncryptionStep("complete");
+    setEncryptionStep("complete");
   };
 
   const {
@@ -270,7 +271,7 @@ export default function EncryptPage() {
           </CardHeader>
 
           <CardContent className="space-y-4 md:space-y-6">
-            {!isProcessing ? (
+            {!isProcessing && !isComplete && (
               <>
                 {/* Asset Selector */}
                 <div className="space-y-1.5 md:space-y-2">
@@ -368,19 +369,6 @@ export default function EncryptPage() {
                           </p>
                         </div>
                       </div>
-
-                      <div className="space-y-1.5 border-t border-border/30 pt-3 md:border-t-0 md:border-l md:pl-6 md:pt-0">
-                        <ol className="space-y-1 text-sm">
-                          {encryptSteps.map((step) => (
-                            <li key={step.id} className="text-muted-foreground">
-                              <span className="font-medium text-foreground">
-                                {step.id}.
-                              </span>{" "}
-                              {step.description}
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -443,7 +431,9 @@ export default function EncryptPage() {
                   )}
                 </div>
               </>
-            ) : (
+            )}
+
+            {(isProcessing || isComplete) && (
               <div className="flex flex-col items-center justify-center py-12">
                 <CircularProgress
                   progress={(currentStepIndex / encryptSteps.length) * 100}
@@ -470,9 +460,18 @@ export default function EncryptPage() {
                   )}
 
                 {isComplete && (
-                  <p className="mt-8 text-sm font-medium text-green-500">
-                    Transaction Complete!
-                  </p>
+                  <>
+                    <p className="mt-8 text-sm font-medium text-green-500">
+                      Transaction Complete!
+                    </p>
+                    <Button
+                      onClick={() => navigate("/account")}
+                      variant="outline"
+                      className="mt-4"
+                    >
+                      Back to Account Page
+                    </Button>
+                  </>
                 )}
 
                 {/* Error Display */}
