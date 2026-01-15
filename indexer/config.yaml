@@ -5,7 +5,7 @@ networks:
   - id: 421614
     start_block: 0
     contracts:
-      - name: commbankdoteth_arb_sepolia
+      - name: commbankdoteth
         address:
           - 0xC0e0C9DC1DE67B7f6434FfdDf2A33300ed6f49E3
         handler: src/EventHandlers.ts
