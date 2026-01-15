@@ -134,13 +134,16 @@ async function main() {
   );
 
   try {
-    const response = await fetch("http://localhost:3000/tx", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      "https://relayer-production-91b9.up.railway.app/tx",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(relayerPayload),
       },
-      body: JSON.stringify(relayerPayload),
-    });
+    );
 
     const text = await response.text();
     console.log("\n📬 Response status:", response.status);

@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/_components/ui/card";
+import { CircularProgress } from "@/_components/ui/circular-progress";
 import { Input } from "@/_components/ui/input";
 import {
   Select,
@@ -23,13 +24,13 @@ import { usePrivateTransfer } from "@/_hooks/use-private-transfer";
 import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
 import PageContainer from "@/_providers/page-container";
 import { ethers, parseUnits } from "ethers";
-import { ArrowLeft, ArrowUpRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   defaultNetwork,
   mainnetAssets,
-  sepoliaAssets,
+  arbSepoliaAssets,
   type SupportedAsset,
 } from "shared/constants/token";
 
@@ -70,8 +71,32 @@ function getSimplifiedErrorMessage(error: Error): string {
 type TransferType = "public" | "private" | null;
 type Step = "select-type" | "enter-details" | "confirm";
 
+type ProcessingStep = {
+  id: number;
+  name: string;
+  description: string;
+};
+
+const privateTransferSteps: ProcessingStep[] = [
+  {
+    id: 1,
+    name: "Generate Proof",
+    description: "Creating zero-knowledge proof",
+  },
+  {
+    id: 2,
+    name: "Submit Transaction",
+    description: "Submitting transaction to network",
+  },
+  {
+    id: 3,
+    name: "Awaiting Confirmation",
+    description: "Waiting for transaction confirmation",
+  },
+];
+
 const assets: SupportedAsset[] =
-  defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+  defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
 
 export default function SendPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -186,16 +211,46 @@ export default function SendPage() {
 
   const privateTransferMutation = usePrivateTransfer({
     onProofSuccess: () => {
-      setTransferStatus("(2/4) Submitting Transaction");
+      setTransferStatus("submitting");
     },
     onTxSubmitted: () => {
-      setTransferStatus("(3/4) Submitted, Awaiting Confirmation");
+      setTransferStatus("awaiting");
     },
     onTxConfirmed: async () => {
       await refetchUserAssets();
-      setTransferStatus("(4/4) Transfer complete");
+      setTransferStatus("complete");
     },
   });
+
+  // Map transferStatus to current step index for progress
+  const getCurrentStepIndex = (): number => {
+    if (!transferStatus) return 0;
+    switch (transferStatus) {
+      case "(1/4) Generating proof":
+      case "generating":
+        return 1;
+      case "(2/4) Submitting Transaction":
+      case "submitting":
+        return 2;
+      case "(3/4) Submitted, Awaiting Confirmation":
+      case "awaiting":
+        return 3;
+      case "(4/4) Transfer complete":
+      case "complete":
+        return privateTransferSteps.length;
+      default:
+        return 0;
+    }
+  };
+
+  const currentStepIndex = getCurrentStepIndex();
+  const isProcessing =
+    transferStatus !== "" &&
+    transferStatus !== "complete" &&
+    step === "confirm";
+  const isComplete =
+    transferStatus === "complete" ||
+    transferStatus === "(4/4) Transfer complete";
 
   const handleConfirm = async () => {
     const contact = contacts?.find((c) => c.id === selectedContactId);
@@ -216,7 +271,7 @@ export default function SendPage() {
       selectedAsset &&
       contact
     ) {
-      setTransferStatus("(1/4) Generating proof");
+      setTransferStatus("generating");
       privateTransferMutation.mutate({
         amount: transaction.amount,
         asset: selectedAsset,
@@ -225,6 +280,14 @@ export default function SendPage() {
         tree,
       });
     }
+  };
+
+  const handleReset = () => {
+    setStep("select-type");
+    setTransferType(null);
+    setSelectedContactId("");
+    setAmount("");
+    setTransferStatus("");
   };
 
   // Filter contacts based on transfer type
@@ -253,11 +316,23 @@ export default function SendPage() {
       <div className="container max-w-full space-y-6 text-left">
         {/* Back Button */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" asChild>
-            <Link to="/account" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Account
-            </Link>
+          <Button
+            variant="ghost"
+            onClick={isComplete ? handleReset : undefined}
+            asChild={!isComplete}
+            className="flex items-center gap-2"
+          >
+            {isComplete ? (
+              <>
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </>
+            ) : (
+              <Link to="/account" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Account
+              </Link>
+            )}
           </Button>
         </div>
 
@@ -456,108 +531,209 @@ export default function SendPage() {
             {/* Step 3: Confirm */}
             {step === "confirm" && selectedContact && (
               <div className="space-y-4">
-                <div className="space-y-3 p-4 bg-muted rounded-lg">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Sending
-                    </span>
-                    <span className="text-sm font-medium">
-                      {selectedAsset?.symbol}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Amount
-                    </span>
-                    <span className="text-sm font-medium">
-                      {amount} {selectedAsset?.symbol}
-                    </span>
-                  </div>
-
-                  <Separator className="w-full" />
-
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">To</span>
-                    <span className="text-sm font-medium">
-                      {selectedContact.nickname || "Anonymous"}
-                    </span>
-                  </div>
-                  {transferType === "public" ? (
-                    <div className="flex justify-between items-start">
-                      <span className="text-sm text-muted-foreground">
-                        Address
-                      </span>
-                      <span className="text-sm font-medium font-mono text-right break-all">
-                        {formatAddress(selectedContact.evmAddress)}
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex justify-between items-start">
+                {!isProcessing ? (
+                  <>
+                    <div className="space-y-3 p-4 bg-muted rounded-lg">
+                      <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">
-                          Private Address
+                          Sending
                         </span>
-                        <span className="text-sm font-medium font-mono text-right break-all">
-                          {formatAddress(selectedContact.privateAddress)}
+                        <span className="text-sm font-medium">
+                          {selectedAsset?.symbol}
                         </span>
                       </div>
-                      {selectedContact.envelopeAddress && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Amount
+                        </span>
+                        <span className="text-sm font-medium">
+                          {amount} {selectedAsset?.symbol}
+                        </span>
+                      </div>
+
+                      <Separator className="w-full" />
+
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          To
+                        </span>
+                        <span className="text-sm font-medium">
+                          {selectedContact.nickname || "Anonymous"}
+                        </span>
+                      </div>
+                      {transferType === "public" ? (
                         <div className="flex justify-between items-start">
                           <span className="text-sm text-muted-foreground">
-                            Signing Key
+                            Address
                           </span>
                           <span className="text-sm font-medium font-mono text-right break-all">
-                            {formatAddress(selectedContact.envelopeAddress)}
+                            {formatAddress(selectedContact.evmAddress)}
                           </span>
                         </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start">
+                            <span className="text-sm text-muted-foreground">
+                              Private Address
+                            </span>
+                            <span className="text-sm font-medium font-mono text-right break-all">
+                              {formatAddress(selectedContact.privateAddress)}
+                            </span>
+                          </div>
+                          {selectedContact.envelopeAddress && (
+                            <div className="flex justify-between items-start">
+                              <span className="text-sm text-muted-foreground">
+                                Signing Key
+                              </span>
+                              <span className="text-sm font-medium font-mono text-right break-all">
+                                {formatAddress(selectedContact.envelopeAddress)}
+                              </span>
+                            </div>
+                          )}
+                        </>
                       )}
-                    </>
-                  )}
-                </div>
+                    </div>
 
-                {transferStatus && (
-                  <div className="text-sm text-primary bg-primary/10 p-3 rounded-md flex items-center gap-2">
-                    {privateTransferMutation.isPending && (
-                      <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                    {transferType === "private" && (
+                      <Card className="border-border/30 bg-muted/30">
+                        <CardContent className="grid gap-6 p-6 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-muted-foreground">
+                              Transfer Details:
+                            </p>
+                            <div className="space-y-1">
+                              <p className="text-sm">
+                                <span className="text-muted-foreground">
+                                  Amount:
+                                </span>{" "}
+                                <span className="font-medium">
+                                  {amount} {selectedAsset?.symbol}
+                                </span>
+                              </p>
+                              <p className="text-sm">
+                                <span className="text-muted-foreground">
+                                  To:
+                                </span>{" "}
+                                <span className="font-medium">
+                                  {selectedContact.nickname || "Anonymous"}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 border-l border-border/30 pl-6">
+                            <ol className="space-y-2 text-sm">
+                              {privateTransferSteps.map((step) => (
+                                <li
+                                  key={step.id}
+                                  className="text-muted-foreground"
+                                >
+                                  <span className="font-medium text-foreground">
+                                    {step.id}.
+                                  </span>{" "}
+                                  {step.description}
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+                        </CardContent>
+                      </Card>
                     )}
-                    {transferStatus}
+
+                    {privateTransferMutation.error && (
+                      <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md break-words overflow-hidden">
+                        Error:{" "}
+                        {getSimplifiedErrorMessage(
+                          privateTransferMutation.error,
+                        )}
+                      </div>
+                    )}
+
+                    {isComplete && (
+                      <div className="text-sm text-green-500 bg-green-500/10 p-3 rounded-md">
+                        Transfer complete! You can view the transaction in your
+                        history.
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleBack}
+                        className="flex-1"
+                        disabled={
+                          privateTransferMutation.isPending || isComplete
+                        }
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back
+                      </Button>
+                      <Button
+                        onClick={handleConfirm}
+                        className="flex-1"
+                        disabled={
+                          privateTransferMutation.isPending ||
+                          isComplete ||
+                          transferType !== "private"
+                        }
+                      >
+                        {isComplete
+                          ? "Complete"
+                          : privateTransferMutation.isPending
+                            ? "Submitting..."
+                            : "Confirm"}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <CircularProgress
+                      progress={
+                        (currentStepIndex / privateTransferSteps.length) * 100
+                      }
+                      isComplete={isComplete}
+                      currentStep={
+                        currentStepIndex > 0 &&
+                        currentStepIndex <= privateTransferSteps.length
+                          ? privateTransferSteps[currentStepIndex - 1].name
+                          : ""
+                      }
+                    />
+
+                    {currentStepIndex > 0 &&
+                      currentStepIndex <= privateTransferSteps.length &&
+                      !isComplete && (
+                        <div className="mt-8 text-center">
+                          <p className="text-sm font-medium">
+                            Step {currentStepIndex} of{" "}
+                            {privateTransferSteps.length}
+                          </p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {
+                              privateTransferSteps[currentStepIndex - 1]
+                                .description
+                            }
+                          </p>
+                        </div>
+                      )}
+
+                    {isComplete && (
+                      <p className="mt-8 text-sm font-medium text-green-500">
+                        Transaction Complete!
+                      </p>
+                    )}
+
+                    {/* Error Display */}
+                    {privateTransferMutation.error && (
+                      <div className="mt-4 text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden max-w-md">
+                        Error:{" "}
+                        {getSimplifiedErrorMessage(
+                          privateTransferMutation.error,
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
-
-                {privateTransferMutation.error && (
-                  <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md break-words overflow-hidden">
-                    Error:{" "}
-                    {getSimplifiedErrorMessage(privateTransferMutation.error)}
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleBack}
-                    className="flex-1"
-                    disabled={privateTransferMutation.isPending}
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleConfirm}
-                    className="flex-1"
-                    disabled={
-                      privateTransferMutation.isPending ||
-                      privateTransferMutation.isSuccess
-                    }
-                  >
-                    {!privateTransferMutation.isPending &&
-                      !privateTransferMutation.isSuccess &&
-                      "Confirm"}
-                    {privateTransferMutation.isPending && "Submitting..."}
-                    {!privateTransferMutation.isPending &&
-                      privateTransferMutation.isSuccess &&
-                      "Complete"}
-                  </Button>
-                </div>
               </div>
             )}
           </CardContent>

@@ -18,7 +18,7 @@ import { useERC20Balances } from "@/_hooks/use-erc20-balance";
 import {
   defaultNetwork,
   mainnetAssets,
-  sepoliaAssets,
+  arbSepoliaAssets,
   type SupportedAsset,
 } from "shared/constants/token";
 import { ethers } from "ethers";
@@ -45,7 +45,7 @@ const chartConfig = {
 
 export function PortfolioChart() {
   const assets: SupportedAsset[] =
-    defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+    defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
 
   const { totalUsd, isLoading: isLoadingTotal } = useAccountTotal();
   const { currency } = usePreferredCurrency();

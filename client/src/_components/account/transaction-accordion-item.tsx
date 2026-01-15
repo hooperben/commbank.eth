@@ -159,7 +159,7 @@ export const TransactionAccordionItem = ({
         : null;
 
   const etherscanUrl = tx.transactionHash
-    ? `https://${defaultNetwork !== 1 ? "sepolia." : ""}etherscan.io/tx/${tx.transactionHash}`
+    ? `https://${defaultNetwork !== 1 ? "sepolia.arbiscan.io" : "etherscan.io"}/tx/${tx.transactionHash}`
     : null;
 
   const hasEthValue = tx.value && Number(tx.value) > 0;

@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import {
   defaultNetwork,
   mainnetAssets,
-  sepoliaAssets,
+  arbSepoliaAssets,
   type SupportedAsset,
 } from "shared/constants/token";
 import { BalanceRow, PrivateBalanceRow, TotalBalanceRow } from "./balance";
@@ -21,7 +21,7 @@ import { BalanceRow, PrivateBalanceRow, TotalBalanceRow } from "./balance";
 export function AssetBreakdown({ isPortfolio }: { isPortfolio?: boolean }) {
   const navigate = useNavigate();
   const assets: SupportedAsset[] =
-    defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+    defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
 
   const [selectedAsset, setSelectedAsset] = useState<SupportedAsset | null>(
     null,

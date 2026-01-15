@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/_components/ui/card";
+import { CircularProgress } from "@/_components/ui/circular-progress";
 import { Input } from "@/_components/ui/input";
 import {
   Select,
@@ -14,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/_components/ui/select";
-import { Decrypt } from "@/_components/PUM/decrypt";
 import type { EncryptionStep } from "@/_components/PUM/step";
 import { useDecrypt } from "@/_hooks/use-decrypt";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
@@ -29,12 +29,27 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   defaultNetwork,
   mainnetAssets,
-  sepoliaAssets,
+  arbSepoliaAssets,
   type SupportedAsset,
 } from "shared/constants/token";
 
 const assets: SupportedAsset[] =
-  defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+  defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
+
+type Step = {
+  id: number;
+  name: string;
+  description: string;
+};
+
+const decryptSteps: Step[] = [
+  {
+    id: 1,
+    name: "Generate Proof",
+    description: "Creating zero-knowledge proof",
+  },
+  { id: 2, name: "Call Withdraw", description: "Calling withdraw on contract" },
+];
 
 // Helper to extract a user-friendly error message
 function getSimplifiedErrorMessage(error: Error): string {
@@ -182,7 +197,28 @@ export default function DecryptPage() {
     setDecryptionStep(undefined);
   };
 
+  // Map decryptionStep to current step index for progress
+  const getCurrentStepIndex = (): number => {
+    if (!decryptionStep) return 0;
+    switch (decryptionStep) {
+      case "proof-generation":
+        return 1;
+      case "deposit":
+        return 2;
+      case "complete":
+        return decryptSteps.length;
+      default:
+        return 0;
+    }
+  };
+
+  const currentStepIndex = getCurrentStepIndex();
   const isPending = decryptMutation.isPending;
+  const isProcessing =
+    decryptionStep !== undefined &&
+    decryptionStep !== "complete" &&
+    decryptionStep !== "review";
+  const isComplete = decryptionStep === "complete";
 
   return (
     <PageContainer
@@ -192,11 +228,23 @@ export default function DecryptPage() {
       <div className="container mx-auto p-6 max-w-6xl space-y-6 text-left">
         {/* Back Button */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" asChild>
-            <Link to="/account" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Account
-            </Link>
+          <Button
+            variant="ghost"
+            onClick={isComplete ? handleReset : undefined}
+            asChild={!isComplete}
+            className="flex items-center gap-2"
+          >
+            {isComplete ? (
+              <>
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </>
+            ) : (
+              <Link to="/account" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Account
+              </Link>
+            )}
           </Button>
         </div>
 
@@ -211,133 +259,208 @@ export default function DecryptPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Asset Selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Asset</label>
-              <Select
-                value={selectedAsset.address}
-                onValueChange={handleAssetChange}
-                disabled={isPending}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue>
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={selectedAsset.logo}
-                        alt={selectedAsset.symbol}
-                        className={`h-5 w-5 ${selectedAsset.symbol === "AUDD" && "invert dark:invert-0"}`}
-                      />
-                      <span className="font-medium">
-                        {selectedAsset.symbol}
-                      </span>
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {assets.map((asset) => (
-                    <SelectItem key={asset.address} value={asset.address}>
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={asset.logo}
-                          alt={asset.symbol}
-                          className={`h-5 w-5 ${asset.symbol === "AUDD" && "invert dark:invert-0"}`}
-                        />
-                        <span className="font-medium">{asset.symbol}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Amount Input (only show when not in progress) */}
-            {!decryptionStep && (
-              <div className="space-y-2">
-                <label htmlFor="amount" className="text-sm font-medium">
-                  Amount
-                </label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  disabled={isPending}
-                  aria-invalid={amount !== "" && hasError}
-                />
-                {amount !== "" && hasError && (
-                  <p className="text-sm text-destructive">{errorMessage}</p>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  Private Balance:{" "}
-                  {formattedPrivateBalance.toFixed(selectedAsset.roundTo ?? 2)}{" "}
-                  {selectedAsset.symbol}
-                </p>
-              </div>
-            )}
-
-            {/* Decryption Progress */}
-            {decryptionStep !== undefined &&
-              amount !== "" &&
-              !hasError &&
-              amountNum > 0 && (
-                <Decrypt
-                  asset={selectedAsset}
-                  formattedBalance={formattedBalance}
-                  formattedPrivateBalance={formattedPrivateBalance}
-                  decryptAmountNum={amountNum}
-                  decryptionStep={decryptionStep}
-                  error={decryptMutation.error}
-                />
-              )}
-
-            {/* Error Display */}
-            {decryptMutation.error && (
-              <div className="text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden">
-                Error: {getSimplifiedErrorMessage(decryptMutation.error)}
-              </div>
-            )}
-
-            {/* Success Message */}
-            {decryptionStep === "complete" && (
-              <div className="text-sm text-green-500 bg-green-500/10 p-3 rounded-md">
-                Funds decrypted! You can view your updated balance above.
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-4">
-              {decryptionStep === "complete" ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={handleReset}
-                    className="flex-1"
+            {!isProcessing ? (
+              <>
+                {/* Asset Selector */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Asset</label>
+                  <Select
+                    value={selectedAsset.address}
+                    onValueChange={handleAssetChange}
+                    disabled={isPending || isComplete}
                   >
-                    Decrypt More
-                  </Button>
-                  <Button asChild className="flex-1">
-                    <Link to="/account">Back to Account</Link>
-                  </Button>
-                </>
-              ) : !decryptionStep ? (
-                <Button
-                  onClick={handleNext}
-                  className="flex-1"
-                  disabled={hasError || amount === ""}
-                >
-                  Next
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleConfirm}
-                  className="flex-1"
-                  disabled={hasError || amount === "" || isPending}
-                >
-                  {isPending ? "Processing..." : "Confirm"}
-                </Button>
-              )}
-            </div>
+                    <SelectTrigger className="bg-background/50">
+                      <SelectValue>
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={selectedAsset.logo}
+                            alt={selectedAsset.symbol}
+                            className={`h-5 w-5 ${selectedAsset.symbol === "AUDD" && "invert dark:invert-0"}`}
+                          />
+                          <span className="font-medium">
+                            {selectedAsset.symbol}
+                          </span>
+                        </div>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assets.map((asset) => (
+                        <SelectItem key={asset.address} value={asset.address}>
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={asset.logo}
+                              alt={asset.symbol}
+                              className={`h-5 w-5 ${asset.symbol === "AUDD" && "invert dark:invert-0"}`}
+                            />
+                            <span className="font-medium">{asset.symbol}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Amount Input (only show when not in progress) */}
+                {!decryptionStep && (
+                  <div className="space-y-2">
+                    <label htmlFor="amount" className="text-sm font-medium">
+                      Amount
+                    </label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="0"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      disabled={isPending || isComplete}
+                      aria-invalid={amount !== "" && hasError}
+                    />
+                    {amount !== "" && hasError && (
+                      <p className="text-sm text-destructive">{errorMessage}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      Private Balance:{" "}
+                      {formattedPrivateBalance.toFixed(
+                        selectedAsset.roundTo ?? 2,
+                      )}{" "}
+                      {selectedAsset.symbol}
+                    </p>
+                  </div>
+                )}
+
+                {/* Transaction Summary Card */}
+                {decryptionStep === "review" && amountNum > 0 && (
+                  <Card className="border-border/30 bg-muted/30">
+                    <CardContent className="grid gap-6 p-6 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Once this transaction is complete:
+                        </p>
+                        <div className="space-y-1">
+                          <p className="text-sm">
+                            <span className="text-muted-foreground">
+                              Public:
+                            </span>{" "}
+                            <span className="font-medium">
+                              {(formattedBalance + amountNum).toFixed(
+                                selectedAsset.roundTo ?? 2,
+                              )}{" "}
+                              {selectedAsset.symbol}
+                            </span>
+                          </p>
+                          <p className="text-sm">
+                            <span className="text-muted-foreground">
+                              Private:
+                            </span>{" "}
+                            <span className="font-medium">
+                              {(formattedPrivateBalance - amountNum).toFixed(
+                                selectedAsset.roundTo ?? 2,
+                              )}{" "}
+                              {selectedAsset.symbol}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 border-l border-border/30 pl-6">
+                        <ol className="space-y-2 text-sm">
+                          {decryptSteps.map((step) => (
+                            <li key={step.id} className="text-muted-foreground">
+                              <span className="font-medium text-foreground">
+                                {step.id}.
+                              </span>{" "}
+                              {step.description}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Error Display */}
+                {decryptMutation.error && (
+                  <div className="text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden">
+                    Error: {getSimplifiedErrorMessage(decryptMutation.error)}
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {isComplete && (
+                  <div className="text-sm text-green-500 bg-green-500/10 p-3 rounded-md">
+                    Funds decrypted! You can view your updated balance above.
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-4">
+                  {isComplete ? (
+                    <Button
+                      onClick={handleConfirm}
+                      className="flex-1"
+                      disabled={true}
+                    >
+                      Complete
+                    </Button>
+                  ) : !decryptionStep ? (
+                    <Button
+                      onClick={handleNext}
+                      className="flex-1"
+                      disabled={hasError || amount === ""}
+                    >
+                      Next
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleConfirm}
+                      className="flex-1"
+                      disabled={hasError || amount === "" || isPending}
+                    >
+                      {isPending ? "Processing..." : "Confirm"}
+                    </Button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <CircularProgress
+                  progress={(currentStepIndex / decryptSteps.length) * 100}
+                  isComplete={isComplete}
+                  currentStep={
+                    currentStepIndex > 0 &&
+                    currentStepIndex <= decryptSteps.length
+                      ? decryptSteps[currentStepIndex - 1].name
+                      : ""
+                  }
+                />
+
+                {currentStepIndex > 0 &&
+                  currentStepIndex <= decryptSteps.length &&
+                  !isComplete && (
+                    <div className="mt-8 text-center">
+                      <p className="text-sm font-medium">
+                        Step {currentStepIndex} of {decryptSteps.length}
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {decryptSteps[currentStepIndex - 1].description}
+                      </p>
+                    </div>
+                  )}
+
+                {isComplete && (
+                  <p className="mt-8 text-sm font-medium text-green-500">
+                    Transaction Complete!
+                  </p>
+                )}
+
+                {/* Error Display */}
+                {decryptMutation.error && (
+                  <div className="mt-4 text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden max-w-md">
+                    Error: {getSimplifiedErrorMessage(decryptMutation.error)}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

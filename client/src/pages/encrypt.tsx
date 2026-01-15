@@ -1,4 +1,3 @@
-import { Encrypt } from "@/_components/PUM/encrpyt";
 import type { EncryptionStep } from "@/_components/PUM/step";
 import { Alert, AlertDescription } from "@/_components/ui/alert";
 import { Button } from "@/_components/ui/button";
@@ -9,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/_components/ui/card";
+import { CircularProgress } from "@/_components/ui/circular-progress";
 import { Input } from "@/_components/ui/input";
 import {
   Select,
@@ -30,7 +30,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   defaultNetwork,
   mainnetAssets,
-  sepoliaAssets,
+  arbSepoliaAssets,
   type SupportedAsset,
 } from "shared/constants/token";
 
@@ -69,7 +69,27 @@ function getSimplifiedErrorMessage(error: Error): string {
 }
 
 const assets: SupportedAsset[] =
-  defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+  defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
+
+type Step = {
+  id: number;
+  name: string;
+  description: string;
+};
+
+const encryptSteps: Step[] = [
+  { id: 1, name: "Approving Token", description: "Approving ERC20 token" },
+  {
+    id: 2,
+    name: "Generate ZK Proof",
+    description: "Generating ZK",
+  },
+  {
+    id: 3,
+    name: "Calling Deposit",
+    description: "Calling deposit on contract",
+  },
+];
 
 export default function EncryptPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -111,7 +131,7 @@ export default function EncryptPage() {
   const onTxSuccess = async () => {
     await refetchERC20Balance();
     await refetchUserAssetNotes();
-    setEncryptionStep("complete");
+    // setEncryptionStep("complete");
   };
 
   const {
@@ -186,19 +206,55 @@ export default function EncryptPage() {
     setEncryptionStep(undefined);
   };
 
+  // Map encryptionStep to current step index for progress
+  const getCurrentStepIndex = (): number => {
+    if (!encryptionStep) return 0;
+    switch (encryptionStep) {
+      case "approval":
+        return 1;
+      case "proof-generation":
+        return 2;
+      case "deposit":
+        return 3;
+      case "complete":
+        return encryptSteps.length;
+      default:
+        return 0;
+    }
+  };
+
+  const currentStepIndex = getCurrentStepIndex();
+  const isProcessing =
+    encryptionStep !== undefined &&
+    encryptionStep !== "complete" &&
+    encryptionStep !== "review";
+  const isComplete = encryptionStep === "complete";
+
   return (
     <PageContainer
       title="commbank.eth | Encrypt"
       description="Encrypt your assets for private transactions"
     >
-      <div className="container mx-auto p-6 max-w-6xl space-y-6 text-left">
+      <div className="container mx-auto p-2 max-w-6xl text-left">
         {/* Back Button */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" asChild>
-            <Link to="/account" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Account
-            </Link>
+          <Button
+            variant="ghost"
+            onClick={isComplete ? handleReset : undefined}
+            asChild={!isComplete}
+            className="flex items-center gap-2"
+          >
+            {isComplete ? (
+              <>
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </>
+            ) : (
+              <Link to="/account" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Account
+              </Link>
+            )}
           </Button>
         </div>
 
@@ -213,149 +269,220 @@ export default function EncryptPage() {
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-6">
-            {/* Asset Selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Asset</label>
-              <Select
-                value={selectedAsset.address}
-                onValueChange={handleAssetChange}
-                disabled={isPending}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue>
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={selectedAsset.logo}
-                        alt={selectedAsset.symbol}
-                        className={`h-5 w-5 ${selectedAsset.symbol === "AUDD" && "invert dark:invert-0"}`}
-                      />
-                      <span className="font-medium">
-                        {selectedAsset.symbol}
-                      </span>
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {assets.map((asset) => (
-                    <SelectItem key={asset.address} value={asset.address}>
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={asset.logo}
-                          alt={asset.symbol}
-                          className={`h-5 w-5 ${asset.symbol === "AUDD" && "invert dark:invert-0"}`}
-                        />
-                        <span className="font-medium">{asset.symbol}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Amount Input (only show when not in progress) */}
-            {!encryptionStep && (
-              <div className="space-y-2">
-                <label htmlFor="amount" className="text-sm font-medium">
-                  Amount
-                </label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  disabled={isPending}
-                  aria-invalid={amount !== "" && hasError}
-                />
-                {amount !== "" && hasError && (
-                  <p className="text-sm text-destructive">{errorMessage}</p>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  Public Balance:{" "}
-                  {formattedBalance.toFixed(selectedAsset.roundTo ?? 2)}{" "}
-                  {selectedAsset.symbol}
-                </p>
-              </div>
-            )}
-
-            {/* Encryption Progress */}
-            {encryptionStep !== undefined &&
-              amount !== "" &&
-              !hasError &&
-              amountNum > 0 && (
-                <Encrypt
-                  asset={selectedAsset}
-                  formattedBalance={formattedBalance}
-                  formattedPrivateBalance={formattedPrivateBalance}
-                  amount={amountNum}
-                  encryptionStep={encryptionStep}
-                  error={error}
-                />
-              )}
-
-            {/* Error Display */}
-            {error && (
-              <div className="text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden">
-                Error: {getSimplifiedErrorMessage(error)}
-              </div>
-            )}
-
-            {/* Success Message */}
-            {encryptionStep === "complete" && (
-              <div className="text-sm text-green-500 bg-green-500/10 p-3 rounded-md">
-                Funds encrypted! You can view all encrypted funds in your
-                transaction history.
-              </div>
-            )}
-
-            {/* Authorization Alert */}
-            {!canEncrypt && !isLoadingCanEncrypt && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  You are currently not authorised to encrypt funds.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-4">
-              {encryptionStep === "complete" ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={handleReset}
-                    className="flex-1"
+          <CardContent className="space-y-4 md:space-y-6">
+            {!isProcessing ? (
+              <>
+                {/* Asset Selector */}
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="text-sm font-medium">Select Asset</label>
+                  <Select
+                    value={selectedAsset.address}
+                    onValueChange={handleAssetChange}
+                    disabled={isPending || isComplete}
                   >
-                    Encrypt More
-                  </Button>
-                  <Button asChild className="flex-1">
-                    <Link to="/account">Back to Account</Link>
-                  </Button>
-                </>
-              ) : !encryptionStep ? (
-                <Button
-                  onClick={handleNext}
-                  className="flex-1"
-                  disabled={
-                    hasError || amount === "" || isPending || !canEncrypt
+                    <SelectTrigger className="bg-background/50">
+                      <SelectValue>
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={selectedAsset.logo}
+                            alt={selectedAsset.symbol}
+                            className={`h-5 w-5 ${selectedAsset.symbol === "AUDD" && "invert dark:invert-0"}`}
+                          />
+                          <span className="font-medium">
+                            {selectedAsset.symbol}
+                          </span>
+                        </div>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assets.map((asset) => (
+                        <SelectItem key={asset.address} value={asset.address}>
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={asset.logo}
+                              alt={asset.symbol}
+                              className={`h-5 w-5 ${asset.symbol === "AUDD" && "invert dark:invert-0"}`}
+                            />
+                            <span className="font-medium">{asset.symbol}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Amount Input (only show when not in progress) */}
+                {!encryptionStep && (
+                  <div className="space-y-1.5 md:space-y-2">
+                    <label htmlFor="amount" className="text-sm font-medium">
+                      Amount
+                    </label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="0"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      disabled={isPending || isComplete}
+                      aria-invalid={amount !== "" && hasError}
+                    />
+                    {amount !== "" && hasError && (
+                      <p className="text-sm text-destructive">{errorMessage}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      Public Balance:{" "}
+                      {formattedBalance.toFixed(selectedAsset.roundTo ?? 2)}{" "}
+                      {selectedAsset.symbol}
+                    </p>
+                  </div>
+                )}
+
+                {/* Transaction Summary Card */}
+                {encryptionStep === "review" && amountNum > 0 && (
+                  <Card className="border-border/30 bg-muted/30">
+                    <CardContent className="flex flex-col gap-3 p-4 md:grid md:grid-cols-2 md:gap-6 md:p-6">
+                      <div className="space-y-1.5">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Once this transaction is complete:
+                        </p>
+                        <div className="space-y-0.5">
+                          <p className="text-sm">
+                            <span className="text-muted-foreground">
+                              Public:
+                            </span>{" "}
+                            <span className="font-medium">
+                              {(formattedBalance - amountNum).toFixed(
+                                selectedAsset.roundTo ?? 2,
+                              )}{" "}
+                              {selectedAsset.symbol}
+                            </span>
+                          </p>
+                          <p className="text-sm">
+                            <span className="text-muted-foreground">
+                              Private:
+                            </span>{" "}
+                            <span className="font-medium">
+                              {formattedPrivateBalance + amountNum}{" "}
+                              {selectedAsset.symbol}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 border-t border-border/30 pt-3 md:border-t-0 md:border-l md:pl-6 md:pt-0">
+                        <ol className="space-y-1 text-sm">
+                          {encryptSteps.map((step) => (
+                            <li key={step.id} className="text-muted-foreground">
+                              <span className="font-medium text-foreground">
+                                {step.id}.
+                              </span>{" "}
+                              {step.description}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Error Display */}
+                {error && (
+                  <div className="text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden">
+                    Error: {getSimplifiedErrorMessage(error)}
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {isComplete && (
+                  <div className="text-sm text-green-500 bg-green-500/10 p-3 rounded-md">
+                    Funds encrypted! You can view all encrypted funds in your
+                    transaction history.
+                  </div>
+                )}
+
+                {/* Authorization Alert */}
+                {!canEncrypt && !isLoadingCanEncrypt && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      You are currently not authorised to encrypt funds.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2 md:pt-4">
+                  {isComplete ? (
+                    <Button
+                      onClick={handleConfirm}
+                      className="flex-1"
+                      disabled={true}
+                    >
+                      Complete
+                    </Button>
+                  ) : !encryptionStep ? (
+                    <Button
+                      onClick={handleNext}
+                      className="flex-1"
+                      disabled={
+                        hasError || amount === "" || isPending || !canEncrypt
+                      }
+                    >
+                      Next
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleConfirm}
+                      className="flex-1"
+                      disabled={
+                        hasError || amount === "" || isPending || !canEncrypt
+                      }
+                    >
+                      {isPending ? "Processing..." : "Confirm"}
+                    </Button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <CircularProgress
+                  progress={(currentStepIndex / encryptSteps.length) * 100}
+                  isComplete={isComplete}
+                  currentStep={
+                    currentStepIndex > 0 &&
+                    currentStepIndex <= encryptSteps.length
+                      ? encryptSteps[currentStepIndex - 1].name
+                      : ""
                   }
-                >
-                  Next
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleConfirm}
-                  className="flex-1"
-                  disabled={
-                    hasError || amount === "" || isPending || !canEncrypt
-                  }
-                >
-                  {isPending ? "Processing..." : "Confirm"}
-                </Button>
-              )}
-            </div>
+                />
+
+                {currentStepIndex > 0 &&
+                  currentStepIndex <= encryptSteps.length &&
+                  !isComplete && (
+                    <div className="mt-8 text-center">
+                      <p className="text-sm font-medium">
+                        Step {currentStepIndex} of {encryptSteps.length}
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {encryptSteps[currentStepIndex - 1].description}
+                      </p>
+                    </div>
+                  )}
+
+                {isComplete && (
+                  <p className="mt-8 text-sm font-medium text-green-500">
+                    Transaction Complete!
+                  </p>
+                )}
+
+                {/* Error Display */}
+                {error && (
+                  <div className="mt-4 text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden max-w-md">
+                    Error: {getSimplifiedErrorMessage(error)}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

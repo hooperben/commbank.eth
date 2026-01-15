@@ -69,14 +69,48 @@ export const sepoliaAssets: SupportedAsset[] = [
   },
 ];
 
+export const arbSepoliaAssets: SupportedAsset[] = [
+  {
+    chainId: 421614,
+    lzEndpointId: 40231,
+    name: "Australian Dollar Coin",
+    symbol: "AUDD",
+    address: "0xA09599efa9a31036D20a9eEF07C69E77937E784E",
+    decimals: 6,
+    roundTo: 2,
+    logo: "audd-logo.png",
+  },
+  {
+    chainId: 421614,
+    lzEndpointId: 40231,
+    name: "USD Coin",
+    symbol: "USDC",
+    address: "0xD1CAD1C8CEEdeD7Ad65440fd643E2d9320c2bf51",
+    decimals: 6,
+    roundTo: 2,
+    logo: "usdc-logo.png",
+  },
+  {
+    chainId: 421614,
+    lzEndpointId: 40231,
+    name: "Ethereum",
+    symbol: "ETH",
+    address: ETH_ADDRESS,
+    decimals: 18,
+    isNative: true,
+    roundTo: 5,
+    logo: "eth-logo.png",
+  },
+];
+
 export const defaultNetwork =
-  Number(import.meta.env.VITE_DEFAULT_CHAIN_ID) || sepoliaAssets[0].chainId;
+  Number(import.meta.env.VITE_DEFAULT_CHAIN_ID) || arbSepoliaAssets[0].chainId;
 
 const assets: SupportedAsset[] =
-  defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+  defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
 
 // Create mapping by address for quick access: assetByAddress[address]
 export const defaultNetworkAssetByAddress: Record<string, SupportedAsset> = {};
 for (const asset of assets) {
-  defaultNetworkAssetByAddress[asset.address.toLowerCase()] = asset;
+  defaultNetworkAssetByAddress[asset.address] = asset;
 }

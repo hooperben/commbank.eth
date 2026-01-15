@@ -4,13 +4,13 @@ import { ethers } from "ethers";
 import {
   defaultNetwork,
   mainnetAssets,
-  sepoliaAssets,
+  arbSepoliaAssets,
   type SupportedAsset,
 } from "shared/constants/token";
 
 export const useAccountTotal = () => {
   const assets: SupportedAsset[] =
-    defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+    defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
 
   // Fetch prices
   const { data: ethUsdPrice, isLoading: isLoadingEthPrice } = useEthUsdPrice();

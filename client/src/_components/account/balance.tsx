@@ -90,7 +90,7 @@ export const TotalBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
       {assetNotes && !isLoading && privateAssetTotal !== undefined && (
         <div className="text-right">
           <div className="font-medium text-sm text-foreground">
-            {erc20BalanceData && (
+            {erc20BalanceData !== undefined && (
               <>
                 {sumAndFormatBalances(erc20BalanceData, privateAssetTotal)}{" "}
                 {asset.symbol}
