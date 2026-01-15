@@ -2,7 +2,7 @@
 export const SUPPORTED_NETWORKS: Record<number, any> = {
   11155111: {
     rpc: "https://relayer-production-91b9.up.railway.app/rpc/11155111",
-    CommBankDotEth: "0x5C0EE420423cB0d7d39d413c313D8B0fe3bD0789",
+    CommBankDotEth: "0x3b4eEb695754F868DF6BaF0c0B788cC6E553DbdA",
     name: "Ethereum",
   },
   1: {
