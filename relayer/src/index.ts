@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
+import { ethers, parseUnits } from "ethers";
 
 import "dotenv/config";
 
@@ -46,6 +47,69 @@ interface ProofData {
 interface TransactionRequest {
   proof: ProofData;
   payload: string[];
+}
+
+// Sponsor transaction request type
+interface SponsorRequest {
+  type: "transfer" | "transferExternal";
+  chainId: number;
+  proof: string;
+  publicInputs: string[];
+  payload: string[];
+}
+
+// Contract addresses by chain ID
+const CONTRACT_ADDRESSES: Record<number, string> = {
+  11155111: "0x3b4eEb695754F868DF6BaF0c0B788cC6E553DbdA", // Sepolia
+  421614: "0xC0e0C9DC1DE67B7f6434FfdDf2A33300ed6f49E3", // Arb Sepolia
+};
+
+// Minimal ABI for transfer and transferExternal functions
+const COMMBANK_ABI = [
+  {
+    inputs: [
+      { internalType: "bytes", name: "_proof", type: "bytes" },
+      { internalType: "bytes32[]", name: "_publicInputs", type: "bytes32[]" },
+      { internalType: "bytes[]", name: "_payload", type: "bytes[]" },
+    ],
+    name: "transfer",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes", name: "_proof", type: "bytes" },
+      { internalType: "bytes32[]", name: "_publicInputs", type: "bytes32[]" },
+      { internalType: "bytes[]", name: "_payload", type: "bytes[]" },
+    ],
+    name: "transferExternal",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];
+
+/**
+ * Get adjusted gas price from provider.
+ * Doubles the gas price to ensure transaction inclusion.
+ * Falls back to 2 gwei if gas price is unavailable.
+ */
+async function getDoubledGasPrice(
+  provider: ethers.JsonRpcProvider
+): Promise<bigint> {
+  const feeData = await provider.getFeeData();
+
+  // Use maxFeePerGas (EIP-1559) or gasPrice (legacy), with 2x multiplier
+  const basePrice = feeData.maxFeePerGas ?? feeData.gasPrice;
+
+  if (!basePrice) {
+    // Fallback to 2 gwei if provider returns nothing
+    return parseUnits("2", "gwei");
+  }
+
+  // Double the gas price
+  return basePrice * 2n;
 }
 
 // Health check endpoint
@@ -162,16 +226,144 @@ app.post("/tx", (req: Request, res: Response) => {
   }
 });
 
+// Sponsor transaction endpoint - submits transfer/transferExternal on behalf of user
+app.post("/tx/sponsor", async (req: Request, res: Response) => {
+  try {
+    const sponsorRequest = req.body as SponsorRequest;
+
+    // Validate request structure
+    if (!sponsorRequest.type || !sponsorRequest.chainId) {
+      res.status(400).json({
+        error: "Invalid request: missing type or chainId",
+      });
+      return;
+    }
+
+    if (!["transfer", "transferExternal"].includes(sponsorRequest.type)) {
+      res.status(400).json({
+        error: "Invalid type: must be 'transfer' or 'transferExternal'",
+      });
+      return;
+    }
+
+    if (!sponsorRequest.proof || !sponsorRequest.publicInputs) {
+      res.status(400).json({
+        error: "Invalid request: missing proof or publicInputs",
+      });
+      return;
+    }
+
+    if (!sponsorRequest.payload || !Array.isArray(sponsorRequest.payload)) {
+      res.status(400).json({
+        error: "Invalid request: missing or invalid payload",
+      });
+      return;
+    }
+
+    // Validate chain ID
+    const contractAddress = CONTRACT_ADDRESSES[sponsorRequest.chainId];
+    if (!contractAddress) {
+      res.status(400).json({
+        error: "Unsupported chain ID",
+        supportedChains: Object.keys(CONTRACT_ADDRESSES),
+      });
+      return;
+    }
+
+    // Get RPC URL for chain
+    const rpcUrl = RPC_URLS[String(sponsorRequest.chainId)];
+    if (!rpcUrl) {
+      res.status(400).json({
+        error: "RPC not configured for this chain",
+        chainId: sponsorRequest.chainId,
+      });
+      return;
+    }
+
+    // Get sponsor private key
+    const sponsorPrivateKey = process.env.SPONSOR_PRIVATE_KEY;
+    if (!sponsorPrivateKey) {
+      console.error("SPONSOR_PRIVATE_KEY not configured");
+      res.status(500).json({
+        error: "Sponsor not configured",
+      });
+      return;
+    }
+
+    console.log("\n📥 Received sponsor request:");
+    console.log("  - Type:", sponsorRequest.type);
+    console.log("  - Chain ID:", sponsorRequest.chainId);
+    console.log("  - Proof length:", sponsorRequest.proof.length, "chars");
+    console.log("  - Public inputs:", sponsorRequest.publicInputs.length);
+    console.log("  - Payload items:", sponsorRequest.payload.length);
+
+    // Set up provider and signer
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const wallet = new ethers.Wallet(sponsorPrivateKey, provider);
+
+    // Get doubled gas price
+    const gasPrice = await getDoubledGasPrice(provider);
+    console.log("  - Gas price (2x):", ethers.formatUnits(gasPrice, "gwei"), "gwei");
+
+    // Initialize contract
+    const contract = new ethers.Contract(
+      contractAddress,
+      COMMBANK_ABI,
+      wallet
+    );
+
+    // Submit transaction
+    let tx: ethers.ContractTransactionResponse;
+
+    if (sponsorRequest.type === "transfer") {
+      tx = await contract.transfer(
+        sponsorRequest.proof,
+        sponsorRequest.publicInputs,
+        sponsorRequest.payload,
+        { gasPrice }
+      );
+    } else {
+      tx = await contract.transferExternal(
+        sponsorRequest.proof,
+        sponsorRequest.publicInputs,
+        sponsorRequest.payload,
+        { gasPrice }
+      );
+    }
+
+    console.log("✅ Transaction submitted:", tx.hash);
+
+    res.json({
+      success: true,
+      transactionHash: tx.hash,
+    });
+  } catch (error) {
+    console.error("Error sponsoring transaction:", error);
+
+    // Return 400 for transaction failures
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+    res.status(400).json({
+      error: "Transaction failed",
+      message: errorMessage,
+    });
+  }
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`\n🚀 Relayer server running on http://localhost:${PORT}`);
   console.log(`   POST /tx - Submit a transaction`);
+  console.log(`   POST /tx/sponsor - Sponsor a transfer/withdraw transaction`);
   console.log(`   POST /rpc/:chainId - RPC proxy endpoint`);
   console.log(`   GET /health - Health check`);
   console.log(`\n🔒 CORS enabled for origins: ${ALLOWED_ORIGINS.join(", ")}`);
   console.log(
     `📡 RPC chains configured: ${Object.keys(RPC_URLS)
       .filter((k) => RPC_URLS[k])
-      .join(", ")}\n`,
+      .join(", ")}`,
+  );
+  console.log(
+    `💰 Sponsor chains configured: ${Object.keys(CONTRACT_ADDRESSES).join(", ")}\n`,
   );
 });
