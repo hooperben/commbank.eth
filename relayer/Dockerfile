@@ -16,7 +16,6 @@ RUN pnpm install --filter relayer --filter shared
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/relayer/node_modules ./relayer/node_modules
-COPY --from=deps /app/shared/node_modules ./shared/node_modules 2>/dev/null || true
 COPY relayer ./relayer
 COPY shared ./shared
 WORKDIR /app/relayer
@@ -32,10 +31,10 @@ ENV PORT=3000
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 
-# Copy built application
+# Copy built application and shared package
 COPY --from=builder /app/relayer/dist ./dist
 COPY --from=builder /app/relayer/node_modules ./node_modules
-COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/shared ../shared
 COPY relayer/package.json ./
 
 # Expose the port
