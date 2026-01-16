@@ -1,20 +1,21 @@
-import express, { Request, Response } from "express";
 import cors from "cors";
+import express, { Request, Response } from "express";
 
 import "dotenv/config";
 
-import { RPC_URLS, CONTRACT_ADDRESSES } from "./constants";
-import type {
-  TransactionRequest,
-  SponsorRequest,
-  QueuedTransaction,
-} from "./types";
+import { SUPPORTED_NETWORKS } from "shared/constants/networks";
+import { RPC_URLS } from "./constants";
 import {
   generateTxId,
-  transactionQueue,
-  transactionMap,
   processQueue,
+  transactionMap,
+  transactionQueue,
 } from "./helpers";
+import type {
+  QueuedTransaction,
+  SponsorRequest,
+  TransactionRequest,
+} from "./types";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -192,11 +193,12 @@ app.post("/tx/sponsor", (req: Request, res: Response) => {
     }
 
     // Validate chain ID
-    const contractAddress = CONTRACT_ADDRESSES[sponsorRequest.chainId];
+    const contractAddress =
+      SUPPORTED_NETWORKS[sponsorRequest.chainId].CommBankDotEth;
     if (!contractAddress) {
       res.status(400).json({
         error: "Unsupported chain ID",
-        supportedChains: Object.keys(CONTRACT_ADDRESSES),
+        supportedChains: Object.keys(SUPPORTED_NETWORKS),
       });
       return;
     }
@@ -324,6 +326,6 @@ app.listen(PORT, () => {
       .join(", ")}`,
   );
   console.log(
-    `[sponsor] Chains configured: ${Object.keys(CONTRACT_ADDRESSES).join(", ")}\n`,
+    `[sponsor] Chains configured: ${Object.keys(SUPPORTED_NETWORKS).join(", ")}\n`,
   );
 });
