@@ -1,7 +1,8 @@
 import { ethers, parseUnits } from "ethers";
-import type { QueuedTransaction, TxStatus } from "./types";
-import { RPC_URLS, CONTRACT_ADDRESSES } from "./constants";
 import { commbankDotEthAbi } from "shared/constants/abi/commbankdoteth";
+import { SUPPORTED_NETWORKS } from "shared/constants/networks";
+import { RPC_URLS } from "./constants";
+import type { QueuedTransaction, TxStatus } from "./types";
 
 // Transaction queue and lookup map
 export const transactionQueue: QueuedTransaction[] = [];
@@ -77,7 +78,7 @@ async function processTransaction(queuedTx: QueuedTransaction): Promise<void> {
     }
 
     // Get contract address
-    const contractAddress = CONTRACT_ADDRESSES[request.chainId];
+    const contractAddress = SUPPORTED_NETWORKS[request.chainId].rpc;
     if (!contractAddress) {
       throw new Error(`Contract not configured for chain ${request.chainId}`);
     }
