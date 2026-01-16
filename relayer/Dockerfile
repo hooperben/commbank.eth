@@ -5,15 +5,21 @@ WORKDIR /app
 # Enable pnpm via corepack
 RUN corepack enable && corepack prepare pnpm@10.16.1 --activate
 
-# Install dependencies
+# Install dependencies - copy workspace files from monorepo root
 FROM base AS deps
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY relayer/package.json ./relayer/
+COPY shared/package.json ./shared/
+RUN pnpm install --filter relayer --filter shared
 
 # Build the application
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app/relayer/node_modules ./relayer/node_modules
+COPY --from=deps /app/shared/node_modules ./shared/node_modules 2>/dev/null || true
+COPY relayer ./relayer
+COPY shared ./shared
+WORKDIR /app/relayer
 RUN pnpm run build
 
 # Production image
@@ -27,9 +33,10 @@ ENV PORT=3000
 RUN apk add --no-cache curl
 
 # Copy built application
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY package.json ./
+COPY --from=builder /app/relayer/dist ./dist
+COPY --from=builder /app/relayer/node_modules ./node_modules
+COPY --from=builder /app/shared ./shared
+COPY relayer/package.json ./
 
 # Expose the port
 EXPOSE 3000
