@@ -31,21 +31,11 @@ pnpm run start
 ### Docker Deployment
 
 ```bash
-# Build the image
-docker build -t commbank-eth-relayer .
+# From root
+docker build -t commbank-eth-relayer -f relayer/Dockerfile .
 
 # Run the container
-docker run -d \
-  --name commbank-eth-relayer \
-  -p 3000:3000 \
-  --env-file .env \
-  commbank-eth-relayer
-
-# View logs
-docker logs -f commbank-eth-relayer
-
-# Stop the container
-docker stop commbank-eth-relayer
+docker run -p 3000:3000 commbank-eth-relayer
 ```
 
 ## Configuration

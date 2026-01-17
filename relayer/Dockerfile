@@ -14,12 +14,16 @@ RUN pnpm install --filter relayer --filter shared
 
 # Build the application
 FROM base AS builder
+# Install esbuild globally for bundling
+RUN npm install -g esbuild
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/relayer/node_modules ./relayer/node_modules
 COPY relayer ./relayer
 COPY shared ./shared
 WORKDIR /app/relayer
-RUN pnpm run build
+# Bundle to handle ESM module resolution (externalize npm packages, bundle local shared)
+RUN esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js \
+    --external:cors --external:express --external:ethers --external:dotenv
 
 # Production image
 FROM base AS runner
@@ -31,11 +35,19 @@ ENV PORT=3000
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 
+# Copy workspace files for production install
+COPY --from=deps /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/package.json ./
+COPY --from=deps /app/relayer/package.json ./relayer/
+COPY --from=deps /app/shared/package.json ./shared/
+
+# Install production dependencies only
+RUN pnpm install --filter relayer --filter shared --prod --frozen-lockfile
+
 # Copy built application and shared package
-COPY --from=builder /app/relayer/dist ./dist
-COPY --from=builder /app/relayer/node_modules ./node_modules
-COPY --from=builder /app/shared ../shared
-COPY relayer/package.json ./
+COPY --from=builder /app/relayer/dist ./relayer/dist
+COPY --from=builder /app/shared ./shared
+
+WORKDIR /app/relayer
 
 # Expose the port
 EXPOSE 3000
@@ -45,4 +57,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # Run the application
-CMD ["node", "dist/index.js"]
+CMD ["node", "./dist/index.js"]
