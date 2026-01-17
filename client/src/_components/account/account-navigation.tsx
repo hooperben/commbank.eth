@@ -59,7 +59,7 @@ export const AccountNavigation = () => {
         >
           <Link to="/encrypt">
             <LockKeyhole className="h-5 w-5" />
-            <span className="text-sm">encrypt</span>
+            <span className="text-sm">hide money</span>
           </Link>
         </Button>
         <Button
@@ -69,7 +69,7 @@ export const AccountNavigation = () => {
         >
           <Link to="/decrypt">
             <LockKeyholeOpen className="h-5 w-5" />
-            <span className="text-sm">decrypt</span>
+            <span className="text-sm">show money</span>
           </Link>
         </Button>
       </div>

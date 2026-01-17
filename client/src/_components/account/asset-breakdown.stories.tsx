@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { AssetBreakdown } from './asset-breakdown';
+import { AssetBreakdown } from "./asset-breakdown";
 
 const meta = {
   component: AssetBreakdown,

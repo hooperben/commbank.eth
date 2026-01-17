@@ -1,4 +1,3 @@
-import { Badge } from "@/_components/ui/badge";
 import { Button } from "@/_components/ui/button";
 import {
   Card,
@@ -24,21 +23,75 @@ export function AddressCard({
 }: AddressCardProps) {
   const [copiedPublic, setCopiedPublic] = useState(false);
   const [copiedPrivate, setCopiedPrivate] = useState(false);
+  const [copiedSigning, setCopiedSigning] = useState(false);
 
-  const handleCopy = async (text: string, isPublic: boolean) => {
+  const handleCopy = async (
+    text: string,
+    type: "EVM" | "Private" | "Signing",
+  ) => {
+    if (!text) return;
+
     const success = await copyToClipboard(text);
     if (success) {
-      if (isPublic) {
+      if (type === "EVM") {
         setCopiedPublic(true);
         setTimeout(() => setCopiedPublic(false), 2000);
-      } else {
+      } else if (type === "Private") {
         setCopiedPrivate(true);
         setTimeout(() => setCopiedPrivate(false), 2000);
+      } else {
+        setCopiedSigning(true);
+        setTimeout(() => setCopiedSigning(false), 2000);
       }
       toast.success("Address copied to clipboard");
     } else {
       toast.error("Failed to copy address");
     }
+  };
+
+  const Address = ({
+    address,
+    type,
+  }: {
+    address: string | null;
+    type: "Private" | "Signing" | "EVM";
+  }) => {
+    if (!address) return null;
+
+    const isCopied =
+      (type === "EVM" && copiedPublic) ||
+      (type === "Private" && copiedPrivate) ||
+      (type === "Signing" && copiedSigning);
+
+    const label =
+      type === "EVM"
+        ? "Ethereum Address"
+        : type === "Private"
+          ? "Poseidon"
+          : "Signing Key";
+
+    return (
+      <div className="flex flex-col gap-2 text-left">
+        <div className="flex justify-between items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground mb-1">{label}</p>
+            <p className="text-sm font-mono break-all">{address}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0 h-8 w-8 p-0"
+            onClick={() => handleCopy(address, type)}
+          >
+            {isCopied ? (
+              <Check className="h-4 w-4 text-green-500" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -47,75 +100,9 @@ export function AddressCard({
         <CardTitle className="text-left text-2xl">My Addresses</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Public Address */}
-        {publicAddress && (
-          <div className="flex flex-col gap-2 text-left">
-            <div className="flex justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Ethereum Address
-                </p>
-                <p className="text-sm break-all">{publicAddress}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0 h-8 w-8 p-0"
-                onClick={() => handleCopy(publicAddress, true)}
-              >
-                {copiedPublic ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Private Address */}
-        {privateAddress && signingKey && (
-          <div className="flex flex-col gap-2 pt-2 border-t text-left">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Private Addresses
-                </p>
-                <div className="space-y-4 text-sm break-all">
-                  <div className="flex flex-row items-center gap-2">
-                    <p className="text-xs break-all">{privateAddress}</p>
-                    <Badge>Owner Address</Badge>
-                  </div>
-
-                  <div className="flex flex-row items-start gap-2">
-                    <p className="text-xs break-all">{signingKey}</p>
-
-                    <Badge variant="secondary">Envelope Address</Badge>
-                  </div>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0 h-8 w-8 p-0"
-                onClick={() =>
-                  handleCopy(`${privateAddress}:${signingKey}`, false)
-                }
-              >
-                {copiedPrivate ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            {/* TODO add links when this is real */}
-            {/* <p className="w-full text-right text-xs">
-              You can read more about the commbank.eth account architecture in
-              our documentation.
-            </p> */}
-          </div>
-        )}
+        <Address type="EVM" address={publicAddress} />
+        <Address type="Private" address={privateAddress} />
+        <Address type="Signing" address={signingKey} />
       </CardContent>
     </Card>
   );

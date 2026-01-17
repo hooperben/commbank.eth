@@ -20,7 +20,7 @@ CommBank.eth is a privacy-enabled DeFi platform that facilitates private transfe
 
 ## Monorepo Structure
 
-This is a Bun workspace monorepo with the following packages:
+This is a pnpm workspace monorepo with the following packages:
 
 ### `client/` - Next.js Frontend (Primary)
 
@@ -124,56 +124,56 @@ This is a Bun workspace monorepo with the following packages:
 
 ```bash
 # Install all dependencies
-bun install
+pnpm install
 
 # Format all code
-bun run format
+pnpm run format
 
 # Check formatting
-bun run format:check
+pnpm run format:check
 
 # Lint all code
-bun run lint
+pnpm run lint
 
 # Fix lint errors
-bun run lint:fix
+pnpm run lint:fix
 
 # Start development (runs client by default)
-bun run dev
+pnpm run dev
 
 # Build client
-bun run build
+pnpm run build
 
 # Build contracts and generate verifiers
-bun run build-contracts
+pnpm run build-contracts
 ```
 
 ### Client (Next.js)
 
 ```bash
 cd client
-bun run dev      # Start dev server on localhost:3000
-bun run build    # Production build
-bun run start    # Run production build
-bun run lint     # Next.js linting
+pnpm run dev      # Start dev server on localhost:3000
+pnpm run build    # Production build
+pnpm run start    # Run production build
+pnpm run lint     # Next.js linting
 ```
 
 ### client (Vite + React Router)
 
 ```bash
 cd client
-bun run dev      # Start Vite dev server
-bun run build    # Build with TypeScript + Vite
-bun run preview  # Preview production build
-bun run lint     # ESLint check
+pnpm run dev      # Start Vite dev server
+pnpm run build    # Build with TypeScript + Vite
+pnpm run preview  # Preview production build
+pnpm run lint     # ESLint check
 ```
 
 ### Contracts
 
 ```bash
 cd contracts
-bun run build                # Build verifiers from circuits (primary build command)
-bun run build-bb            # Compile Noir circuits to bytecode
+pnpm run build                # Build verifiers from circuits (primary build command)
+pnpm run build-bb            # Compile Noir circuits to bytecode
 
 # Testing
 npx hardhat test            # Run all tests
@@ -276,7 +276,7 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 - **Config:** `eslint.config.mjs` at root (modern flat config)
 - **Rules:** TypeScript + Prettier plugin integration
 - **Ignored Paths:** node_modules, dist, build, .next, out
-- **Run:** `bun run lint` and `bun run lint:fix`
+- **Run:** `pnpm run lint` and `pnpm run lint:fix`
 
 ### Prettier Configuration
 
@@ -287,7 +287,7 @@ const proof = await deposit.depositNoir.generateProof(inputs);
   - Single quotes: false (use double quotes)
   - Print width: 80 characters
   - Tab width: 2 spaces
-- **Run:** `bun run format` and `bun run format:check`
+- **Run:** `pnpm run format` and `pnpm run format:check`
 
 ### TypeScript Configuration
 
@@ -400,7 +400,7 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 - `PRIVATE_KEY` - Deployment account key
 - `DEMO_MNEMONIC_ALICE` - Test wallet mnemonic
 
-**Auto-loaded by Bun:** Use environment variables directly; Bun loads `.env` automatically
+**Loading ENV:** Use dotenv or configure your shell to load `.env` files
 
 ## Testing Overview
 
@@ -435,8 +435,8 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 ### Running client Locally
 
 1. `cd client`
-2. `bun install` (if dependencies changed)
-3. `bun run dev` - Opens at http://localhost:5173
+2. `pnpm install` (if dependencies changed)
+3. `pnpm run dev` - Opens at http://localhost:5173
 4. Changes auto-reload (Vite HMR)
 
 ### Debugging Proofs
@@ -449,14 +449,14 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 ### Deploying to Testnets
 
 1. Ensure proper ENV variables are set
-2. Verify circuit artifacts are built (`bun run build-contracts`)
+2. Verify circuit artifacts are built (`pnpm run build-contracts`)
 3. Run: `npx hardhat run scripts/deploy.ts --network <network-name>`
 4. Network names: hardhat, mainnet, arbitrumOne, base
 
 ### Working with Shared Package
 
 - Always import as `shared-package/*` (not relative paths)
-- Changes to shared require re-running `bun install` in dependent packages
+- Changes to shared require re-running `pnpm install` in dependent packages
 - Shared uses workspace:\* to link to contracts package
 
 ## Notable Design Decisions
@@ -466,7 +466,7 @@ const proof = await deposit.depositNoir.generateProof(inputs);
 3. **Encrypted Notes:** Notes encrypted with user's public key, enabling note passing without on-chain storage
 4. **Two Keys:** Signing key (public key) and owning key (poseidon hash) allow efficient ZK proofs vs on-chain encryption
 5. **TypeChain Integration:** Type-safe contract ABIs prevent runtime errors during tests
-6. **Bun Runtime:** Faster compilation and bundling for TS/TSX; better dev experience than Node.js
+6. **pnpm Workspaces:** Efficient disk space usage with symlinked node_modules; strict dependency resolution
 
 ## Known Limitations & WIPs
 
