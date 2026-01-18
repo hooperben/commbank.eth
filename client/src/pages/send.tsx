@@ -21,10 +21,16 @@ import { useContacts } from "@/_hooks/use-contacts";
 import { useERC20Balance } from "@/_hooks/use-erc20-balance";
 import { useMerkleTree } from "@/_hooks/use-merkle-tree";
 import { usePrivateTransfer } from "@/_hooks/use-private-transfer";
+import {
+  usePublicTransfer,
+  estimatePublicTransferGas,
+  type GasEstimate,
+} from "@/_hooks/use-public-transfer";
 import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
+import { useAuth } from "@/_providers/auth-provider";
 import PageContainer from "@/_providers/page-container";
 import { ethers, parseUnits } from "ethers";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -80,16 +86,29 @@ type ProcessingStep = {
 const privateTransferSteps: ProcessingStep[] = [
   {
     id: 1,
-    name: "Generate Proof",
+    name: "Generating Proof",
     description: "Creating zero-knowledge proof",
   },
   {
     id: 2,
-    name: "Submit Transaction",
+    name: "Submitting Transaction",
     description: "Submitting transaction to network",
   },
   {
     id: 3,
+    name: "Awaiting Confirmation",
+    description: "Waiting for transaction confirmation",
+  },
+];
+
+const publicTransferSteps: ProcessingStep[] = [
+  {
+    id: 1,
+    name: "Submitting Transaction",
+    description: "Submitting transaction to network",
+  },
+  {
+    id: 2,
     name: "Awaiting Confirmation",
     description: "Waiting for transaction confirmation",
   },
@@ -133,9 +152,15 @@ export default function SendPage() {
   const [selectedContactId, setSelectedContactId] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [transferStatus, setTransferStatus] = useState<string>("");
+  const [gasEstimate, setGasEstimate] = useState<GasEstimate | null>(null);
+  const [gasEstimateLoading, setGasEstimateLoading] = useState(false);
+  // TODO fix
+  const [, setGasEstimateError] = useState<string>("");
 
+  const { address } = useAuth();
   const { data: contacts } = useContacts();
-  const { data: publicBalance } = useERC20Balance(selectedAsset);
+  const { data: publicBalance, refetch: refetchPublicBalance } =
+    useERC20Balance(selectedAsset);
   const { data: assetNotes } = useUserAssetNotes(selectedAsset?.address);
   const { tree } = useMerkleTree();
   const { data: sendingNotes } = useUserAssetNotes(selectedAsset?.address);
@@ -193,8 +218,13 @@ export default function SendPage() {
   // Validation
   const amountNum = parseFloat(amount);
   const hasAmountError = amount && amountNum > maxBalance;
+  const hasInsufficientGas =
+    transferType === "public" && gasEstimate && !gasEstimate.hasEnoughEth;
   const hasValidationError =
-    !selectedContactId || !amount || parseFloat(amount) <= 0 || hasAmountError;
+    !selectedContactId ||
+    !amount ||
+    parseFloat(amount) <= 0 ||
+    hasAmountError;
 
   const getAmountError = () => {
     if (!amount) return "";
@@ -223,9 +253,91 @@ export default function SendPage() {
     },
   });
 
+  const publicTransferMutation = usePublicTransfer({
+    onTxSubmitted: () => {
+      setTransferStatus("awaiting");
+    },
+    onTxConfirmed: async () => {
+      await refetchPublicBalance();
+      setTransferStatus("complete");
+    },
+  });
+
+  // Estimate gas for public transfers
+  useEffect(() => {
+    const estimateGas = async () => {
+      if (
+        transferType !== "public" ||
+        !selectedContactId ||
+        !amount ||
+        parseFloat(amount) <= 0 ||
+        !address ||
+        !selectedAsset
+      ) {
+        setGasEstimate(null);
+        setGasEstimateError("");
+        return;
+      }
+
+      const contact = contacts?.find((c) => c.id === selectedContactId);
+      if (!contact?.evmAddress) {
+        setGasEstimate(null);
+        return;
+      }
+
+      setGasEstimateLoading(true);
+      setGasEstimateError("");
+
+      try {
+        const parsedAmount = parseUnits(amount, selectedAsset.decimals);
+        const estimate = await estimatePublicTransferGas(
+          selectedAsset,
+          address,
+          contact.evmAddress,
+          parsedAmount,
+        );
+        setGasEstimate(estimate);
+      } catch (error) {
+        console.error("Gas estimation failed:", error);
+        setGasEstimateError(
+          error instanceof Error ? error.message : "Failed to estimate gas",
+        );
+        setGasEstimate(null);
+      } finally {
+        setGasEstimateLoading(false);
+      }
+    };
+
+    // Debounce gas estimation
+    const timeoutId = setTimeout(estimateGas, 500);
+    return () => clearTimeout(timeoutId);
+  }, [
+    transferType,
+    selectedContactId,
+    amount,
+    address,
+    selectedAsset,
+    contacts,
+  ]);
+
   // Map transferStatus to current step index for progress
   const getCurrentStepIndex = (): number => {
     if (!transferStatus) return 0;
+
+    if (transferType === "public") {
+      switch (transferStatus) {
+        case "submitting":
+          return 1;
+        case "awaiting":
+          return 2;
+        case "complete":
+          return publicTransferSteps.length;
+        default:
+          return 0;
+      }
+    }
+
+    // Private transfer
     switch (transferStatus) {
       case "(1/4) Generating proof":
       case "generating":
@@ -243,6 +355,10 @@ export default function SendPage() {
         return 0;
     }
   };
+
+  // Get the appropriate steps array based on transfer type
+  const transferSteps =
+    transferType === "public" ? publicTransferSteps : privateTransferSteps;
 
   const currentStepIndex = getCurrentStepIndex();
   const isProcessing =
@@ -265,7 +381,14 @@ export default function SendPage() {
 
     console.log("Transaction to send:", transaction);
 
-    if (
+    if (transferType === "public" && selectedAsset && contact) {
+      setTransferStatus("submitting");
+      publicTransferMutation.mutate({
+        amount: transaction.amount,
+        asset: selectedAsset,
+        recipient: contact,
+      });
+    } else if (
       transferType === "private" &&
       tree &&
       sendingNotes &&
@@ -289,6 +412,8 @@ export default function SendPage() {
     setSelectedContactId("");
     setAmount("");
     setTransferStatus("");
+    setGasEstimate(null);
+    setGasEstimateError("");
   };
 
   // Filter contacts based on transfer type
@@ -564,14 +689,38 @@ export default function SendPage() {
                         </span>
                       </div>
                       {transferType === "public" ? (
-                        <div className="flex justify-between items-start">
-                          <span className="text-sm text-muted-foreground">
-                            Address
-                          </span>
-                          <span className="text-sm font-medium font-mono text-right break-all">
-                            {formatAddress(selectedContact.evmAddress)}
-                          </span>
-                        </div>
+                        <>
+                          <div className="flex justify-between items-start">
+                            <span className="text-sm text-muted-foreground">
+                              Address
+                            </span>
+                            <span className="text-sm font-medium font-mono text-right break-all">
+                              {formatAddress(selectedContact.evmAddress)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-start">
+                            <span className="text-sm text-muted-foreground">
+                              Est. Gas Fee
+                            </span>
+                            <span className="text-sm font-medium font-mono">
+                              {gasEstimateLoading ? (
+                                <span className="flex items-center gap-2">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Estimating...
+                                </span>
+                              ) : gasEstimate ? (
+                                <>
+                                  {parseFloat(
+                                    gasEstimate.formattedCost,
+                                  ).toFixed(6)}{" "}
+                                  ETH
+                                </>
+                              ) : (
+                                "—"
+                              )}
+                            </span>
+                          </div>
+                        </>
                       ) : (
                         <>
                           <div className="flex justify-between items-start">
@@ -596,11 +745,23 @@ export default function SendPage() {
                       )}
                     </div>
 
-                    {privateTransferMutation.error && (
+                    {hasInsufficientGas && (
+                      <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                        Insufficient ETH for gas. You need{" "}
+                        {parseFloat(gasEstimate!.formattedCost).toFixed(6)} ETH
+                        but only have{" "}
+                        {parseFloat(gasEstimate!.formattedEthBalance).toFixed(6)}{" "}
+                        ETH.
+                      </div>
+                    )}
+
+                    {(privateTransferMutation.error ||
+                      publicTransferMutation.error) && (
                       <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md break-words overflow-hidden">
                         Error:{" "}
                         {getSimplifiedErrorMessage(
-                          privateTransferMutation.error,
+                          (privateTransferMutation.error ||
+                            publicTransferMutation.error) as Error,
                         )}
                       </div>
                     )}
@@ -618,7 +779,9 @@ export default function SendPage() {
                         onClick={handleBack}
                         className="flex-1"
                         disabled={
-                          privateTransferMutation.isPending || isComplete
+                          privateTransferMutation.isPending ||
+                          publicTransferMutation.isPending ||
+                          isComplete
                         }
                       >
                         <ArrowLeft className="h-4 w-4 mr-2" />
@@ -629,15 +792,25 @@ export default function SendPage() {
                         className="flex-1"
                         disabled={
                           privateTransferMutation.isPending ||
+                          publicTransferMutation.isPending ||
                           isComplete ||
-                          transferType !== "private"
+                          !!hasInsufficientGas ||
+                          (transferType === "public" && gasEstimateLoading)
                         }
                       >
-                        {isComplete
-                          ? "Complete"
-                          : privateTransferMutation.isPending
-                            ? "Submitting..."
-                            : "Confirm"}
+                        {isComplete ? (
+                          "Complete"
+                        ) : privateTransferMutation.isPending ||
+                          publicTransferMutation.isPending ? (
+                          "Submitting..."
+                        ) : transferType === "public" && gasEstimateLoading ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Estimating Gas...
+                          </span>
+                        ) : (
+                          "Confirm"
+                        )}
                       </Button>
                     </div>
                   </>
@@ -646,28 +819,28 @@ export default function SendPage() {
                   <div className="flex flex-col items-center justify-center py-12">
                     <CircularProgress
                       progress={
-                        (currentStepIndex / privateTransferSteps.length) * 100
+                        (currentStepIndex / transferSteps.length) * 100
                       }
                       isComplete={isComplete}
                       currentStep={
                         currentStepIndex > 0 &&
-                        currentStepIndex <= privateTransferSteps.length
-                          ? privateTransferSteps[currentStepIndex - 1].name
+                        currentStepIndex <= transferSteps.length
+                          ? transferSteps[currentStepIndex - 1].name
                           : ""
                       }
                     />
 
                     {currentStepIndex > 0 &&
-                      currentStepIndex <= privateTransferSteps.length &&
+                      currentStepIndex <= transferSteps.length &&
                       !isComplete && (
                         <div className="mt-8 text-center">
                           <p className="text-sm font-medium">
                             Step {currentStepIndex} of{" "}
-                            {privateTransferSteps.length}
+                            {transferSteps.length}
                           </p>
                           <p className="mt-1 text-sm text-muted-foreground">
                             {
-                              privateTransferSteps[currentStepIndex - 1]
+                              transferSteps[currentStepIndex - 1]
                                 .description
                             }
                           </p>
@@ -690,11 +863,13 @@ export default function SendPage() {
                     )}
 
                     {/* Error Display */}
-                    {privateTransferMutation.error && (
+                    {(privateTransferMutation.error ||
+                      publicTransferMutation.error) && (
                       <div className="mt-4 text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden max-w-md">
                         Error:{" "}
                         {getSimplifiedErrorMessage(
-                          privateTransferMutation.error,
+                          (privateTransferMutation.error ||
+                            publicTransferMutation.error) as Error,
                         )}
                       </div>
                     )}
