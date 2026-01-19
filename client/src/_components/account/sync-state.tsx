@@ -81,7 +81,6 @@ export const SyncState = () => {
             console.log(newPayloads);
           }
 
-          // TODO: Uncomment when ready to write to database
           await Promise.all([
             ...newLeafs.map((leaf) => addTreeLeaf(leaf)),
             ...newPayloads.map((payload) => addPayload(payload)),

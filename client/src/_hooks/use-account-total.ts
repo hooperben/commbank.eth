@@ -1,5 +1,6 @@
 import { useAudUsdPrice, useEthUsdPrice } from "@/_hooks/use-chainlink-price";
 import { useERC20Balances } from "@/_hooks/use-erc20-balance";
+import { usePrivateBalances } from "@/_hooks/use-private-balances";
 import { ethers } from "ethers";
 import {
   defaultNetwork,
@@ -16,37 +17,53 @@ export const useAccountTotal = () => {
   const { data: ethUsdPrice, isLoading: isLoadingEthPrice } = useEthUsdPrice();
   const { data: audUsdPrice, isLoading: isLoadingAudPrice } = useAudUsdPrice();
 
-  // fetch erc20 balances
+  // Fetch erc20 balances
   const { data: assetBalances, isLoading: isLoadingAsset } =
     useERC20Balances(assets);
 
-  // TODO add note balances here
+  const { data: privateBalances, isLoading: isLoadingPrivate } =
+    usePrivateBalances(assets);
 
-  // Calculate total value in USD
+  // Helper to convert asset balance to USD
+  const assetToUsd = (
+    symbol: string,
+    balance: bigint,
+    decimals: number,
+  ): number => {
+    if (!ethUsdPrice || !audUsdPrice) return 0;
+
+    const balanceFormatted = parseFloat(ethers.formatUnits(balance, decimals));
+
+    if (symbol === "ETH") {
+      const ethPrice = parseFloat(ethUsdPrice.formattedPrice);
+      return balanceFormatted * ethPrice;
+    } else if (symbol === "AUDD") {
+      const audToUsd = parseFloat(audUsdPrice.formattedPrice);
+      return balanceFormatted * audToUsd;
+    } else if (symbol === "USDC") {
+      return balanceFormatted;
+    }
+
+    return 0;
+  };
+
+  // Calculate total value in USD (public + private balances)
   const totalUsd = (() => {
     if (!ethUsdPrice || !audUsdPrice || !assetBalances) return 0;
 
     let total = 0;
 
+    // Add public ERC20 balances
     for (const asset of assetBalances) {
       if (!asset.balance) continue;
+      total += assetToUsd(asset.symbol, asset.balance, asset.decimals);
+    }
 
-      const balanceFormatted = parseFloat(
-        ethers.formatUnits(asset.balance, asset.decimals),
-      );
-
-      // Convert each asset to USD
-      if (asset.symbol === "ETH") {
-        // ETH to USD
-        const ethPrice = parseFloat(ethUsdPrice.formattedPrice);
-        total += balanceFormatted * ethPrice;
-      } else if (asset.symbol === "AUDD") {
-        // AUDD to USD (1 AUDD = 1 AUD)
-        const audToUsd = parseFloat(audUsdPrice.formattedPrice);
-        total += balanceFormatted * audToUsd;
-      } else if (asset.symbol === "USDC") {
-        // USDC to USD (1:1)
-        total += balanceFormatted;
+    // Add private note balances
+    if (privateBalances) {
+      for (const { asset, balance } of privateBalances) {
+        if (balance === 0n) continue;
+        total += assetToUsd(asset.symbol, balance, asset.decimals);
       }
     }
 
@@ -55,6 +72,10 @@ export const useAccountTotal = () => {
 
   return {
     totalUsd,
-    isLoading: isLoadingEthPrice || isLoadingAudPrice || isLoadingAsset,
+    isLoading:
+      isLoadingEthPrice ||
+      isLoadingAudPrice ||
+      isLoadingAsset ||
+      isLoadingPrivate,
   };
 };
