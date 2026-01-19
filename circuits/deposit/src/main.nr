@@ -1,11 +1,4 @@
-use poseidon;
-
-fn calculate_leaf(asset_id: Field, asset_amount: Field, owner: Field, secret: Field) -> Field {
-    let leaf_hash =
-        poseidon::poseidon2::Poseidon2::hash([asset_id, asset_amount, owner, secret], 4);
-
-    leaf_hash
-}
+use pum_lib;
 
 fn main(
     hash: pub Field,
@@ -14,7 +7,7 @@ fn main(
     owner: Field,
     secret: Field,
 ) {
-    let reconstructed_leaf = calculate_leaf(asset_id, asset_amount, owner, secret);
+    let reconstructed_leaf = pum_lib::calculate_leaf(asset_id, asset_amount, owner, secret);
 
     assert(reconstructed_leaf == hash);
 }

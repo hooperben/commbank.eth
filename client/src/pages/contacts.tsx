@@ -1,45 +1,103 @@
-import { AddContactModal } from "@/components/contacts/add-contact-modal";
-import PageContainer from "@/components/page-container";
-import { Button } from "@/components/ui/button";
+import { AddContactModal } from "@/_components/contacts/add-contact-modal";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/_components/ui/accordion";
+import { Button } from "@/_components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+} from "@/_components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { useDeleteContact, useSearchContacts } from "@/hooks/use-contacts";
-import { PAGE_METADATA } from "@/lib/seo-config";
-import { ArrowLeft, Search, Trash2 } from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/_components/ui/dialog";
+import { Input } from "@/_components/ui/input";
+import { PAGE_METADATA } from "@/_constants/seo-config";
+import {
+  useDeleteContact,
+  useSearchContacts,
+  useUpdateContact,
+} from "@/_hooks/use-contacts";
+import PageContainer from "@/_providers/page-container";
+import type { Contact } from "@/_types";
+import { ArrowLeft, Pencil, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<{
+    id: string;
+    nickname: string;
+  } | null>(null);
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Contact>>({});
 
   const { data: contacts, isLoading } = useSearchContacts(searchQuery);
 
   const deleteContactMutation = useDeleteContact();
+  const updateContactMutation = useUpdateContact();
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this contact?")) {
-      deleteContactMutation.mutate(id);
+  const handleDeleteClick = (id: string, nickname: string) => {
+    setContactToDelete({ id, nickname });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (contactToDelete) {
+      deleteContactMutation.mutate(contactToDelete.id, {
+        onSuccess: () => {
+          toast.success(`${contactToDelete.nickname || "Contact"} deleted`);
+          setDeleteDialogOpen(false);
+          setContactToDelete(null);
+        },
+      });
     }
   };
 
-  const formatAddress = (address?: string) => {
-    if (!address) return "—";
-    if (address.length <= 12) return address;
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const handleEditClick = (contact: Contact) => {
+    setEditingContactId(contact.id);
+    setEditForm({
+      nickname: contact.nickname || "",
+      evmAddress: contact.evmAddress || "",
+      privateAddress: contact.privateAddress || "",
+      envelopeAddress: contact.envelopeAddress || "",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingContactId(null);
+    setEditForm({});
+  };
+
+  const handleSaveEdit = (contact: Contact) => {
+    updateContactMutation.mutate(
+      {
+        ...contact,
+        nickname: editForm.nickname,
+        evmAddress: editForm.evmAddress,
+        privateAddress: editForm.privateAddress,
+        envelopeAddress: editForm.envelopeAddress,
+      },
+      {
+        onSuccess: () => {
+          setEditingContactId(null);
+          setEditForm({});
+        },
+      },
+    );
   };
 
   return (
@@ -60,16 +118,15 @@ export default function ContactsPage() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-2xl">Contacts</CardTitle>
-                <CardDescription>
-                  Manage your saved commbank.eth contacts
-                </CardDescription>
-              </div>
+            <div className="flex flex-row justify-between">
+              <CardTitle className="text-2xl">Contacts</CardTitle>
               <AddContactModal />
             </div>
+            <CardDescription>
+              Manage your saved commbank.eth contacts
+            </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-4">
             {/* Search Bar */}
             <div className="relative">
@@ -83,7 +140,7 @@ export default function ContactsPage() {
               />
             </div>
 
-            {/* Contacts Table */}
+            {/* Contacts List */}
             {isLoading ? (
               <div className="text-center py-8 text-muted-foreground">
                 Loading contacts...
@@ -95,48 +152,196 @@ export default function ContactsPage() {
                   : "No contacts yet. Add contacts from shared profiles."}
               </div>
             ) : (
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Public Address</TableHead>
-                      <TableHead>Private Addresses</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contacts.map((contact) => (
-                      <TableRow key={contact.id}>
-                        <TableCell className="font-medium">
+              <Accordion type="single" collapsible className="w-full">
+                {contacts.map((contact) => (
+                  <AccordionItem key={contact.id} value={contact.id}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-2">
+                        <span className="font-medium">
                           {contact.nickname || "Anonymous"}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {formatAddress(contact.evmAddress)}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {formatAddress(contact.privateAddress)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDelete(contact.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-3 pt-2">
+                        {editingContactId === contact.id ? (
+                          <>
+                            {/* Edit Mode */}
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">
+                                Nickname
+                              </p>
+                              <Input
+                                value={editForm.nickname || ""}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    nickname: e.target.value,
+                                  })
+                                }
+                                placeholder="Nickname"
+                                className="font-mono text-sm"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">
+                                Public Address
+                              </p>
+                              <Input
+                                value={editForm.evmAddress || ""}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    evmAddress: e.target.value,
+                                  })
+                                }
+                                placeholder="0x..."
+                                className="font-mono text-sm"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">
+                                Private Address
+                              </p>
+                              <Input
+                                value={editForm.privateAddress || ""}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    privateAddress: e.target.value,
+                                  })
+                                }
+                                placeholder="Private address"
+                                className="font-mono text-sm"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">
+                                Envelope Address
+                              </p>
+                              <Input
+                                value={editForm.envelopeAddress || ""}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    envelopeAddress: e.target.value,
+                                  })
+                                }
+                                placeholder="Envelope address"
+                                className="font-mono text-sm"
+                              />
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleSaveEdit(contact)}
+                                disabled={updateContactMutation.isPending}
+                              >
+                                {updateContactMutation.isPending
+                                  ? "Saving..."
+                                  : "Save"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {/* View Mode */}
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">
+                                Public Address
+                              </p>
+                              <p className="font-mono text-sm break-all">
+                                {contact.evmAddress || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground my-1">
+                                Private Address
+                              </p>
+                              <p className="font-mono text-sm break-all">
+                                {contact.privateAddress || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground my-1">
+                                Envelope Address
+                              </p>
+                              <p className="font-mono text-sm break-all">
+                                {contact.envelopeAddress || "—"}
+                              </p>
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditClick(contact)}
+                              >
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handleDeleteClick(
+                                    contact.id,
+                                    contact.nickname || "Anonymous",
+                                  )
+                                }
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Contact</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-medium">
+                {contactToDelete?.nickname || "this contact"}
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteContactMutation.isPending}
+            >
+              {deleteContactMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

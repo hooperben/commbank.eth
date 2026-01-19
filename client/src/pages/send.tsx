@@ -1,0 +1,898 @@
+import { BalanceRow, PrivateBalanceRow } from "@/_components/account/balance";
+import { Button } from "@/_components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/_components/ui/card";
+import { CircularProgress } from "@/_components/ui/circular-progress";
+import { Input } from "@/_components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/_components/ui/select";
+import { Separator } from "@/_components/ui/separator";
+import { useContacts } from "@/_hooks/use-contacts";
+import { useERC20Balance } from "@/_hooks/use-erc20-balance";
+import { useMerkleTree } from "@/_hooks/use-merkle-tree";
+import { usePrivateTransfer } from "@/_hooks/use-private-transfer";
+import {
+  usePublicTransfer,
+  estimatePublicTransferGas,
+  type GasEstimate,
+} from "@/_hooks/use-public-transfer";
+import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
+import { useAuth } from "@/_providers/auth-provider";
+import PageContainer from "@/_providers/page-container";
+import { ethers, parseUnits } from "ethers";
+import { ArrowLeft, ArrowUpRight, Loader2, RotateCcw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { type SupportedAsset, DEFAULT_ASSETS } from "shared/constants/token";
+
+// Helper to extract a user-friendly error message
+function getSimplifiedErrorMessage(error: Error): string {
+  const message = error.message;
+
+  // Common error patterns
+  if (message.includes("user rejected") || message.includes("User rejected")) {
+    return "Transaction was rejected by user";
+  }
+  if (message.includes("insufficient funds")) {
+    return "Insufficient funds for transaction";
+  }
+  if (message.includes("CALL_EXCEPTION")) {
+    return "Transaction failed - the contract call was reverted";
+  }
+  if (message.includes("network") || message.includes("Network")) {
+    return "Network error - please check your connection";
+  }
+  if (message.includes("timeout")) {
+    return "Request timed out - please try again";
+  }
+
+  // If the message is very long, truncate it
+  if (message.length > 100) {
+    // Try to extract just the error reason
+    const reasonMatch = message.match(/reason[=:]\s*["']?([^"',}]+)/i);
+    if (reasonMatch) {
+      return reasonMatch[1].trim();
+    }
+    return message.substring(0, 100) + "...";
+  }
+
+  return message;
+}
+
+type TransferType = "public" | "private" | null;
+type Step = "select-type" | "enter-details" | "confirm";
+
+type ProcessingStep = {
+  id: number;
+  name: string;
+  description: string;
+};
+
+const privateTransferSteps: ProcessingStep[] = [
+  {
+    id: 1,
+    name: "Generating Proof",
+    description: "Creating zero-knowledge proof",
+  },
+  {
+    id: 2,
+    name: "Submitting Transaction",
+    description: "Submitting transaction to network",
+  },
+  {
+    id: 3,
+    name: "Awaiting Confirmation",
+    description: "Waiting for transaction confirmation",
+  },
+];
+
+const publicTransferSteps: ProcessingStep[] = [
+  {
+    id: 1,
+    name: "Submitting Transaction",
+    description: "Submitting transaction to network",
+  },
+  {
+    id: 2,
+    name: "Awaiting Confirmation",
+    description: "Waiting for transaction confirmation",
+  },
+];
+
+export default function SendPage() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Asset selection
+  const assetParam = searchParams.get("asset");
+  const initialAsset =
+    DEFAULT_ASSETS.find(
+      (a) => a.address.toLowerCase() === assetParam?.toLowerCase(),
+    ) || DEFAULT_ASSETS[0];
+  const [selectedAsset, setSelectedAsset] =
+    useState<SupportedAsset>(initialAsset);
+
+  // Update URL when asset changes
+  const handleAssetChange = (address: string) => {
+    const asset = DEFAULT_ASSETS.find(
+      (a) => a.address.toLowerCase() === address.toLowerCase(),
+    );
+    if (asset) {
+      setSelectedAsset(asset);
+      setSearchParams({ asset: asset.address });
+      // Reset form state when asset changes
+      setStep("select-type");
+      setTransferType(null);
+      setSelectedContactId("");
+      setAmount("");
+      setTransferStatus("");
+    }
+  };
+
+  // Form state
+  const [step, setStep] = useState<Step>("select-type");
+  const [transferType, setTransferType] = useState<TransferType>(null);
+  const [selectedContactId, setSelectedContactId] = useState<string>("");
+  const [amount, setAmount] = useState<string>("");
+  const [transferStatus, setTransferStatus] = useState<string>("");
+  const [gasEstimate, setGasEstimate] = useState<GasEstimate | null>(null);
+  const [gasEstimateLoading, setGasEstimateLoading] = useState(false);
+  // TODO fix
+  const [, setGasEstimateError] = useState<string>("");
+
+  const { address } = useAuth();
+  const { data: contacts } = useContacts();
+  const { data: publicBalance, refetch: refetchPublicBalance } =
+    useERC20Balance(selectedAsset);
+  const { data: assetNotes } = useUserAssetNotes(selectedAsset?.address);
+  const { tree } = useMerkleTree();
+  const { data: sendingNotes } = useUserAssetNotes(selectedAsset?.address);
+  const { refetch: refetchUserAssets } = useUserAssetNotes(
+    selectedAsset?.address,
+  );
+
+  // Calculate private balance
+  const privateBalance = assetNotes
+    ? assetNotes.reduce((acc, curr) => {
+        return acc + BigInt(curr.assetAmount);
+      }, 0n)
+    : 0n;
+
+  // Update selected asset from URL param on mount
+  useEffect(() => {
+    if (assetParam) {
+      const asset = DEFAULT_ASSETS.find(
+        (a) => a.address.toLowerCase() === assetParam.toLowerCase(),
+      );
+      if (asset) {
+        setSelectedAsset(asset);
+      }
+    }
+  }, [assetParam]);
+
+  // When the user selects public or private transfer
+  const handleSelectType = (type: TransferType) => {
+    setTransferType(type);
+    setStep("enter-details");
+  };
+
+  // When the user goes back a step
+  const handleBack = () => {
+    if (step === "enter-details") {
+      setTransferType(null);
+      setStep("select-type");
+    } else if (step === "confirm") {
+      setStep("enter-details");
+    }
+  };
+
+  // Max balance for current transfer type
+  const maxBalance =
+    transferType === "public"
+      ? publicBalance
+        ? parseFloat(
+            ethers.formatUnits(publicBalance, selectedAsset?.decimals || 6),
+          )
+        : 0
+      : parseFloat(
+          ethers.formatUnits(privateBalance, selectedAsset?.decimals || 6),
+        );
+
+  // Validation
+  const amountNum = parseFloat(amount);
+  const hasAmountError = amount && amountNum > maxBalance;
+  const hasInsufficientGas =
+    transferType === "public" && gasEstimate && !gasEstimate.hasEnoughEth;
+  const hasValidationError =
+    !selectedContactId || !amount || parseFloat(amount) <= 0 || hasAmountError;
+
+  const getAmountError = () => {
+    if (!amount) return "";
+    if (parseFloat(amount) <= 0) return "Please enter a valid amount";
+    if (hasAmountError) {
+      return `Amount exceeds available balance (${maxBalance.toFixed(2)} ${selectedAsset?.symbol})`;
+    }
+    return "";
+  };
+
+  const handleNext = () => {
+    if (hasValidationError) return;
+    setStep("confirm");
+  };
+
+  const privateTransferMutation = usePrivateTransfer({
+    onProofSuccess: () => {
+      setTransferStatus("submitting");
+    },
+    onTxSubmitted: () => {
+      setTransferStatus("awaiting");
+    },
+    onTxConfirmed: async () => {
+      await refetchUserAssets();
+      setTransferStatus("complete");
+    },
+  });
+
+  const publicTransferMutation = usePublicTransfer({
+    onTxSubmitted: () => {
+      setTransferStatus("awaiting");
+    },
+    onTxConfirmed: async () => {
+      await refetchPublicBalance();
+      setTransferStatus("complete");
+    },
+  });
+
+  // Estimate gas for public transfers
+  useEffect(() => {
+    const estimateGas = async () => {
+      if (
+        transferType !== "public" ||
+        !selectedContactId ||
+        !amount ||
+        parseFloat(amount) <= 0 ||
+        !address ||
+        !selectedAsset
+      ) {
+        setGasEstimate(null);
+        setGasEstimateError("");
+        return;
+      }
+
+      const contact = contacts?.find((c) => c.id === selectedContactId);
+      if (!contact?.evmAddress) {
+        setGasEstimate(null);
+        return;
+      }
+
+      setGasEstimateLoading(true);
+      setGasEstimateError("");
+
+      try {
+        const parsedAmount = parseUnits(amount, selectedAsset.decimals);
+        const estimate = await estimatePublicTransferGas(
+          selectedAsset,
+          address,
+          contact.evmAddress,
+          parsedAmount,
+        );
+        setGasEstimate(estimate);
+      } catch (error) {
+        console.error("Gas estimation failed:", error);
+        setGasEstimateError(
+          error instanceof Error ? error.message : "Failed to estimate gas",
+        );
+        setGasEstimate(null);
+      } finally {
+        setGasEstimateLoading(false);
+      }
+    };
+
+    // Debounce gas estimation
+    const timeoutId = setTimeout(estimateGas, 500);
+    return () => clearTimeout(timeoutId);
+  }, [
+    transferType,
+    selectedContactId,
+    amount,
+    address,
+    selectedAsset,
+    contacts,
+  ]);
+
+  // Map transferStatus to current step index for progress
+  const getCurrentStepIndex = (): number => {
+    if (!transferStatus) return 0;
+
+    if (transferType === "public") {
+      switch (transferStatus) {
+        case "submitting":
+          return 1;
+        case "awaiting":
+          return 2;
+        case "complete":
+          return publicTransferSteps.length;
+        default:
+          return 0;
+      }
+    }
+
+    // Private transfer
+    switch (transferStatus) {
+      case "(1/4) Generating proof":
+      case "generating":
+        return 1;
+      case "(2/4) Submitting Transaction":
+      case "submitting":
+        return 2;
+      case "(3/4) Submitted, Awaiting Confirmation":
+      case "awaiting":
+        return 3;
+      case "(4/4) Transfer complete":
+      case "complete":
+        return privateTransferSteps.length;
+      default:
+        return 0;
+    }
+  };
+
+  // Get the appropriate steps array based on transfer type
+  const transferSteps =
+    transferType === "public" ? publicTransferSteps : privateTransferSteps;
+
+  const currentStepIndex = getCurrentStepIndex();
+  const isProcessing =
+    transferStatus !== "" &&
+    transferStatus !== "complete" &&
+    step === "confirm";
+  const isComplete =
+    transferStatus === "complete" ||
+    transferStatus === "(4/4) Transfer complete";
+
+  const handleConfirm = async () => {
+    const contact = contacts?.find((c) => c.id === selectedContactId);
+    const transaction = {
+      type: transferType,
+      asset: selectedAsset?.symbol,
+      amount: parseUnits(amount.toString(), selectedAsset.decimals),
+      recipient: contact,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log("Transaction to send:", transaction);
+
+    if (transferType === "public" && selectedAsset && contact) {
+      setTransferStatus("submitting");
+      publicTransferMutation.mutate({
+        amount: transaction.amount,
+        asset: selectedAsset,
+        recipient: contact,
+      });
+    } else if (
+      transferType === "private" &&
+      tree &&
+      sendingNotes &&
+      selectedAsset &&
+      contact
+    ) {
+      setTransferStatus("generating");
+      privateTransferMutation.mutate({
+        amount: transaction.amount,
+        asset: selectedAsset,
+        recipient: contact,
+        sendingNotes,
+        tree,
+      });
+    }
+  };
+
+  const handleReset = () => {
+    setStep("select-type");
+    setTransferType(null);
+    setSelectedContactId("");
+    setAmount("");
+    setTransferStatus("");
+    setGasEstimate(null);
+    setGasEstimateError("");
+  };
+
+  // Filter contacts based on transfer type
+  const availableContacts = contacts?.filter((contact) => {
+    if (transferType === "public") {
+      return !!contact.evmAddress;
+    } else if (transferType === "private") {
+      return !!contact.privateAddress;
+    }
+    return false;
+  });
+
+  const selectedContact = contacts?.find((c) => c.id === selectedContactId);
+
+  const formatAddress = (address?: string) => {
+    if (!address) return "—";
+    if (address.length <= 12) return address;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  return (
+    <PageContainer
+      title="commbank.eth | Send"
+      description="Send assets privately or publicly"
+    >
+      <div className="container mx-auto max-w-6xl space-y-6 text-left">
+        {/* Back Button */}
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={isComplete ? handleReset : undefined}
+            asChild={!isComplete}
+            className="flex items-center gap-2"
+          >
+            {isComplete ? (
+              <>
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </>
+            ) : (
+              <Link to="/account" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Account
+              </Link>
+            )}
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              Send{" "}
+              {transferType &&
+                transferType.charAt(0).toUpperCase() +
+                  transferType.slice(1)}{" "}
+              {selectedAsset?.symbol}
+            </CardTitle>
+            <CardDescription>
+              {!transferType &&
+                "Send assets to a contact publicly or privately"}
+              {transferType == "private" &&
+                "Send assets privately to one of your contacts"}
+              {transferType == "public" &&
+                "Send assets publicly to one of your contacts"}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            {/* Asset Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Asset</label>
+              <Select
+                value={selectedAsset.address}
+                onValueChange={handleAssetChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={selectedAsset.logo}
+                        alt={selectedAsset.symbol}
+                        className={`h-5 w-5 ${selectedAsset.symbol === "AUDD" && "invert dark:invert-0"}`}
+                      />
+                      <span className="font-medium">
+                        {selectedAsset.symbol}
+                      </span>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {DEFAULT_ASSETS.map((asset) => (
+                    <SelectItem key={asset.address} value={asset.address}>
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={asset.logo}
+                          alt={asset.symbol}
+                          className={`h-5 w-5 ${asset.symbol === "AUDD" && "invert dark:invert-0"}`}
+                        />
+                        <span className="font-medium">{asset.symbol}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Step 1: Select Transfer Type */}
+            {step === "select-type" && (
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <Button
+                  variant="outline"
+                  className="h-16 text-lg font-semibold flex-col gap-1"
+                  onClick={() => handleSelectType("public")}
+                >
+                  <ArrowUpRight className="h-5 w-5" />
+                  <span className="text-sm">Public Transfer</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-16 text-lg font-semibold flex-col gap-1"
+                  onClick={() => handleSelectType("private")}
+                >
+                  <ArrowUpRight className="h-5 w-5" />
+                  <span className="text-sm">Private Transfer</span>
+                </Button>
+              </div>
+            )}
+
+            {/* Step 2: Enter Details */}
+            {step === "enter-details" && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Contact</label>
+                  <Select
+                    value={selectedContactId}
+                    onValueChange={setSelectedContactId}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a contact">
+                        {selectedContact && (
+                          <span className="font-medium">
+                            {selectedContact.nickname || "No Contact Name"}
+                          </span>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableContacts?.map((contact) => (
+                        <SelectItem key={contact.id} value={contact.id}>
+                          <div className="flex flex-col items-start gap-1 py-1">
+                            <span className="font-medium">
+                              {contact.nickname || "No Contact Name"}
+                            </span>
+                            {transferType === "public" ? (
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {formatAddress(contact.evmAddress)}
+                              </span>
+                            ) : (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-xs text-muted-foreground font-mono">
+                                  Private:{" "}
+                                  {formatAddress(contact.privateAddress)}
+                                </span>
+                                {contact.envelopeAddress && (
+                                  <span className="text-xs text-muted-foreground font-mono">
+                                    Signing:{" "}
+                                    {formatAddress(contact.envelopeAddress)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    You can add new contacts on the{" "}
+                    <Link
+                      to="/contacts"
+                      className="underline hover:text-foreground"
+                    >
+                      Contacts
+                    </Link>{" "}
+                    page.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Amount</label>
+                    <span className="text-xs text-muted-foreground">
+                      {transferType === "public" ? (
+                        <BalanceRow
+                          asset={selectedAsset}
+                          description={` ${selectedAsset.symbol} available`}
+                        />
+                      ) : (
+                        <PrivateBalanceRow
+                          asset={selectedAsset}
+                          description={` ${selectedAsset.symbol} available`}
+                        />
+                      )}
+                    </span>
+                  </div>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                {getAmountError() && (
+                  <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                    {getAmountError()}
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleBack}
+                    className="flex-1"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleNext}
+                    className="flex-1"
+                    disabled={!!hasValidationError}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Confirm */}
+            {step === "confirm" && selectedContact && (
+              <div className="space-y-4">
+                {!isProcessing && !isComplete && (
+                  <>
+                    <div className="space-y-3 p-4 bg-muted rounded-lg">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Sending
+                        </span>
+                        <span className="text-sm font-medium">
+                          {selectedAsset?.symbol}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Amount
+                        </span>
+                        <span className="text-sm font-medium">
+                          {amount} {selectedAsset?.symbol}
+                        </span>
+                      </div>
+
+                      <Separator className="w-full" />
+
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          To
+                        </span>
+                        <span className="text-sm font-medium">
+                          {selectedContact.nickname || "Anonymous"}
+                        </span>
+                      </div>
+                      {transferType === "public" ? (
+                        <>
+                          <div className="flex justify-between items-start">
+                            <span className="text-sm text-muted-foreground">
+                              Address
+                            </span>
+                            <span className="text-sm font-medium font-mono text-right break-all">
+                              {formatAddress(selectedContact.evmAddress)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-start">
+                            <span className="text-sm text-muted-foreground">
+                              Est. Gas Fee
+                            </span>
+                            <span className="text-sm font-medium font-mono">
+                              {gasEstimateLoading ? (
+                                <span className="flex items-center gap-2">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Estimating...
+                                </span>
+                              ) : gasEstimate ? (
+                                <>
+                                  {parseFloat(
+                                    gasEstimate.formattedCost,
+                                  ).toFixed(6)}{" "}
+                                  ETH
+                                </>
+                              ) : (
+                                "—"
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start">
+                            <span className="text-sm text-muted-foreground">
+                              Private Address
+                            </span>
+                            <span className="text-sm font-medium font-mono text-right break-all">
+                              {formatAddress(selectedContact.privateAddress)}
+                            </span>
+                          </div>
+                          {selectedContact.envelopeAddress && (
+                            <div className="flex justify-between items-start">
+                              <span className="text-sm text-muted-foreground">
+                                Signing Key
+                              </span>
+                              <span className="text-sm font-medium font-mono text-right break-all">
+                                {formatAddress(selectedContact.envelopeAddress)}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {hasInsufficientGas && (
+                      <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                        Insufficient ETH for gas. You need{" "}
+                        {parseFloat(gasEstimate!.formattedCost).toFixed(6)} ETH
+                        but only have{" "}
+                        {parseFloat(gasEstimate!.formattedEthBalance).toFixed(
+                          6,
+                        )}{" "}
+                        ETH.
+                      </div>
+                    )}
+
+                    {(privateTransferMutation.error ||
+                      publicTransferMutation.error) && (
+                      <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md break-words overflow-hidden">
+                        Error:{" "}
+                        {getSimplifiedErrorMessage(
+                          (privateTransferMutation.error ||
+                            publicTransferMutation.error) as Error,
+                        )}
+                      </div>
+                    )}
+
+                    {isComplete && (
+                      <div className="text-sm text-green-500 bg-green-500/10 p-3 rounded-md">
+                        Transfer complete! You can view the transaction in your
+                        history.
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleBack}
+                        className="flex-1"
+                        disabled={
+                          privateTransferMutation.isPending ||
+                          publicTransferMutation.isPending ||
+                          isComplete
+                        }
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back
+                      </Button>
+                      <Button
+                        onClick={handleConfirm}
+                        className="flex-1"
+                        disabled={
+                          privateTransferMutation.isPending ||
+                          publicTransferMutation.isPending ||
+                          isComplete ||
+                          !!hasInsufficientGas ||
+                          (transferType === "public" && gasEstimateLoading)
+                        }
+                      >
+                        {isComplete ? (
+                          "Complete"
+                        ) : privateTransferMutation.isPending ||
+                          publicTransferMutation.isPending ? (
+                          "Submitting..."
+                        ) : transferType === "public" && gasEstimateLoading ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Estimating Gas...
+                          </span>
+                        ) : (
+                          "Confirm"
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
+                {(isProcessing || isComplete) && (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <CircularProgress
+                      progress={(currentStepIndex / transferSteps.length) * 100}
+                      isComplete={isComplete}
+                      currentStep={
+                        currentStepIndex > 0 &&
+                        currentStepIndex <= transferSteps.length
+                          ? transferSteps[currentStepIndex - 1].name
+                          : ""
+                      }
+                    />
+
+                    {currentStepIndex > 0 &&
+                      currentStepIndex <= transferSteps.length &&
+                      !isComplete && (
+                        <div className="mt-8 text-center">
+                          <p className="text-sm font-medium">
+                            Step {currentStepIndex} of {transferSteps.length}
+                          </p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {transferSteps[currentStepIndex - 1].description}
+                          </p>
+                        </div>
+                      )}
+
+                    {isComplete && (
+                      <>
+                        <p className="mt-8 text-sm font-medium text-green-500">
+                          Transaction Complete!
+                        </p>
+                        <Button
+                          onClick={() => navigate("/account")}
+                          variant="outline"
+                          className="mt-4"
+                        >
+                          Back to Account Page
+                        </Button>
+                      </>
+                    )}
+
+                    {/* Error Display */}
+                    {(privateTransferMutation.error ||
+                      publicTransferMutation.error) && (
+                      <>
+                        <div className="mt-4 text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden max-w-md">
+                          Error:{" "}
+                          {getSimplifiedErrorMessage(
+                            (privateTransferMutation.error ||
+                              publicTransferMutation.error) as Error,
+                          )}
+                        </div>
+                        <div className="mt-4 flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              privateTransferMutation.reset();
+                              publicTransferMutation.reset();
+                              setTransferStatus("");
+                            }}
+                          >
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              privateTransferMutation.reset();
+                              publicTransferMutation.reset();
+                              setTransferStatus("");
+                              // Small delay to ensure state is reset before retrying
+                              setTimeout(() => handleConfirm(), 100);
+                            }}
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Retry
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </PageContainer>
+  );
+}

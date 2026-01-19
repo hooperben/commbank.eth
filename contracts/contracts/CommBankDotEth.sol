@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+
+import "./PoseidonMerkleTree.sol";
+import {IVerifier} from "./verifiers/DepositVerifier.sol";
+
 //                             ___.                  __               __  .__
 //   ____  ____   _____   _____\_ |__ _____    ____ |  | __     _____/  |_|  |__
 // _/ ___\/  _ \ /     \ /     \| __ \\__  \  /    \|  |/ /   _/ __ \   __\  |  \
@@ -8,20 +14,11 @@ pragma solidity ^0.8.24;
 //  \___  >____/|__|_|  /__|_|  /___  (____  /___|  /__|_ \ /\ \___  >__| |___|  /
 //      \/            \/      \/    \/     \/     \/     \/ \/     \/          \/
 //
-// author: benhooper.eth
-
-import "./PoseidonMerkleTree.sol";
-
-import {IVerifier} from "./verifiers/DepositVerifier.sol";
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-
 contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
   address public depositVerifier;
   address public transferVerifier;
   address public withdrawVerifier;
+  address public transferExternalVerifier;
 
   mapping(bytes32 => bool) public nullifierUsed;
 
@@ -41,11 +38,13 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
   constructor(
     address _noteVerifier,
     address _transactVerifier,
-    address _withdrawalVerifier
+    address _withdrawalVerifier,
+    address _transferExternalVerifier
   ) PoseidonMerkleTree(12) {
     depositVerifier = _noteVerifier;
     transferVerifier = _transactVerifier;
     withdrawVerifier = _withdrawalVerifier;
+    transferExternalVerifier = _transferExternalVerifier;
 
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(DEPOSIT_ROLE, msg.sender);
@@ -56,7 +55,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     uint256 _amount, // with decimals
     bytes calldata _proof,
     bytes32[] calldata _publicInputs,
-    bytes[] calldata _payload
+    bytes[] calldata _payload // TODO this probably doesn't need to be an array
   ) public onlyRole(DEPOSIT_ROLE) {
     bool depositTransfer = IERC20(_erc20).transferFrom(
       msg.sender,
@@ -65,14 +64,14 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     );
     require(depositTransfer, "failed to transfer deposit");
 
-    // VERIFY PROOF
+    // verify proof
     bool isValidProof = IVerifier(depositVerifier).verify(
       _proof,
       _publicInputs
     );
     require(isValidProof, "Invalid deposit proof!");
 
-    // CHECK INPUT ADDRESS AND AMOUNT MATCH PROOF INPUTS
+    // check input input asset address and amount match proof inputs
     require(
       _erc20 == address(uint160(uint256(_publicInputs[1]))),
       "ERC20 address mismatch"
@@ -82,9 +81,10 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
       "Address amount incorrect"
     );
 
-    // INSERT NOTE INTO TREE
+    // insert note
     _insert(uint256(_publicInputs[0]));
 
+    // TODO this probably doesn't need to be a loop
     for (uint256 i = 0; i < 3 && i < _payload.length; i++) {
       if (_payload[i].length != 0) {
         emit NotePayload(_payload[i]);
@@ -95,9 +95,9 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
   function depositNative(
     bytes calldata _proof,
     bytes32[] calldata _publicInputs,
-    bytes[] calldata _payload
+    bytes[] calldata _payload // TODO this probably doesn't need to be an array
   ) public payable onlyRole(DEPOSIT_ROLE) {
-    // VERIFY PROOF
+    // verify proof
     bool isValidProof = IVerifier(depositVerifier).verify(
       _proof,
       _publicInputs
@@ -112,10 +112,10 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     // check that msg.value matches amount in proof
     require(msg.value == uint64(uint256(_publicInputs[2])), "Amount incorrect");
 
-    // Insert note into tree
+    // insert note
     _insert(uint256(_publicInputs[0]));
 
-    // Emit encrypted payloads
+    // TODO this probably doesn't need to be a loop
     for (uint256 i = 0; i < 3 && i < _payload.length; i++) {
       if (_payload[i].length != 0) {
         emit NotePayload(_payload[i]);
@@ -153,7 +153,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
       }
     }
 
-    // and insert output note commitments
+    // and insert output notes
     for (
       uint256 i = NOTES_INPUT_LENGTH + 1;
       i < NOTES_INPUT_LENGTH + 1 + NOTES_INPUT_LENGTH;
@@ -225,6 +225,85 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
           bool success = IERC20(exitAsset).transfer(exitAddress, exitAmount);
           require(success, "Token transfer failed");
         }
+      }
+    }
+  }
+
+  // transfer function that allows for arbitrary amounts of withdrawal (not just note based)
+  function transferExternal(
+    bytes calldata _proof,
+    bytes32[] calldata _publicInputs,
+    bytes[] calldata _payload
+  ) public {
+    // verify the root is in the trees history
+    require(isKnownRoot(uint256(_publicInputs[0])), "Invalid Root!");
+
+    // verify the proof
+    bool isValidProof = IVerifier(transferExternalVerifier).verify(
+      _proof,
+      _publicInputs
+    );
+    require(isValidProof, "Invalid transfer external proof");
+
+    // Mark nullifiers as spent (indices 1-3)
+    for (uint256 i = 1; i <= NOTES_INPUT_LENGTH; i++) {
+      if (_publicInputs[i] != bytes32(0)) {
+        require(
+          nullifierUsed[_publicInputs[i]] == false,
+          "Nullifier already spent"
+        );
+        nullifierUsed[_publicInputs[i]] = true;
+        emit NullifierUsed(_publicInputs[i]);
+      }
+    }
+
+    // Process output notes (indices 4-6 are output_hashes)
+    // Insert internal transfer notes into merkle tree
+    for (
+      uint256 i = NOTES_INPUT_LENGTH + 1;
+      i < NOTES_INPUT_LENGTH + 1 + NOTES_INPUT_LENGTH;
+      i++
+    ) {
+      if (_publicInputs[i] != bytes32(0)) {
+        _insert(uint256(_publicInputs[i]));
+      }
+    }
+
+    // Process external withdrawals (indices 7-9: exit_assets, 10-12: exit_amounts, 13-15: exit_addresses)
+    uint256 exitAssetStartIndex = 7;
+    uint256 exitAmountStartIndex = exitAssetStartIndex + NOTES_INPUT_LENGTH;
+    uint256 exitAddressStartIndex = exitAmountStartIndex + NOTES_INPUT_LENGTH;
+
+    for (uint256 i = 0; i < NOTES_INPUT_LENGTH; i++) {
+      uint256 assetIndex = exitAssetStartIndex + i;
+      uint256 amountIndex = exitAmountStartIndex + i;
+      uint256 addressIndex = exitAddressStartIndex + i;
+
+      address exitAsset = address(uint160(uint256(_publicInputs[assetIndex])));
+      uint256 exitAmount = uint256(_publicInputs[amountIndex]);
+      address exitAddress = address(
+        uint160(uint256(_publicInputs[addressIndex]))
+      );
+
+      if (exitAmount > 0 && exitAddress != address(0)) {
+        if (exitAsset == ETH_ADDRESS) {
+          require(
+            address(this).balance >= exitAmount,
+            "Insufficient ETH balance"
+          );
+          (bool success, ) = exitAddress.call{value: exitAmount}("");
+          require(success, "ETH transfer failed");
+        } else {
+          bool success = IERC20(exitAsset).transfer(exitAddress, exitAmount);
+          require(success, "Token transfer failed");
+        }
+      }
+    }
+
+    // Emit payload note parameters for internal transfers
+    for (uint256 i = 0; i < 3 && i < _payload.length; i++) {
+      if (_payload[i].length != 0) {
+        emit NotePayload(_payload[i]);
       }
     }
   }

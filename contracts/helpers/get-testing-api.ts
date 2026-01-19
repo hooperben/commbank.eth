@@ -41,8 +41,8 @@ export const getTestingAPI = async () => {
     transferBackend,
     withdrawNoir,
     withdrawBackend,
-    warpNoir,
-    warpBackend,
+    transferExternalNoir,
+    transferExternalBackend,
   } = getNoirClasses();
 
   const tree = await getMerkleTree();
@@ -57,8 +57,8 @@ export const getTestingAPI = async () => {
     transferBackend,
     withdrawNoir,
     withdrawBackend,
-    warpNoir,
-    warpBackend,
+    transferExternalNoir,
+    transferExternalBackend,
     Signers,
     tree,
     deployer1Secret,

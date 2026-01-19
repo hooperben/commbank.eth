@@ -1,19 +1,12 @@
-export interface DepositNote {
-  assetId: string | bigint;
-  assetAmount: string | bigint;
-  secret: string | bigint;
-  owner: string | bigint;
-}
-
 export interface InputNote {
-  asset_id: bigint | string;
-  asset_amount: bigint | string;
-  owner: bigint | string;
-  owner_secret: bigint | string;
-  secret: bigint | string;
-  leaf_index: bigint | string;
-  path: bigint[] | string[];
-  path_indices: bigint[] | string[];
+  asset_id: string;
+  asset_amount: string;
+  owner: string;
+  owner_secret: string;
+  secret: string;
+  leaf_index: string;
+  path: string[];
+  path_indices: string[];
 }
 
 export interface OutputNote {
@@ -21,4 +14,5 @@ export interface OutputNote {
   secret: string;
   asset_id: string;
   asset_amount: string;
+  external_address?: string;
 }

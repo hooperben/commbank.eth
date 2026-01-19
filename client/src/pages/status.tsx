@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
-import PageContainer from "@/components/page-container";
-import { StatusCard } from "@/components/status/status-card";
-import { Button } from "@/components/ui/button";
+import { StatusCard } from "@/_components/status/status-card";
+import { Button } from "@/_components/ui/button";
+import PageContainer from "@/_providers/page-container";
 import type { SystemStatus } from "@/_types";
 import {
-  checkRPCStatus,
+  checkIndexedDBSupport,
   checkIndexerStatus,
   checkPasskeySupport,
-  checkIndexedDBSupport,
-} from "@/lib/status-helpers";
+  checkRelayerStatus,
+  checkRPCStatus,
+} from "@/lib/formatting/status-helpers";
 import { ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function StatusPage() {
   const [rpcStatus, setRpcStatus] = useState<SystemStatus>({
@@ -19,6 +20,10 @@ export default function StatusPage() {
   const [indexerStatus, setIndexerStatus] = useState<SystemStatus>({
     type: "loading",
     message: "Checking indexer status...",
+  });
+  const [relayerStatus, setRelayerStatus] = useState<SystemStatus>({
+    type: "loading",
+    message: "Checking relayer status...",
   });
 
   const githubBuildUrl = import.meta.env.VITE_GITHUB_ACTION_BUILD_URL;
@@ -38,18 +43,21 @@ export default function StatusPage() {
 
     // Check indexer status
     checkIndexerStatus().then(setIndexerStatus);
+
+    // Check relayer status
+    checkRelayerStatus().then(setRelayerStatus);
   }, []);
 
   return (
     <PageContainer
       title="System Status"
-      description="Check the status of commbank.eth services and browser compatibility"
+      description="Monitor the health of commbank.eth services and check your browser compatibility."
     >
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl space-y-6 text-left">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">System Status</h1>
           <p className="text-muted-foreground">
-            Monitor the health of commbank.eth services and check browser
+            Monitor the health of commbank.eth services and check your browser
             compatibility.
           </p>
         </div>
@@ -75,6 +83,7 @@ export default function StatusPage() {
           </StatusCard>
           <StatusCard title="RPC Status" status={rpcStatus} />
           <StatusCard title="Indexer Status" status={indexerStatus} />
+          <StatusCard title="Relayer Status" status={relayerStatus} />
           <StatusCard title="Passkey Support" status={passkeyStatus} />
           <StatusCard title="IndexedDB Support" status={indexedDBStatus} />
         </div>

@@ -7,6 +7,7 @@ export interface SupportedAsset {
   decimals: number;
   isNative?: boolean;
   roundTo?: number;
+  logo: string;
 }
 
 export const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -19,6 +20,17 @@ export const mainnetAssets: SupportedAsset[] = [
     symbol: "AUDD",
     address: "0x4cCe605eD955295432958d8951D0B176C10720d5",
     decimals: 6,
+    logo: "audd-logo.png",
+  },
+  {
+    chainId: 1,
+    lzEndpointId: 30101,
+    name: "USD Coin",
+    symbol: "USDC",
+    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    decimals: 6,
+    roundTo: 2,
+    logo: "usdc-logo.png",
   },
   {
     chainId: 1,
@@ -28,7 +40,8 @@ export const mainnetAssets: SupportedAsset[] = [
     address: ETH_ADDRESS,
     decimals: 18,
     isNative: true,
-    roundTo: 8,
+    roundTo: 5,
+    logo: "usdc-logo.png",
   },
 ];
 
@@ -41,6 +54,7 @@ export const sepoliaAssets: SupportedAsset[] = [
     address: "0x237eEeE66266c72DBb7Ee2Aa84811666cE4EB815",
     decimals: 6,
     roundTo: 2,
+    logo: "usdc-logo.png",
   },
   {
     chainId: 11155111,
@@ -50,6 +64,7 @@ export const sepoliaAssets: SupportedAsset[] = [
     address: "0xd794125Bc226895b987845Ef768B8C104fAbecD5",
     decimals: 6,
     roundTo: 2,
+    logo: "audd-logo.png",
   },
   {
     chainId: 11155111,
@@ -59,18 +74,53 @@ export const sepoliaAssets: SupportedAsset[] = [
     address: ETH_ADDRESS,
     decimals: 18,
     isNative: true,
-    roundTo: 8,
+    roundTo: 5,
+    logo: "eth-logo.png",
+  },
+];
+
+export const arbSepoliaAssets: SupportedAsset[] = [
+  {
+    chainId: 421614,
+    lzEndpointId: 40231,
+    name: "Australian Dollar Coin",
+    symbol: "AUDD",
+    address: "0xA09599efa9a31036D20a9eEF07C69E77937E784E",
+    decimals: 6,
+    roundTo: 2,
+    logo: "audd-logo.png",
+  },
+  {
+    chainId: 421614,
+    lzEndpointId: 40231,
+    name: "USD Coin",
+    symbol: "USDC",
+    address: "0xD1CAD1C8CEEdeD7Ad65440fd643E2d9320c2bf51",
+    decimals: 6,
+    roundTo: 2,
+    logo: "usdc-logo.png",
+  },
+  {
+    chainId: 421614,
+    lzEndpointId: 40231,
+    name: "Ethereum",
+    symbol: "ETH",
+    address: ETH_ADDRESS,
+    decimals: 18,
+    isNative: true,
+    roundTo: 5,
+    logo: "eth-logo.png",
   },
 ];
 
 export const defaultNetwork =
-  Number(import.meta.env.VITE_DEFAULT_CHAIN_ID) || sepoliaAssets[0].chainId;
+  Number(import.meta.env.VITE_DEFAULT_CHAIN_ID) || arbSepoliaAssets[0].chainId;
 
-const assets: SupportedAsset[] =
-  defaultNetwork === 1 ? mainnetAssets : sepoliaAssets;
+export const DEFAULT_ASSETS: SupportedAsset[] =
+  defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
 
 // Create mapping by address for quick access: assetByAddress[address]
 export const defaultNetworkAssetByAddress: Record<string, SupportedAsset> = {};
-for (const asset of assets) {
-  defaultNetworkAssetByAddress[asset.address.toLowerCase()] = asset;
+for (const asset of DEFAULT_ASSETS) {
+  defaultNetworkAssetByAddress[BigInt(asset.address).toString()] = asset;
 }

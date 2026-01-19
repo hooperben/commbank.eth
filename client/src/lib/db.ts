@@ -10,10 +10,11 @@ import type {
   Meta,
   Contact,
   Transaction,
+  TransactionStatus,
 } from "@/_types";
 
 const DB_NAME = "commbankdotethdb";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 // Store names
 const NOTES_STORE = "notes";
@@ -55,6 +56,8 @@ export function initDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+      const oldVersion = event.oldVersion;
+      const transaction = (event.target as IDBOpenDBRequest).transaction;
 
       // Create Notes store
       if (!db.objectStoreNames.contains(NOTES_STORE)) {
@@ -102,6 +105,21 @@ export function initDB(): Promise<IDBDatabase> {
         transactionsStore.createIndex("timestamp", "timestamp", {
           unique: false,
         });
+        transactionsStore.createIndex("status", "status", { unique: false });
+        transactionsStore.createIndex("createdAt", "createdAt", {
+          unique: false,
+        });
+      }
+
+      // Migration from v3 to v4: Add new indexes to existing transactions store
+      if (oldVersion < 4 && oldVersion >= 3 && transaction) {
+        const txStore = transaction.objectStore(TRANSACTIONS_STORE);
+        if (!txStore.indexNames.contains("status")) {
+          txStore.createIndex("status", "status", { unique: false });
+        }
+        if (!txStore.indexNames.contains("createdAt")) {
+          txStore.createIndex("createdAt", "createdAt", { unique: false });
+        }
       }
     };
 
@@ -352,6 +370,35 @@ export async function clearAllData(): Promise<void> {
 }
 
 /**
+ * Reset app data for re-sync
+ * Clears notes, tree leaves, payloads, and private transactions
+ * Keeps meta, contacts, and approval transactions
+ */
+export async function resetAppData(): Promise<void> {
+  // Clear notes, tree, and payloads
+  await Promise.all([clearNotes(), clearTree(), clearPayloads()]);
+
+  // Clear private transactions (keep approvals and other non-private txs)
+  const privateTransactionTypes = [
+    "Deposit",
+    "Deposit-Pending",
+    "Withdraw",
+    "Transfer",
+    "PrivateTransfer",
+  ];
+
+  const allTransactions = await getAllTransactions();
+  const transactionsToDelete = allTransactions.filter((tx) =>
+    privateTransactionTypes.includes(tx.type),
+  );
+
+  await Promise.all(transactionsToDelete.map((tx) => deleteTransaction(tx.id)));
+
+  // Reset meta last_id
+  await updateMeta({ last_id: 0 });
+}
+
+/**
  * Get database statistics
  */
 export async function getDBStats(): Promise<{
@@ -486,4 +533,99 @@ export async function deleteTransaction(id: string): Promise<void> {
 
 export async function clearTransactions(): Promise<void> {
   return clearStore(TRANSACTIONS_STORE);
+}
+
+/**
+ * Get all pending transactions for a chain
+ */
+export async function getPendingTransactions(
+  chainId: number,
+): Promise<Transaction[]> {
+  const allTxs = await getTransactionsByChainId(chainId);
+  return allTxs.filter((tx) => tx.status === "pending");
+}
+
+/**
+ * Get all transactions by status for a chain
+ */
+export async function getTransactionsByStatus(
+  chainId: number,
+  status: TransactionStatus,
+): Promise<Transaction[]> {
+  const allTxs = await getTransactionsByChainId(chainId);
+  return allTxs.filter((tx) => tx.status === status);
+}
+
+/**
+ * Get locked note commitments (notes in pending transactions)
+ */
+export async function getLockedNoteCommitments(
+  chainId: number,
+): Promise<Set<string>> {
+  const pendingTxs = await getPendingTransactions(chainId);
+  const locked = new Set<string>();
+
+  for (const tx of pendingTxs) {
+    for (const note of tx.inputNotes || []) {
+      locked.add(note.commitment);
+    }
+  }
+
+  return locked;
+}
+
+/**
+ * Update transaction status with optional additional updates
+ */
+export async function updateTransactionStatus(
+  id: string,
+  status: TransactionStatus,
+  updates?: Partial<Transaction>,
+): Promise<void> {
+  const tx = await getTransaction(id);
+  if (!tx) return;
+
+  const updatedTx: Transaction = {
+    ...tx,
+    ...updates,
+    status,
+    ...(status === "confirmed" ? { confirmedAt: Date.now() } : {}),
+  };
+
+  await updateTransaction(updatedTx);
+}
+
+/**
+ * Migrate existing transactions to v4 schema
+ * Sets status to "confirmed" for old transactions that don't have a status
+ */
+export async function migrateTransactionsToV4(): Promise<void> {
+  const allTxs = await getAllTransactions();
+
+  for (const tx of allTxs) {
+    // Skip if already migrated (has status field)
+    if (tx.status) continue;
+
+    // Set defaults for old transactions
+    const migratedTx: Transaction = {
+      ...tx,
+      status: "confirmed", // Old txs were only stored after confirmation
+      createdAt: tx.timestamp,
+      confirmedAt: tx.timestamp,
+      inputNotes: tx.inputNotes || [],
+      outputNotes: tx.outputNotes || [],
+    };
+
+    await updateTransaction(migratedTx);
+  }
+}
+
+/**
+ * Get note by commitment hash
+ */
+export async function getNoteByCommitment(
+  commitment: string,
+): Promise<Note | null> {
+  const allNotes = await getAllNotes();
+  return allNotes.find((note) => note.id === commitment) || null;
 }

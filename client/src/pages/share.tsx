@@ -1,13 +1,18 @@
+import { SignupModal } from "@/_components/auth/signup-modal";
+import { Button } from "@/_components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/_components/ui/card";
+import { PAGE_METADATA } from "@/_constants/seo-config";
+import { useAddContact } from "@/_hooks/use-contacts";
+import { useIsRegistered } from "@/_hooks/use-is-registered";
+import { useSignIn } from "@/_hooks/use-sign-in";
+import PageContainer from "@/_providers/page-container";
 import type { ContactInfo, ShareProfileParams } from "@/_types";
-import PageContainer from "@/components/page-container";
-import { SignupModal } from "@/components/signup/signup-modal";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAddContact } from "@/hooks/use-contacts";
-import { useIsRegistered } from "@/hooks/use-is-registered";
-import { useSignIn } from "@/hooks/use-sign-in";
-import { verifyNicknameHash } from "@/lib/nickname-hash";
-import { PAGE_METADATA } from "@/lib/seo-config";
+import { verifyNicknameHash } from "@/lib/formatting/nickname-hash";
 import { AlertCircle, Loader2, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";

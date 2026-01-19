@@ -16,6 +16,11 @@ export const commbankDotEthAbi = [
         name: "_withdrawalVerifier",
         type: "address",
       },
+      {
+        internalType: "address",
+        name: "_transferExternalVerifier",
+        type: "address",
+      },
     ],
     stateMutability: "nonpayable",
     type: "constructor",
@@ -335,6 +340,19 @@ export const commbankDotEthAbi = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "depositVerifier",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [
       {
         internalType: "uint256",
@@ -637,10 +655,72 @@ export const commbankDotEthAbi = [
         name: "_publicInputs",
         type: "bytes32[]",
       },
+      {
+        internalType: "bytes[]",
+        name: "_payload",
+        type: "bytes[]",
+      },
+    ],
+    name: "transferExternal",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "transferExternalVerifier",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "transferVerifier",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "_proof",
+        type: "bytes",
+      },
+      {
+        internalType: "bytes32[]",
+        name: "_publicInputs",
+        type: "bytes32[]",
+      },
     ],
     name: "withdraw",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "withdrawVerifier",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {

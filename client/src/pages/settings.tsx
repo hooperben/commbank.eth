@@ -1,10 +1,16 @@
-import { AddressCard } from "@/components/account/address-card";
-import { BackupAccountModal } from "@/components/settings/backup-account-modal";
-import { DeleteAccountModal } from "@/components/settings/delete-account-modal";
-import PageContainer from "@/components/page-container";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/lib/auth-context";
-import { PAGE_METADATA } from "@/lib/seo-config";
+import { AddressCard } from "@/_components/account/address-card";
+import { BackupAccountModal } from "@/_components/settings/backup-account-modal";
+import { DeleteAccountModal } from "@/_components/settings/delete-account-modal";
+import { ResetAppModal } from "@/_components/settings/reset-app-modal";
+import PageContainer from "@/_providers/page-container";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/_components/ui/card";
+import { useAuth } from "@/_providers/auth-provider";
+import { PAGE_METADATA } from "@/_constants/seo-config";
 
 export const SettingsPage = () => {
   const { address, privateAddress, signingKey } = useAuth();
@@ -29,6 +35,21 @@ export const SettingsPage = () => {
             </p>
             <div className="flex justify-start">
               <BackupAccountModal />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-left">Reset App Data</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-left">
+              Clear your local cache and re-sync your account data. Your
+              credentials and contacts will be preserved.
+            </p>
+            <div className="flex justify-start">
+              <ResetAppModal />
             </div>
           </CardContent>
         </Card>

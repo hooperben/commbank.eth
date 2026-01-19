@@ -98,13 +98,67 @@ export type TransactionType =
   | "PrivateTransfer"
   | "Withdraw";
 
+export type TransactionStatus =
+  | "pending" // Submitted to network, awaiting confirmation
+  | "confirmed" // Confirmed on-chain
+  | "failed" // Failed or timed out
+  | "replaced"; // Replaced by another transaction (speed-up/cancel)
+
+export interface TransactionAssetDetails {
+  address: string; // Asset contract address
+  symbol: string; // e.g., "USDC", "ETH"
+  decimals: number; // e.g., 6 for USDC
+  amount: string; // Raw amount as string (BigInt)
+  formattedAmount: string; // Human-readable amount (e.g., "100.00")
+}
+
+export interface TransactionParticipant {
+  evmAddress?: string; // EVM address if known
+  privateAddress?: string; // Poseidon address if private
+  nickname?: string; // Contact nickname if known
+  isSelf: boolean; // Is this the current user
+}
+
+export interface TransactionNoteInfo {
+  commitment: string; // Note commitment/hash
+  isInput: boolean; // Input (spent) or output (created)
+  isChange: boolean; // Is this a change note back to sender
+}
+
 export interface Transaction {
-  id: string; // Auto-generated UUID or transaction hash
+  // Identifiers
+  id: string; // UUID (generated before submission)
   chainId: number;
-  transactionHash: string; // 0x-prefixed transaction hash
+  transactionHash?: string; // May be undefined while building proof
+
+  // Type and Status
   type: TransactionType;
-  to: string; // Contract address or recipient address (0x-prefixed)
-  data?: string; // Contract function calldata (optional)
-  value?: string; // BigInt as string (optional)
-  timestamp: number; // Unix timestamp
+  status: TransactionStatus;
+
+  // Timing
+  createdAt: number; // When transaction was initiated
+  submittedAt?: number; // When submitted to network
+  confirmedAt?: number; // When confirmed
+
+  // Basic transaction data
+  to: string; // Contract address
+  data?: string; // Calldata (optional, for debugging)
+  gasPrice?: string; // Gas price used
+  gasUsed?: string; // Gas used (after confirmation)
+
+  // Enhanced details
+  asset?: TransactionAssetDetails;
+  sender?: TransactionParticipant;
+  recipient?: TransactionParticipant;
+
+  // Note tracking (for double-spend prevention)
+  inputNotes: TransactionNoteInfo[]; // Notes being spent
+  outputNotes: TransactionNoteInfo[]; // Notes being created
+
+  // Error tracking
+  errorMessage?: string; // If failed, why
+
+  // Legacy (for backwards compatibility)
+  value?: string;
+  timestamp: number; // Alias for createdAt
 }

@@ -33,10 +33,23 @@ export default defineConfig({
   },
 
   networks: {
+    mainnet: {
+      type: "http",
+      url: process.env.MAINNET_RPC_URL!,
+      accounts: [process.env.EVM_PRIVATE_KEY!],
+      chainId: 1,
+    },
     sepolia: {
       type: "http",
       url: process.env.SEPOLIA_RPC_URL!,
       accounts: [process.env.EVM_PRIVATE_KEY!],
+      chainId: 11155111,
+    },
+    arbSepolia: {
+      type: "http",
+      url: process.env.ARB_SEPOLIA_RPC_URL!,
+      accounts: [process.env.EVM_PRIVATE_KEY!],
+      chainId: 421614,
     },
   },
   verify: {

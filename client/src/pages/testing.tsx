@@ -1,13 +1,18 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/_components/ui/button";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { useEffect, useState } from "react";
 
 import type { Note, Payload, TreeLeaf } from "@/_types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDBStats } from "@/hooks/use-indexed-db";
-import { useIndexerLeafs } from "@/hooks/use-indexer-leafs";
-import { useIndexerNotes } from "@/hooks/use-indexer-notes";
-import { useAuth } from "@/lib/auth-context";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/_components/ui/card";
+import { useDBStats } from "@/_hooks/use-indexed-db";
+import { useIndexerLeafs } from "@/_hooks/use-indexer-leafs";
+import { useIndexerNotes } from "@/_hooks/use-indexer-notes";
+import { useAuth } from "@/_providers/auth-provider";
 import { NoteDecryption } from "shared/classes/Note";
 import {
   AlertCircle,

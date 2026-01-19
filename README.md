@@ -1,13 +1,14 @@
 # commbank.eth
 
-### the bank you don't have to trust
+### open source, privacy enhancing financial technologies
 
 ## Components
 
-- `client*/`: the commbank.eth web app (currently 2 versions)
-- `contracts/`: the EVM smart contracts required to facilitate private transfers
-- `circuits/`: an implementation of a Multi Asset Shield Pool with `poseidon2` as the merkle tree hash function
-- `indexer/`: the indexer that makes the merkle tree data available easier
+- `client/`: the commbank.eth web app deployed to `https://commbank.eth.limo`
+- `contracts/`: the EVM smart contracts required to facilitate Private Unstoppable Money
+- `circuits/`: Private Unstoppable Money Zero Knowledge circuits
+- `indexer/`: a data indexer used to cache Private Unstoppable Money transactions more efficiently
+- `relayer/`: an expressJS based backend that forwards RPC requests and works as a transaction relayer
 
 ## Development
 

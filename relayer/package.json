@@ -1,0 +1,29 @@
+{
+  "name": "relayer",
+  "version": "1.0.0",
+  "description": "Transaction relayer for commbank.eth",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.16.1",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "ethers": "^6.13.4",
+    "express": "4.19.2",
+    "shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.3.3"
+  }
+}

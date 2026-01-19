@@ -22,7 +22,7 @@ jobs:
         run: |
           curl -L https://raw.githubusercontent.com/noir-lang/noirup/refs/heads/main/install | bash
           export PATH="$HOME/.nargo/bin:$PATH"
-          noirup --version 1.0.0-beta.15
+          noirup --version 1.0.0-beta.16
           echo "$HOME/.nargo/bin" >> $GITHUB_PATH
 
       - name: Install bb (Barretenberg)
@@ -43,7 +43,7 @@ jobs:
         env:
           VITE_GITHUB_ACTION_BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           VITE_DOMAIN: ${{ github.ref == 'refs/heads/main' && 'https://commbank.eth.limo' || 'https://dev.commbank.eth.limo' }}
-          VITE_DEFAULT_CHAIN_ID: ${{ github.ref == 'refs/heads/main' && '1' || '11155111' }}
+          VITE_DEFAULT_CHAIN_ID: ${{ github.ref == 'refs/heads/main' && '1' || '421614' }}
         run: |
           export PNPM_HOME="$HOME/.local/share/pnpm"
           export PATH="$PNPM_HOME:$PATH"
