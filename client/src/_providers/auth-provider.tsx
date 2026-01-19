@@ -1,12 +1,29 @@
+import { SUPPORTED_NETWORKS } from "@/_constants/networks";
 import { fetchIndexerNotes } from "@/_hooks/use-indexer-notes";
 import { useIsRegistered } from "@/_hooks/use-is-registered";
 import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
-import { addNote, getAllPayloads, migrateTransactionsToV4 } from "@/lib/db";
+import {
+  addNote,
+  addTransaction,
+  getAllPayloads,
+  migrateTransactionsToV4,
+} from "@/lib/db";
 import { transactionMonitor } from "@/lib/transaction-monitor";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
-import { ethers } from "ethers";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { ethers, formatUnits } from "ethers";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { NoteDecryption, NoteEncryption } from "shared/classes/Note";
+import {
+  defaultNetwork,
+  defaultNetworkAssetByAddress,
+} from "shared/constants/token";
 
 interface AuthContextType {
   isLoading: boolean;
@@ -19,6 +36,7 @@ interface AuthContextType {
   signOut: () => void;
   getMnemonic: () => Promise<string | null>;
   getEnvelopeKey: () => Promise<string | null>;
+  refreshNotes: () => Promise<number>;
   commbankDotEthAccount?: CommbankDotETHAccount;
 }
 
@@ -37,6 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [commbankDotEthAccount, setCommbankDotEthAccount] =
     useState<CommbankDotETHAccount>();
+
+  // Ref to store wallet during sign-in for refreshNotes
+  // TODO review more in depth
+  const walletRef = useRef<ethers.HDNodeWallet | null>(null);
 
   const { refetch: refetchRegistered } = useIsRegistered();
 
@@ -115,49 +137,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const signingKey = await NoteEncryption.getPublicKeyFromAddress(wallet);
       const privateAddressHex = "0x" + privateAddress.toString(16);
 
-      // TODO review this implementation and reuse elsewhere
-      // Fetch and decrypt indexer encrypted payloads
+      // Store wallet in ref for refreshNotes to use during sign-in
+      walletRef.current = wallet;
+
+      // Fetch and decrypt notes from indexer
       try {
-        const indexerPayloads = await fetchIndexerNotes(50, 0);
-        const existingPayloads = await getAllPayloads();
-        const existingPayloadIds = new Set(existingPayloads.map((p) => p.id));
-
-        // Try to decrypt each payload
-        for (const payload of indexerPayloads) {
-          // Skip if already in database
-          if (existingPayloadIds.has(payload.id)) {
-            console.log("skipping", existingPayloadIds);
-            continue;
-          }
-
-          try {
-            const decrypted = await NoteDecryption.decryptEncryptedNote(
-              payload.encryptedNote,
-              wallet.privateKey,
-            );
-
-            // Successfully decrypted - add to notes database
-            // TODO need to write these as hex values
-            await addNote({
-              id: payload.id,
-              assetId: decrypted.asset_id,
-              assetAmount: decrypted.asset_amount,
-              nullifier: payload.id,
-              secret: decrypted.secret,
-              entity_id: decrypted.owner,
-              isUsed: false,
-            });
-
-            console.log("Decrypted and stored note:", payload.id);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars -- will happen a bit
-          } catch (_e) {
-            // Silently ignore decryption failures - note wasn't meant for this user
-            continue;
-          }
-        }
+        await refreshNotes();
       } catch (error) {
-        // Silently fail if indexer is unavailable or other errors occur
-        console.error("Failed to sync encrypted payloads:", error);
+        // Silently fail if indexer is unavailable
+        console.error("Failed to sync notes during sign-in:", error);
+      } finally {
+        // Clear wallet ref after refresh
+        walletRef.current = null;
       }
 
       const now = Math.floor(Date.now() / 1000);
@@ -247,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
   };
 
-  const getMnemonic = async (): Promise<string | null> => {
+  const getMnemonic = useCallback(async (): Promise<string | null> => {
     if (!isSignedIn) {
       return null;
     }
@@ -259,7 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Error retrieving mnemonic:", error);
       return null;
     }
-  };
+  }, [isSignedIn, commbankDotEthAccount]);
 
   const getEnvelopeKey = async (): Promise<string | null> => {
     if (!isSignedIn) {
@@ -279,6 +270,115 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   };
+
+  const refreshNotes = useCallback(async (): Promise<number> => {
+    let wallet = walletRef.current;
+
+    // If no wallet in ref, try to get it from mnemonic (for post-login refreshes)
+    if (!wallet) {
+      if (!isSignedIn) {
+        return 0;
+      }
+
+      const mnemonic = await getMnemonic();
+      if (!mnemonic) {
+        return 0;
+      }
+      wallet = ethers.Wallet.fromPhrase(mnemonic);
+    }
+
+    try {
+      let newNotesCount = 0;
+
+      const indexerPayloads = await fetchIndexerNotes(50, 0);
+      const existingPayloads = await getAllPayloads();
+      const existingPayloadIds = new Set(existingPayloads.map((p) => p.id));
+
+      const chain = SUPPORTED_NETWORKS[defaultNetwork];
+
+      for (const payload of indexerPayloads) {
+        // TODO this is not a good check - we should check if it's in the decrypted notes, not payloads
+        if (existingPayloadIds.has(payload.id)) {
+          console.log("existing in loop");
+          continue;
+        }
+
+        try {
+          const decrypted = await NoteDecryption.decryptEncryptedNote(
+            payload.encryptedNote,
+            wallet.privateKey,
+          );
+
+          // Add the note to the database
+          await addNote({
+            id: payload.id,
+            assetId: decrypted.asset_id,
+            assetAmount: decrypted.asset_amount,
+            nullifier: payload.id,
+            secret: decrypted.secret,
+            entity_id: decrypted.owner,
+            isUsed: false,
+          });
+
+          // Create a "Transfer" transaction record for the received note
+          const asset =
+            defaultNetworkAssetByAddress[BigInt(decrypted.asset_id).toString()];
+
+          if (asset && chain) {
+            const txId = crypto.randomUUID();
+            // TODO this should look different in the transfer UI
+            await addTransaction({
+              id: txId,
+              chainId: defaultNetwork,
+              type: "Transfer",
+              status: "confirmed",
+              createdAt: Date.now(),
+              confirmedAt: Date.now(),
+              timestamp: Date.now(),
+              to: chain.CommBankDotEth,
+              asset: {
+                address: asset.address,
+                symbol: asset.symbol,
+                decimals: asset.decimals,
+                amount: decrypted.asset_amount,
+                formattedAmount: formatUnits(
+                  BigInt(decrypted.asset_amount),
+                  asset.decimals,
+                ),
+              },
+              sender: {
+                isSelf: false,
+              },
+              recipient: {
+                privateAddress: decrypted.owner,
+                isSelf: true,
+              },
+              inputNotes: [],
+              outputNotes: [
+                {
+                  commitment: payload.id,
+                  isInput: false,
+                  isChange: false,
+                },
+              ],
+            });
+          }
+
+          newNotesCount++;
+          console.log("Decrypted and stored note:", payload.id);
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) {
+          // Silently ignore decryption failures - note wasn't meant for this user
+          continue;
+        }
+      }
+
+      return newNotesCount;
+    } catch (error) {
+      console.error("Failed to sync encrypted payloads:", error);
+      throw error;
+    }
+  }, [isSignedIn, getMnemonic]);
 
   const signOut = () => {
     // Stop transaction monitor
@@ -306,6 +406,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         getMnemonic,
         getEnvelopeKey,
+        refreshNotes,
         commbankDotEthAccount,
       }}
     >

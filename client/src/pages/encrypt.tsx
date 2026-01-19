@@ -27,12 +27,7 @@ import { ethers } from "ethers";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import {
-  defaultNetwork,
-  mainnetAssets,
-  arbSepoliaAssets,
-  type SupportedAsset,
-} from "shared/constants/token";
+import { DEFAULT_ASSETS, type SupportedAsset } from "shared/constants/token";
 
 // Helper to extract a user-friendly error message
 function getSimplifiedErrorMessage(error: Error): string {
@@ -68,9 +63,6 @@ function getSimplifiedErrorMessage(error: Error): string {
   return message;
 }
 
-const assets: SupportedAsset[] =
-  defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
-
 type Step = {
   id: number;
   name: string;
@@ -98,14 +90,15 @@ export default function EncryptPage() {
   // Asset selection
   const assetParam = searchParams.get("asset");
   const initialAsset =
-    assets.find((a) => a.address.toLowerCase() === assetParam?.toLowerCase()) ||
-    assets[0];
+    DEFAULT_ASSETS.find(
+      (a) => a.address.toLowerCase() === assetParam?.toLowerCase(),
+    ) || DEFAULT_ASSETS[0];
   const [selectedAsset, setSelectedAsset] =
     useState<SupportedAsset>(initialAsset);
 
   // Update URL when asset changes
   const handleAssetChange = (address: string) => {
-    const asset = assets.find(
+    const asset = DEFAULT_ASSETS.find(
       (a) => a.address.toLowerCase() === address.toLowerCase(),
     );
     if (asset) {
@@ -160,7 +153,7 @@ export default function EncryptPage() {
   // Update selected asset from URL param on mount
   useEffect(() => {
     if (assetParam) {
-      const asset = assets.find(
+      const asset = DEFAULT_ASSETS.find(
         (a) => a.address.toLowerCase() === assetParam.toLowerCase(),
       );
       if (asset) {
@@ -296,7 +289,7 @@ export default function EncryptPage() {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {assets.map((asset) => (
+                      {DEFAULT_ASSETS.map((asset) => (
                         <SelectItem key={asset.address} value={asset.address}>
                           <div className="flex items-center gap-2">
                             <img

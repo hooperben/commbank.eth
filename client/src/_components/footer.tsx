@@ -13,12 +13,16 @@ export default function Footer() {
         <div className="flex gap-4 items-center">
           <a
             href="https://github.com/hooperben/commbank.eth"
+            target="_blank"
+            rel="noopener noreferrer"
             className="hover:text-foreground transition-colors"
           >
             GitHub
           </a>
           <a
             href="https://twitter.com/commbankdoteth"
+            target="_blank"
+            rel="noopener noreferrer"
             className="hover:text-foreground transition-colors"
           >
             Twitter

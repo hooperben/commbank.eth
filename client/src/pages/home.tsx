@@ -16,11 +16,17 @@ export const HomePage = () => {
       <div className="transform transition-all duration-1000 delay-300 flex w-full justify-center ml-4">
         <Logo height={400} width={400} />
       </div>
-      <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 transform transition-all duration-1000 delay-500">
+      <h1 className="text-5xl md:text-7xl font-bold tracking-tighter transform transition-all duration-1000 delay-500">
         <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
           commbank.eth
         </span>
       </h1>
+
+      <div className="mb-6 text-muted-foreground">
+        <p className="text-sm">
+          open source, privacy enhancing financial technologies
+        </p>
+      </div>
 
       <BrowserNotSupportedWarning />
 

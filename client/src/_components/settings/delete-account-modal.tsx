@@ -43,9 +43,7 @@ export function DeleteAccountModal() {
       setIsOpen(false);
 
       // Show success message
-      toast.success("Deletion Successful", {
-        description: "Have a nice day.",
-      });
+      toast.success("Account Deleted - Have a nice day.");
 
       // Sign out
       signOut();

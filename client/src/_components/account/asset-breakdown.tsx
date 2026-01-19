@@ -10,18 +10,11 @@ import { Separator } from "@/_components/ui/separator";
 import { ArrowRight, ArrowRightLeft } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  defaultNetwork,
-  mainnetAssets,
-  arbSepoliaAssets,
-  type SupportedAsset,
-} from "shared/constants/token";
+import { DEFAULT_ASSETS, type SupportedAsset } from "shared/constants/token";
 import { BalanceRow, PrivateBalanceRow, TotalBalanceRow } from "./balance";
 
 export function AssetBreakdown({ isPortfolio }: { isPortfolio?: boolean }) {
   const navigate = useNavigate();
-  const assets: SupportedAsset[] =
-    defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
 
   const [selectedAsset, setSelectedAsset] = useState<SupportedAsset | null>(
     null,
@@ -63,10 +56,10 @@ export function AssetBreakdown({ isPortfolio }: { isPortfolio?: boolean }) {
         <div className="overflow-x-auto">
           <table className="w-full">
             <tbody>
-              {assets.map((asset, i) => (
+              {DEFAULT_ASSETS.map((asset, i) => (
                 <Fragment key={`${asset.address}-${asset.chainId}`}>
                   <tr
-                    className={`${i !== assets.length - 1 && "border-b-2"} hover:bg-muted/50 transition-colors`}
+                    className={`${i !== DEFAULT_ASSETS.length - 1 && "border-b-2"} hover:bg-muted/50 transition-colors`}
                   >
                     <td className="py-4 px-2 font-semibold text-left align-top sm:align-middle">
                       <div className="flex flex-row items-center gap-2">

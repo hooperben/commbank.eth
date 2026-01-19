@@ -7,17 +7,42 @@ import {
   DropdownMenuTrigger,
 } from "@/_components/ui/dropdown-menu";
 import { useAuth } from "@/_providers/auth-provider";
-import { LogOut, Settings, User } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { LogOut, RefreshCw, Settings, User } from "lucide-react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export function SettingsDropdown() {
-  const { isLoading, isSignedIn, signOut } = useAuth();
+  const { isLoading, isSignedIn, signOut, refreshNotes } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+    try {
+      const newNotesCount = await refreshNotes();
+      if (newNotesCount > 0) {
+        // Invalidate queries to refresh balances
+        queryClient.invalidateQueries({ queryKey: ["privateBalances"] });
+        queryClient.invalidateQueries({ queryKey: ["notes"] });
+      } else {
+        toast.success("Account is up to date");
+      }
+    } catch (error) {
+      console.error("Failed to refresh:", error);
+      toast.error("Failed to refresh account");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleLogout = () => {
     signOut();
-    toast.success("Have a nice day!");
+    toast.success("Logged out - Have a nice day!");
     navigate("/");
   };
 
@@ -74,6 +99,17 @@ export function SettingsDropdown() {
               <Settings className="size-4" />
               Settings
             </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <RefreshCw
+              className={`size-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            {isRefreshing ? "Refreshing..." : "Refresh Account"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

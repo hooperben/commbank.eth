@@ -126,7 +126,7 @@ export const BalanceCard = () => {
               {/* Mobile: inline text */}
               <span className="flex items-center gap-1 text-[11px] md:hidden">
                 <img src="/link-logo.png" alt="Chainlink" className="h-3 w-3" />
-                prices provided by ChainLink
+                prices provided by Chainlink
               </span>
             </>
           ) : null}

@@ -167,11 +167,6 @@ class TransactionMonitor {
     // Note: Output notes (change notes) were already added when the tx was submitted
     // by the use-private-transfer or use-decrypt hooks during background monitoring
 
-    // Show notification
-    toast.success(`Transaction confirmed`, {
-      description: `Your ${this.getTransactionTypeLabel(tx.type)} transaction was confirmed.`,
-    });
-
     console.log(`Transaction ${tx.id} confirmed`);
   }
 

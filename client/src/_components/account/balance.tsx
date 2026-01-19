@@ -63,11 +63,12 @@ export const PrivateBalanceRow = ({
 export const TotalBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
   const {
     assetNotes,
-    isLoading,
+    isLoading: isLoadingPrivate,
     assetTotal: privateAssetTotal,
   } = usePrivateBalance(asset);
 
-  const { data: erc20BalanceData } = useERC20Balance(asset);
+  const { data: erc20BalanceData, isLoading: isLoadingPublic } =
+    useERC20Balance(asset);
 
   const sumAndFormatBalances = (
     publicBalance: bigint,
@@ -85,20 +86,24 @@ export const TotalBalanceRow = ({ asset }: { asset: SupportedAsset }) => {
 
   return (
     <div>
-      {isLoading && <Skeleton className="ml-auto w-20 h-4" />}
-
-      {assetNotes && !isLoading && privateAssetTotal !== undefined && (
-        <div className="text-right">
-          <div className="font-medium text-sm text-foreground">
-            {erc20BalanceData !== undefined && (
-              <>
-                {sumAndFormatBalances(erc20BalanceData, privateAssetTotal)}{" "}
-                {asset.symbol}
-              </>
-            )}
-          </div>
-        </div>
+      {(isLoadingPrivate || isLoadingPublic) && (
+        <Skeleton className="ml-auto w-20 h-4" />
       )}
+
+      {assetNotes &&
+        !(isLoadingPrivate || isLoadingPublic) &&
+        privateAssetTotal !== undefined && (
+          <div className="text-right">
+            <div className="font-medium text-sm text-foreground">
+              {erc20BalanceData !== undefined && (
+                <>
+                  {sumAndFormatBalances(erc20BalanceData, privateAssetTotal)}{" "}
+                  {asset.symbol}
+                </>
+              )}
+            </div>
+          </div>
+        )}
     </div>
   );
 };

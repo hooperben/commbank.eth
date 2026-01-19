@@ -1,6 +1,7 @@
-import PageContainer from "@/_providers/page-container";
 import { Markdown } from "@/_components/markdown";
+import { MobileHeader } from "@/_components/mobile-header";
 import { PAGE_METADATA } from "@/_constants/seo-config";
+import PageContainer from "@/_providers/page-container";
 
 const aboutContent = `
 # commbank.eth
@@ -98,6 +99,7 @@ Thanks for reading, take it easy.
 export const AboutPage = () => {
   return (
     <PageContainer {...PAGE_METADATA.about}>
+      <MobileHeader showSettingsWhenSignedIn />
       <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 w-full text-left">
         <Markdown>{aboutContent}</Markdown>
       </div>

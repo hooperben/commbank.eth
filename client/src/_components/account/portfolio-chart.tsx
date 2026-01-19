@@ -15,12 +15,7 @@ import { useAccountTotal } from "@/_hooks/use-account-total";
 import { usePreferredCurrency } from "@/_hooks/use-preferred-currency";
 import { useAudUsdPrice, useEthUsdPrice } from "@/_hooks/use-chainlink-price";
 import { useERC20Balances } from "@/_hooks/use-erc20-balance";
-import {
-  defaultNetwork,
-  mainnetAssets,
-  arbSepoliaAssets,
-  type SupportedAsset,
-} from "shared/constants/token";
+import { DEFAULT_ASSETS } from "shared/constants/token";
 import { ethers } from "ethers";
 import { Skeleton } from "@/_components/ui/skeleton";
 import { formatCompactCurrency } from "@/lib/formatting/currency-formatting";
@@ -44,15 +39,12 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function PortfolioChart() {
-  const assets: SupportedAsset[] =
-    defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
-
   const { totalUsd, isLoading: isLoadingTotal } = useAccountTotal();
   const { currency } = usePreferredCurrency();
   const { data: ethUsdPrice } = useEthUsdPrice();
   const { data: audUsdPrice } = useAudUsdPrice();
   const { data: assetBalances, isLoading: isLoadingAssets } =
-    useERC20Balances(assets);
+    useERC20Balances(DEFAULT_ASSETS);
 
   // Calculate asset values in USD for the chart
   const chartData = React.useMemo(() => {
@@ -173,6 +165,89 @@ export function PortfolioChart() {
   );
 }
 
+const legendColors: Record<string, string> = {
+  USDC: "var(--chart-1)",
+  AUDD: "var(--chart-2)",
+  ETH: "var(--chart-3)",
+};
+
+function PortfolioLegend() {
+  const { currency } = usePreferredCurrency();
+  const { data: ethUsdPrice } = useEthUsdPrice();
+  const { data: audUsdPrice } = useAudUsdPrice();
+  const { data: assetBalances, isLoading } = useERC20Balances(DEFAULT_ASSETS);
+
+  const legendData = React.useMemo(() => {
+    if (!ethUsdPrice || !audUsdPrice || !assetBalances) return [];
+
+    return assetBalances
+      .map((asset) => {
+        if (!asset.balance) return null;
+
+        const balanceFormatted = parseFloat(
+          ethers.formatUnits(asset.balance, asset.decimals),
+        );
+
+        let valueUsd = 0;
+
+        if (asset.symbol === "ETH") {
+          valueUsd = balanceFormatted * parseFloat(ethUsdPrice.formattedPrice);
+        } else if (asset.symbol === "AUDD") {
+          valueUsd = balanceFormatted * parseFloat(audUsdPrice.formattedPrice);
+        } else if (asset.symbol === "USDC") {
+          valueUsd = balanceFormatted;
+        }
+
+        // Convert to preferred currency
+        const displayValue =
+          currency === "AUD"
+            ? valueUsd / parseFloat(audUsdPrice.formattedPrice)
+            : valueUsd;
+
+        return {
+          symbol: asset.symbol,
+          value: displayValue,
+          color: legendColors[asset.symbol] || "var(--chart-1)",
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (b?.value ?? 0) - (a?.value ?? 0));
+  }, [ethUsdPrice, audUsdPrice, assetBalances, currency]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-wrap justify-center gap-4 mt-4">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-6 w-24" />
+        ))}
+      </div>
+    );
+  }
+
+  const currencySymbol = currency === "AUD" ? "A$" : "$";
+
+  return (
+    <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4">
+      {legendData.map((item) => (
+        <div key={item?.symbol} className="flex items-center gap-2">
+          <div
+            className="w-3 h-3 rounded-full shrink-0"
+            style={{ backgroundColor: item?.color }}
+          />
+          <span className="text-sm font-medium">{item?.symbol}</span>
+          <span className="text-sm text-muted-foreground">
+            {currencySymbol}
+            {item?.value?.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function PortfolioChartWithTooltip() {
   const { totalUsd, isLoading: isLoadingTotal } = useAccountTotal();
   const { currency } = usePreferredCurrency();
@@ -189,18 +264,26 @@ export function PortfolioChartWithTooltip() {
   // If the value is large enough to be compacted, show tooltip
   if (formatted !== full && !isLoadingTotal) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="cursor-help">
-            <PortfolioChart />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{full}</p>
-        </TooltipContent>
-      </Tooltip>
+      <div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="cursor-help">
+              <PortfolioChart />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{full}</p>
+          </TooltipContent>
+        </Tooltip>
+        <PortfolioLegend />
+      </div>
     );
   }
 
-  return <PortfolioChart />;
+  return (
+    <div>
+      <PortfolioChart />
+      <PortfolioLegend />
+    </div>
+  );
 }

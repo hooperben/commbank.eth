@@ -95,10 +95,15 @@ export function usePrivateTransfer({
       console.log("Send amount:", amount.toString());
 
       // 3. Select input notes (UTXO selection - greedy algorithm)
-      const selectedInputs: typeof availableNotes = [];
+      // Sort by amount descending to minimize number of inputs needed
+      const sortedNotes = [...availableNotes].sort((a, b) =>
+        Number(BigInt(b.assetAmount) - BigInt(a.assetAmount)),
+      );
+
+      const selectedInputs: typeof sortedNotes = [];
       let totalInputAmount = 0n;
 
-      for (const note of availableNotes) {
+      for (const note of sortedNotes) {
         if (selectedInputs.length >= 3) break; // Max 3 inputs
         selectedInputs.push(note);
         totalInputAmount += BigInt(note.assetAmount);

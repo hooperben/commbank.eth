@@ -2,27 +2,19 @@ import { useAudUsdPrice, useEthUsdPrice } from "@/_hooks/use-chainlink-price";
 import { useERC20Balances } from "@/_hooks/use-erc20-balance";
 import { usePrivateBalances } from "@/_hooks/use-private-balances";
 import { ethers } from "ethers";
-import {
-  defaultNetwork,
-  mainnetAssets,
-  arbSepoliaAssets,
-  type SupportedAsset,
-} from "shared/constants/token";
+import { DEFAULT_ASSETS } from "shared/constants/token";
 
 export const useAccountTotal = () => {
-  const assets: SupportedAsset[] =
-    defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
-
   // Fetch prices
   const { data: ethUsdPrice, isLoading: isLoadingEthPrice } = useEthUsdPrice();
   const { data: audUsdPrice, isLoading: isLoadingAudPrice } = useAudUsdPrice();
 
   // Fetch erc20 balances
   const { data: assetBalances, isLoading: isLoadingAsset } =
-    useERC20Balances(assets);
+    useERC20Balances(DEFAULT_ASSETS);
 
   const { data: privateBalances, isLoading: isLoadingPrivate } =
-    usePrivateBalances(assets);
+    usePrivateBalances(DEFAULT_ASSETS);
 
   // Helper to convert asset balance to USD
   const assetToUsd = (
