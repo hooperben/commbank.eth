@@ -30,7 +30,7 @@ import { useUserAssetNotes } from "@/_hooks/use-user-asset-notes";
 import { useAuth } from "@/_providers/auth-provider";
 import PageContainer from "@/_providers/page-container";
 import { ethers, parseUnits } from "ethers";
-import { ArrowLeft, ArrowUpRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Loader2, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -221,10 +221,7 @@ export default function SendPage() {
   const hasInsufficientGas =
     transferType === "public" && gasEstimate && !gasEstimate.hasEnoughEth;
   const hasValidationError =
-    !selectedContactId ||
-    !amount ||
-    parseFloat(amount) <= 0 ||
-    hasAmountError;
+    !selectedContactId || !amount || parseFloat(amount) <= 0 || hasAmountError;
 
   const getAmountError = () => {
     if (!amount) return "";
@@ -750,7 +747,9 @@ export default function SendPage() {
                         Insufficient ETH for gas. You need{" "}
                         {parseFloat(gasEstimate!.formattedCost).toFixed(6)} ETH
                         but only have{" "}
-                        {parseFloat(gasEstimate!.formattedEthBalance).toFixed(6)}{" "}
+                        {parseFloat(gasEstimate!.formattedEthBalance).toFixed(
+                          6,
+                        )}{" "}
                         ETH.
                       </div>
                     )}
@@ -818,9 +817,7 @@ export default function SendPage() {
                 {(isProcessing || isComplete) && (
                   <div className="flex flex-col items-center justify-center py-12">
                     <CircularProgress
-                      progress={
-                        (currentStepIndex / transferSteps.length) * 100
-                      }
+                      progress={(currentStepIndex / transferSteps.length) * 100}
                       isComplete={isComplete}
                       currentStep={
                         currentStepIndex > 0 &&
@@ -835,14 +832,10 @@ export default function SendPage() {
                       !isComplete && (
                         <div className="mt-8 text-center">
                           <p className="text-sm font-medium">
-                            Step {currentStepIndex} of{" "}
-                            {transferSteps.length}
+                            Step {currentStepIndex} of {transferSteps.length}
                           </p>
                           <p className="mt-1 text-sm text-muted-foreground">
-                            {
-                              transferSteps[currentStepIndex - 1]
-                                .description
-                            }
+                            {transferSteps[currentStepIndex - 1].description}
                           </p>
                         </div>
                       )}
@@ -865,13 +858,40 @@ export default function SendPage() {
                     {/* Error Display */}
                     {(privateTransferMutation.error ||
                       publicTransferMutation.error) && (
-                      <div className="mt-4 text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden max-w-md">
-                        Error:{" "}
-                        {getSimplifiedErrorMessage(
-                          (privateTransferMutation.error ||
-                            publicTransferMutation.error) as Error,
-                        )}
-                      </div>
+                      <>
+                        <div className="mt-4 text-sm text-red-500 bg-red-500/10 p-3 rounded-md break-words overflow-hidden max-w-md">
+                          Error:{" "}
+                          {getSimplifiedErrorMessage(
+                            (privateTransferMutation.error ||
+                              publicTransferMutation.error) as Error,
+                          )}
+                        </div>
+                        <div className="mt-4 flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              privateTransferMutation.reset();
+                              publicTransferMutation.reset();
+                              setTransferStatus("");
+                            }}
+                          >
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              privateTransferMutation.reset();
+                              publicTransferMutation.reset();
+                              setTransferStatus("");
+                              // Small delay to ensure state is reset before retrying
+                              setTimeout(() => handleConfirm(), 100);
+                            }}
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Retry
+                          </Button>
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
