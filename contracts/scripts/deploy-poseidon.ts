@@ -10,6 +10,10 @@ async function main() {
 
   console.log(deployer.address);
 
+  const balance = await deployer.provider?.getBalance(deployer.address);
+
+  console.log("balance: ", balance);
+
   // As the poseidon2 huff bytecode was prebuilt, we have to assemble the factory like this
   const poseidon2HuffFactory = new ethers.ContractFactory(
     [],

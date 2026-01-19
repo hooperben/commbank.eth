@@ -10,6 +10,9 @@ const getPosedion = (chainId: number) => {
   if (chainId === 421614) {
     return "0x7A8ee7caab52782547341c3A6a0aA29aC4f60Aa3";
   }
+  if (chainId === 1) {
+    return "0xA09599efa9a31036D20a9eEF07C69E77937E784E";
+  }
 };
 
 async function main() {
@@ -27,6 +30,10 @@ async function main() {
     throw new Error("ERRR missing chainId");
 
   const posedion = getPosedion(connection.networkConfig.chainId);
+
+  if (!posedion) {
+    throw new Error("missing poseidon");
+  }
 
   const tx = await commbankDotEth.setPoseidon(posedion);
 
