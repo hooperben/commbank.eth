@@ -106,11 +106,11 @@ export const arbSepoliaAssets: SupportedAsset[] = [
 export const defaultNetwork =
   Number(import.meta.env.VITE_DEFAULT_CHAIN_ID) || arbSepoliaAssets[0].chainId;
 
-const assets: SupportedAsset[] =
+export const DEFAULT_ASSETS: SupportedAsset[] =
   defaultNetwork === 1 ? mainnetAssets : arbSepoliaAssets;
 
 // Create mapping by address for quick access: assetByAddress[address]
 export const defaultNetworkAssetByAddress: Record<string, SupportedAsset> = {};
-for (const asset of assets) {
-  defaultNetworkAssetByAddress[asset.address] = asset;
+for (const asset of DEFAULT_ASSETS) {
+  defaultNetworkAssetByAddress[BigInt(asset.address).toString()] = asset;
 }
