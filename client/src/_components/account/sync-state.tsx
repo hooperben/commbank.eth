@@ -1,12 +1,7 @@
-import type { Payload, TreeLeaf } from "@/_types";
+import type { TreeLeaf } from "@/_types";
 import { useIndexerLeafs } from "@/_hooks/use-indexer-leafs";
 import { useIndexerNotes } from "@/_hooks/use-indexer-notes";
-import {
-  addPayload,
-  addTreeLeaf,
-  getAllPayloads,
-  getAllTreeLeaves,
-} from "@/lib/db";
+import { addTreeLeaf, getAllTreeLeaves } from "@/lib/db";
 import { useEffect, useState } from "react";
 import { SyncButton } from "./sync-button";
 
@@ -29,16 +24,10 @@ export const SyncState = () => {
         }
 
         // Get existing data from IndexedDB
-        const [existingLeafs, existingPayloads] = await Promise.all([
-          getAllTreeLeaves(),
-          getAllPayloads(),
-        ]);
+        const [existingLeafs] = await Promise.all([getAllTreeLeaves()]);
 
         // Create sets of existing IDs for quick lookup
         const existingLeafIds = new Set(existingLeafs.map((leaf) => leaf.id));
-        const existingPayloadIds = new Set(
-          existingPayloads.map((payload) => payload.id),
-        );
 
         // Find new leafs that don't exist in IndexedDB
         const newLeafs: TreeLeaf[] = [];
@@ -54,21 +43,8 @@ export const SyncState = () => {
           }
         }
 
-        // Find new payloads that don't exist in IndexedDB
-        const newPayloads: Payload[] = [];
-        if (indexerNotes) {
-          for (const indexerNote of indexerNotes) {
-            if (!existingPayloadIds.has(indexerNote.id)) {
-              newPayloads.push({
-                id: indexerNote.id,
-                encryptedNote: indexerNote.encryptedNote,
-              });
-            }
-          }
-        }
-
         // Log what would be written to IndexedDB
-        if (newLeafs.length > 0 || newPayloads.length > 0) {
+        if (newLeafs.length > 0) {
           console.log("=== SYNC: New data to be written ===");
 
           if (newLeafs.length > 0) {
@@ -76,15 +52,7 @@ export const SyncState = () => {
             console.log(newLeafs);
           }
 
-          if (newPayloads.length > 0) {
-            console.log(`Found ${newPayloads.length} new payloads:`);
-            console.log(newPayloads);
-          }
-
-          await Promise.all([
-            ...newLeafs.map((leaf) => addTreeLeaf(leaf)),
-            ...newPayloads.map((payload) => addPayload(payload)),
-          ]);
+          await Promise.all([...newLeafs.map((leaf) => addTreeLeaf(leaf))]);
 
           console.log("Wrote to DB");
         } else {

@@ -1,11 +1,16 @@
 import { SUPPORTED_NETWORKS } from "@/_constants/networks";
+import { getNoteHash, getNullifier } from "@/_constants/notes";
 import { fetchIndexerNotes } from "@/_hooks/use-indexer-notes";
+import { fetchIndexerNullifiers } from "@/_hooks/use-indexer-nullifiers";
 import { useIsRegistered } from "@/_hooks/use-is-registered";
+import type { Payload } from "@/_types";
 import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
 import {
   addNote,
+  addPayload,
   addTransaction,
   getAllPayloads,
+  getAllTreeLeaves,
   migrateTransactionsToV4,
 } from "@/lib/db";
 import { transactionMonitor } from "@/lib/transaction-monitor";
@@ -294,10 +299,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const existingPayloads = await getAllPayloads();
       const existingPayloadIds = new Set(existingPayloads.map((p) => p.id));
 
+      // Find new payloads that don't exist in IndexedDB
+      const newPayloads: Payload[] = [];
+      if (indexerPayloads) {
+        for (const indexerNote of indexerPayloads) {
+          if (!existingPayloadIds.has(indexerNote.id)) {
+            newPayloads.push({
+              id: indexerNote.id,
+              encryptedNote: indexerNote.encryptedNote,
+            });
+          }
+        }
+      }
+
+      await Promise.all([...newPayloads.map((payload) => addPayload(payload))]);
+
       const chain = SUPPORTED_NETWORKS[defaultNetwork];
 
+      const leafs = await getAllTreeLeaves();
+      const nullifiers = await fetchIndexerNullifiers(50, 0);
+
+      console.log("nullifiers: ", nullifiers);
+      console.log("leafs", leafs);
+
       for (const payload of indexerPayloads) {
-        // TODO this is not a good check - we should check if it's in the decrypted notes, not payloads
         if (existingPayloadIds.has(payload.id)) {
           console.log("existing in loop");
           continue;
@@ -309,6 +334,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             wallet.privateKey,
           );
 
+          const parsedNote = {
+            assetId: decrypted.asset_id,
+            assetAmount: decrypted.asset_amount,
+            secret: decrypted.secret,
+            owner: decrypted.owner,
+          };
+          const noteHash = getNoteHash(parsedNote);
+
+          const leafs = await getAllTreeLeaves();
+
+          const [leaf] = leafs.filter(
+            (item) => BigInt(item.leafValue) === BigInt(noteHash),
+          );
+
+          const nullifier = getNullifier({
+            leaf_index: leaf?.leafIndex,
+            owner: decrypted.owner,
+            secret: decrypted.secret,
+            asset_id: decrypted.asset_id,
+            asset_amount: decrypted.asset_amount,
+            owner_secret: "",
+            path: [],
+            path_indices: [],
+          });
+
           // Add the note to the database
           await addNote({
             id: payload.id,
@@ -317,7 +367,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             nullifier: payload.id,
             secret: decrypted.secret,
             entity_id: decrypted.owner,
-            isUsed: false,
+            isUsed: nullifiers.some(
+              (item) => BigInt(item.nullifier) === BigInt(nullifier),
+            ),
           });
 
           // Create a "Transfer" transaction record for the received note

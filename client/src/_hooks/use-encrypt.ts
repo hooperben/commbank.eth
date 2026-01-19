@@ -80,7 +80,9 @@ export const useEncryptMutation = ({
       const assetAmount = ethers.parseUnits(amount.toString(), decimals);
 
       // Build asset details for transaction history
-      const assetInfo = defaultNetworkAssetByAddress[assetId];
+      const assetInfo =
+        defaultNetworkAssetByAddress[BigInt(assetId).toString()];
+
       const assetDetails: TransactionAssetDetails = {
         address: assetId,
         symbol: assetInfo?.symbol ?? (isNativeDeposit ? "ETH" : "Unknown"),

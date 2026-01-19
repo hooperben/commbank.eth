@@ -14,7 +14,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export function ResetAppModal() {
-  const { signIn, getMnemonic } = useAuth();
+  const { signIn, getMnemonic, refreshNotes } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -37,13 +37,13 @@ export function ResetAppModal() {
       // Re-sync by signing in again with the mnemonic
       await signIn(mnemonic);
 
+      await refreshNotes();
+
       // Close modal
       setIsOpen(false);
 
       // Show success message
-      toast.success("App Reset Complete", {
-        description: "Your data has been cleared and re-synced.",
-      });
+      toast.success("App Reset Complete");
     } catch (error) {
       console.error("Reset app error:", error);
       toast.error("Failed to reset app");
