@@ -41,7 +41,7 @@ export const mainnetAssets: SupportedAsset[] = [
     decimals: 18,
     isNative: true,
     roundTo: 5,
-    logo: "usdc-logo.png",
+    logo: "eth-logo.png",
   },
 ];
 
