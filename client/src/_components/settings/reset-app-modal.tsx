@@ -37,7 +37,7 @@ export function ResetAppModal() {
       // Re-sync by signing in again with the mnemonic
       await signIn(mnemonic);
 
-      await refreshNotes();
+      await refreshNotes(mnemonic);
 
       // Close modal
       setIsOpen(false);

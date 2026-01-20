@@ -6,6 +6,7 @@ export interface Note {
   secret: string;
   entity_id: string;
   isUsed: boolean;
+  note_payload_id?: string;
 }
 
 export interface TreeLeaf {
@@ -17,6 +18,7 @@ export interface TreeLeaf {
 export interface Payload {
   id: string;
   encryptedNote: string;
+  decryptAttempted: boolean;
 }
 
 export interface Meta {

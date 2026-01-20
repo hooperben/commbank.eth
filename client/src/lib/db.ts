@@ -290,6 +290,26 @@ export async function clearNotes(): Promise<void> {
   return clearStore(NOTES_STORE);
 }
 
+export async function findNoteByFields(
+  assetId: string,
+  assetAmount: string,
+  secret: string,
+): Promise<Note | null> {
+  const allNotes = await getAllNotes();
+  const targetAssetId = BigInt(assetId);
+  const targetAssetAmount = BigInt(assetAmount);
+  const targetSecret = BigInt(secret);
+
+  return (
+    allNotes.find(
+      (note) =>
+        BigInt(note.assetId) === targetAssetId &&
+        BigInt(note.assetAmount) === targetAssetAmount &&
+        BigInt(note.secret) === targetSecret,
+    ) || null
+  );
+}
+
 // ===== Tree API =====
 
 export async function addTreeLeaf(leaf: TreeLeaf): Promise<void> {
@@ -332,6 +352,15 @@ export async function deletePayload(id: string): Promise<void> {
 
 export async function clearPayloads(): Promise<void> {
   return clearStore(PAYLOAD_STORE);
+}
+
+export async function updatePayload(payload: Payload): Promise<void> {
+  return putItem(PAYLOAD_STORE, payload);
+}
+
+export async function getUnattemptedPayloads(): Promise<Payload[]> {
+  const allPayloads = await getAllPayloads();
+  return allPayloads.filter((payload) => !payload.decryptAttempted);
 }
 
 // ===== Meta API =====
