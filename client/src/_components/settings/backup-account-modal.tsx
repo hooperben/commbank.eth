@@ -15,11 +15,30 @@ import { AlertTriangle, Copy, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function BackupAccountModal() {
+interface BackupAccountModalProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onBackupSuccess?: () => void;
+  trigger?: React.ReactNode;
+}
+
+export function BackupAccountModal({
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  onBackupSuccess,
+  trigger,
+}: BackupAccountModalProps = {}) {
   const { getMnemonic } = useAuth();
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [confirmExport, setConfirmExport] = useState(false);
+
+  // Support both controlled and uncontrolled modes
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const setIsOpen = isControlled
+    ? (open: boolean) => controlledOnOpenChange?.(open)
+    : setInternalOpen;
 
   function waitForWindowFocus(): Promise<void> {
     return new Promise((resolve) => {
@@ -56,6 +75,7 @@ export function BackupAccountModal() {
 
       await copyToClipboard(exportData);
       toast.success("Account backup copied to clipboard!");
+      onBackupSuccess?.();
       setIsOpen(false);
       resetForm();
     } catch (error) {
@@ -77,6 +97,7 @@ export function BackupAccountModal() {
 
       downloadAsJson(exportData);
       toast.success("Account backup downloaded!");
+      onBackupSuccess?.();
       setIsOpen(false);
       resetForm();
     } catch (error) {
@@ -98,9 +119,11 @@ export function BackupAccountModal() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" className="">
-          Back Up Account
-        </Button>
+        {trigger || (
+          <Button variant="outline" className="">
+            Back Up Account
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -117,7 +140,7 @@ export function BackupAccountModal() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Anyone with access to this backup can control all of your
-                  account. Keep it secure.
+                  assets. Keep it secure.
                 </p>
               </div>
             </div>
