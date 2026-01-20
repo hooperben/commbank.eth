@@ -18,6 +18,6 @@ export async function getAdjustedGasPrice(
     return parseUnits("2", "gwei");
   }
 
-  // Add 50% buffer to handle base fee increases between estimation and inclusion
-  return (basePrice * 150n) / 100n;
+  // Add 20% buffer to handle base fee increases between estimation and inclusion
+  return (basePrice * 120n) / 100n;
 }

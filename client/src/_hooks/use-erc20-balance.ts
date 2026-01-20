@@ -44,6 +44,7 @@ export const useERC20Balance = (asset?: SupportedAsset | null) => {
       return balance;
     },
     enabled: !!address && !!asset,
+    retry: 3,
   });
 
   return queryFn;

@@ -8,5 +8,6 @@ export function useUserNotes() {
   return useQuery({
     queryKey: ["notes"],
     queryFn: getAllNotes,
+    retry: 3,
   });
 }

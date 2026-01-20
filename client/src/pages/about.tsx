@@ -87,11 +87,11 @@ In order to facilitate a smoother user experience with regards to submitting tra
 
 Your use of this software is your own choice, just like everything else. It might have some bugs or unexpected behaviours, so don't do anything unless it makes sense.
 
-With regards to the legalities of commbank.eth's private unstoppable money - more documentation is on the way, but in the mean time that's a conversation I think is best done at the pub.
+With regards to the legalities of commbank.eth's private unstoppable money - more documentation is on the way, but in the mean time that is a conversation I think is best had at the pub.
 
 If you're curious about how commbank.eth works - you can look at **all** of the [source code in github](https://github.com/hooperben/commbank.eth), all of which is free to use - **forever**.
 
-Found a bug? Create an issue in the Github or reach out to the project on [twitter](https://twitter.com/commbankdoteth).
+If you've found a bug? Create an issue in the Github or reach out to the project on [twitter](https://twitter.com/commbankdoteth).
 
 Thanks for reading, take it easy.
 `;

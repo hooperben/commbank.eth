@@ -31,6 +31,7 @@ export function usePrivateBalances(assets: SupportedAsset[]) {
 
       return balances;
     },
+    retry: 3,
     enabled: assets.length > 0,
   });
 }

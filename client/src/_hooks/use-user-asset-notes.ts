@@ -14,6 +14,7 @@ export function useUserAssetNotes(assetId: string | undefined) {
         (note) => BigInt(note.assetId) === BigInt(assetId ?? "0"),
       );
     },
+    retry: 3,
     enabled: !!assetId,
   });
 }

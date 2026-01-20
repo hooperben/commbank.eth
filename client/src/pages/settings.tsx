@@ -2,15 +2,18 @@ import { AddressCard } from "@/_components/account/address-card";
 import { BackupAccountModal } from "@/_components/settings/backup-account-modal";
 import { DeleteAccountModal } from "@/_components/settings/delete-account-modal";
 import { ResetAppModal } from "@/_components/settings/reset-app-modal";
-import PageContainer from "@/_providers/page-container";
+import { Button } from "@/_components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/_components/ui/card";
-import { useAuth } from "@/_providers/auth-provider";
 import { PAGE_METADATA } from "@/_constants/seo-config";
+import { useAuth } from "@/_providers/auth-provider";
+import PageContainer from "@/_providers/page-container";
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const SettingsPage = () => {
   const { address, privateAddress, signingKey } = useAuth();
@@ -48,8 +51,18 @@ export const SettingsPage = () => {
               Clear your local cache and re-sync your account data. Your
               credentials and contacts will be preserved.
             </p>
-            <div className="flex justify-start">
+            <div className="flex justify-start gap-2">
               <ResetAppModal />
+
+              <Button
+                variant="secondary"
+                className="font-semibold flex gap-1"
+                asChild
+              >
+                <Link to="/state">
+                  View App State <ArrowRight />
+                </Link>
+              </Button>
             </div>
           </CardContent>
         </Card>

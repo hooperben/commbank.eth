@@ -99,7 +99,9 @@ export function usePublicTransfer({
   return useMutation({
     mutationFn: async ({ amount, asset, recipient }: PublicTransferParams) => {
       if (!recipient.evmAddress) {
-        throw new Error("Recipient must have an EVM address for public transfer");
+        throw new Error(
+          "Recipient must have an EVM address for public transfer",
+        );
       }
 
       // Generate unique transaction ID upfront
