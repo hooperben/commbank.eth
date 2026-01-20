@@ -3,6 +3,7 @@ import { InAppBrowserWarning } from "@/_components/status/in-app-browser-warning
 import { AboutPage } from "@/pages/about";
 import AccountPage from "@/pages/account";
 import AccountsPage from "@/pages/accounts";
+import AppStatePage from "@/pages/app-state";
 import ContactsPage from "@/pages/contacts";
 import DecryptPage from "@/pages/decrypt";
 import EncryptPage from "@/pages/encrypt";
@@ -12,7 +13,6 @@ import SendPage from "@/pages/send";
 import { SettingsPage } from "@/pages/settings";
 import SharePage from "@/pages/share";
 import StatusPage from "@/pages/status";
-import TestingPage from "@/pages/testing";
 import TransactionsPage from "@/pages/transactions";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./_providers/auth-provider";
@@ -99,12 +99,11 @@ function App() {
                 <Route path="/share" element={<SharePage />} />
                 <Route path="/status" element={<StatusPage />} />
 
-                {/* TODO remove once confirmed that everything works */}
                 <Route
-                  path="/testing"
+                  path="/state"
                   element={
                     <ProtectedRoute>
-                      <TestingPage />
+                      <AppStatePage />
                     </ProtectedRoute>
                   }
                 />

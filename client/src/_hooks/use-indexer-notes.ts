@@ -29,7 +29,7 @@ export const useIndexerNotes = (limit: number = 50, offset: number = 0) => {
   return useQuery({
     queryKey: ["indexer-notes", limit, offset],
     queryFn: () => fetchIndexerNotes(limit, offset),
-    retry: 1,
+    retry: 3,
     refetchInterval: 20_000, // refetch every 20 seconds
   });
 };

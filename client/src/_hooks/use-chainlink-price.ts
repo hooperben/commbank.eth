@@ -83,6 +83,7 @@ export const useChainlinkPrice = (
         description: String(description),
       };
     },
+    retry: 3,
     refetchInterval: options?.refetchInterval ?? 60000, // Default: refetch every 60 seconds
     enabled: options?.enabled ?? true,
   });

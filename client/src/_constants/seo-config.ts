@@ -181,6 +181,23 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
       "Ethereum development",
     ],
   },
+  state: {
+    header: "App State",
+    title: "commbank.eth | App State",
+    description: "View account state and sync status",
+    path: "/state",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
+    keywords: [
+      "commbank.eth account",
+      "open source finance",
+      "privacy technology",
+      "blockchain project",
+      "passkey",
+      "credentials management",
+      "Ethereum development",
+    ],
+  },
 };
 
 export function getPageUrl(path: string): string {

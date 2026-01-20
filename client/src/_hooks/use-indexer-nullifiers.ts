@@ -37,7 +37,7 @@ export const useIndexerNullifiers = (
   return useQuery({
     queryKey: ["indexer-nullifiers", limit, offset],
     queryFn: () => fetchIndexerNullifiers(limit, offset),
-    retry: 1,
+    retry: 3,
     refetchInterval: 20_000, // refetch every 20 seconds
   });
 };

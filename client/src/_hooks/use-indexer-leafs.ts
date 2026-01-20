@@ -7,7 +7,7 @@ interface LeafInsertedResponse {
   envio_Commbankdoteth_LeafInserted: IndexerLeafInserted[];
 }
 
-const fetchIndexerLeafs = async (
+export const fetchIndexerLeafs = async (
   limit: number = 50,
   offset: number = 0,
 ): Promise<IndexerLeafInserted[]> => {
@@ -29,7 +29,7 @@ export const useIndexerLeafs = (limit: number = 50, offset: number = 0) => {
   return useQuery({
     queryKey: ["indexer-leafs", limit, offset],
     queryFn: () => fetchIndexerLeafs(limit, offset),
-    retry: 1,
+    retry: 3,
     refetchInterval: 20_000, // refetch every 20 seconds
   });
 };
