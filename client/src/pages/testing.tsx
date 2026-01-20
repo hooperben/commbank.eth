@@ -1,8 +1,6 @@
 import { Button } from "@/_components/ui/button";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
 import { useEffect, useState } from "react";
-
-import type { Note, Payload, TreeLeaf } from "@/_types";
 import {
   Card,
   CardContent,
@@ -30,31 +28,18 @@ import { toast } from "sonner";
 const IndexerPayloadRow = ({
   note,
   checkInDB,
-  onWriteToDB,
   getEnvelopeKey,
 }: {
   note: { id: string; encryptedNote: string };
   checkInDB: (id: string) => Promise<boolean>;
-  onWriteToDB: (id: string, encryptedNote: string) => Promise<void>;
   getEnvelopeKey: () => Promise<string | null>;
 }) => {
   const [isInDB, setIsInDB] = useState<boolean | null>(null);
-  const [isWriting, setIsWriting] = useState(false);
   const [isDecrypting, setIsDecrypting] = useState(false);
 
   useEffect(() => {
     checkInDB(note.id).then(setIsInDB);
   }, [note.id, checkInDB]);
-
-  const handleWrite = async () => {
-    setIsWriting(true);
-    try {
-      await onWriteToDB(note.id, note.encryptedNote);
-      setIsInDB(true);
-    } finally {
-      setIsWriting(false);
-    }
-  };
 
   const handleDecrypt = async () => {
     setIsDecrypting(true);
@@ -105,15 +90,6 @@ const IndexerPayloadRow = ({
         <div className="flex gap-2">
           <Button
             size="sm"
-            variant="outline"
-            onClick={handleWrite}
-            disabled={isInDB === true || isWriting}
-            className="h-7 text-xs"
-          >
-            {isWriting ? "Writing..." : "Write to DB"}
-          </Button>
-          <Button
-            size="sm"
             variant="secondary"
             onClick={handleDecrypt}
             disabled={isDecrypting}
@@ -138,32 +114,15 @@ const IndexerPayloadRow = ({
 const IndexerLeafRow = ({
   leaf,
   checkInDB,
-  onWriteToDB,
 }: {
   leaf: { id: string; leafIndex: string; leafValue: string };
   checkInDB: (id: string) => Promise<boolean>;
-  onWriteToDB: (
-    id: string,
-    leafIndex: string,
-    leafValue: string,
-  ) => Promise<void>;
 }) => {
   const [isInDB, setIsInDB] = useState<boolean | null>(null);
-  const [isWriting, setIsWriting] = useState(false);
 
   useEffect(() => {
     checkInDB(leaf.id).then(setIsInDB);
   }, [leaf.id, checkInDB]);
-
-  const handleWrite = async () => {
-    setIsWriting(true);
-    try {
-      await onWriteToDB(leaf.id, leaf.leafIndex, leaf.leafValue);
-      setIsInDB(true);
-    } finally {
-      setIsWriting(false);
-    }
-  };
 
   return (
     <tr className="border-b hover:bg-muted/50">
@@ -186,17 +145,6 @@ const IndexerLeafRow = ({
             <span className="text-xs">Not in DB</span>
           </div>
         )}
-      </td>
-      <td className="p-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleWrite}
-          disabled={isInDB === true || isWriting}
-          className="h-7 text-xs"
-        >
-          {isWriting ? "Writing..." : "Write to DB"}
-        </Button>
       </td>
     </tr>
   );
@@ -250,33 +198,6 @@ const TestingPage = () => {
       return !!leaf;
     } catch {
       return false;
-    }
-  };
-
-  // Write indexer records to IndexedDB
-  const handleWritePayloadToDB = async (id: string, encryptedNote: string) => {
-    try {
-      await db.addPayload({ id, encryptedNote });
-      toast.success("Payload written to IndexedDB");
-      await refreshDBStats();
-    } catch (error) {
-      toast.error("Failed to write payload");
-      console.error(error);
-    }
-  };
-
-  const handleWriteLeafToDB = async (
-    id: string,
-    leafIndex: string,
-    leafValue: string,
-  ) => {
-    try {
-      await db.addTreeLeaf({ id, leafIndex, leafValue });
-      toast.success("Tree leaf written to IndexedDB");
-      await refreshDBStats();
-    } catch (error) {
-      toast.error("Failed to write tree leaf");
-      console.error(error);
     }
   };
 
@@ -525,83 +446,6 @@ const TestingPage = () => {
     }
   };
 
-  // IndexedDB test functions
-  const handleAddRandomNote = async () => {
-    try {
-      const randomId = Math.random().toString(36).substring(7);
-      const note: Note = {
-        id: `note-${randomId}`,
-        assetId: `asset-${Math.floor(Math.random() * 1000)}`,
-        assetAmount: Math.floor(Math.random() * 100).toString(),
-        nullifier: `nullifier-${randomId}`,
-        secret: `secret-${randomId}`,
-        entity_id: `entity-${Math.floor(Math.random() * 10)}`,
-        isUsed: Math.random() > 0.5,
-      };
-      await db.addNote(note);
-      toast.success("Note added successfully");
-      await refreshDBStats();
-    } catch (error) {
-      toast.error("Failed to add note");
-      console.error(error);
-    }
-  };
-
-  const handleAddRandomTreeLeaf = async () => {
-    try {
-      const randomId = Math.random().toString(36).substring(7);
-      const leaf: TreeLeaf = {
-        id: `leaf-${randomId}`,
-        leafValue: `0x${Math.random().toString(16).substring(2, 18)}`,
-        leafIndex: Math.floor(Math.random() * 1000).toString(),
-      };
-      await db.addTreeLeaf(leaf);
-      toast.success("Tree leaf added successfully");
-      await refreshDBStats();
-    } catch (error) {
-      toast.error("Failed to add tree leaf");
-      console.error(error);
-    }
-  };
-
-  const handleAddRandomPayload = async () => {
-    try {
-      const randomId = Math.random().toString(36).substring(7);
-      const payload: Payload = {
-        id: `payload-${randomId}`,
-        encryptedNote: `encrypted-${Math.random().toString(36)}`,
-      };
-      await db.addPayload(payload);
-      toast.success("Payload added successfully");
-      await refreshDBStats();
-    } catch (error) {
-      toast.error("Failed to add payload");
-      console.error(error);
-    }
-  };
-
-  const handleClearAll = async () => {
-    try {
-      await db.clearAllData();
-      toast.success("All data cleared");
-      await refreshDBStats();
-    } catch (error) {
-      toast.error("Failed to clear data");
-      console.error(error);
-    }
-  };
-
-  const handleIncrementId = async () => {
-    try {
-      const newId = await db.incrementLastId();
-      toast.success(`Last ID incremented to ${newId}`);
-      await refreshDBStats();
-    } catch (error) {
-      toast.error("Failed to increment ID");
-      console.error(error);
-    }
-  };
-
   // Show loading state while DB initializes
   if (db.isInitializing) {
     return (
@@ -678,23 +522,8 @@ const TestingPage = () => {
         <CardContent className="space-y-4">
           {/* Action buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            <Button onClick={handleAddRandomNote} variant="default">
-              Add Random Note
-            </Button>
-            <Button onClick={handleAddRandomTreeLeaf} variant="default">
-              Add Random Tree Leaf
-            </Button>
-            <Button onClick={handleAddRandomPayload} variant="default">
-              Add Random Payload
-            </Button>
-            <Button onClick={handleIncrementId} variant="secondary">
-              Increment Last ID
-            </Button>
             <Button onClick={refreshDBStats} variant="secondary">
               Refresh Stats
-            </Button>
-            <Button onClick={handleClearAll} variant="destructive">
-              Clear All Data
             </Button>
           </div>
 
@@ -849,7 +678,6 @@ const TestingPage = () => {
                         key={note.id}
                         note={note}
                         checkInDB={checkPayloadInDB}
-                        onWriteToDB={handleWritePayloadToDB}
                         getEnvelopeKey={getEnvelopeKey}
                       />
                     ))}
@@ -895,7 +723,6 @@ const TestingPage = () => {
                         key={leaf.id}
                         leaf={leaf}
                         checkInDB={checkLeafInDB}
-                        onWriteToDB={handleWriteLeafToDB}
                       />
                     ))}
                   </tbody>

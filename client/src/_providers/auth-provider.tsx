@@ -3,15 +3,16 @@ import { getNoteHash, getNullifier } from "@/_constants/notes";
 import { fetchIndexerNotes } from "@/_hooks/use-indexer-notes";
 import { fetchIndexerNullifiers } from "@/_hooks/use-indexer-nullifiers";
 import { useIsRegistered } from "@/_hooks/use-is-registered";
-import type { Payload } from "@/_types";
 import { CommbankDotETHAccount } from "@/lib/commbankdoteth-account";
 import {
   addNote,
   addPayload,
   addTransaction,
-  getAllPayloads,
+  findNoteByFields,
   getAllTreeLeaves,
+  getUnattemptedPayloads,
   migrateTransactionsToV4,
+  updatePayload,
 } from "@/lib/db";
 import { transactionMonitor } from "@/lib/transaction-monitor";
 import { poseidon2Hash } from "@zkpassport/poseidon2";
@@ -41,7 +42,7 @@ interface AuthContextType {
   signOut: () => void;
   getMnemonic: () => Promise<string | null>;
   getEnvelopeKey: () => Promise<string | null>;
-  refreshNotes: () => Promise<number>;
+  refreshNotes: (inputMnemonic?: string) => Promise<number>;
   commbankDotEthAccount?: CommbankDotETHAccount;
 }
 
@@ -276,161 +277,184 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const refreshNotes = useCallback(async (): Promise<number> => {
-    let wallet = walletRef.current;
+  const refreshNotes = useCallback(
+    async (inputMnemonic?: string): Promise<number> => {
+      let wallet = walletRef.current;
 
-    // If no wallet in ref, try to get it from mnemonic (for post-login refreshes)
-    if (!wallet) {
-      if (!isSignedIn) {
-        return 0;
+      // If no wallet in ref, try to get it from mnemonic (for post-login refreshes)
+      if (!wallet) {
+        if (!isSignedIn) {
+          return 0;
+        }
+
+        let mnemonic = inputMnemonic ?? null;
+
+        if (!mnemonic) {
+          mnemonic = await getMnemonic();
+
+          if (!mnemonic) return 0;
+        }
+
+        wallet = ethers.Wallet.fromPhrase(mnemonic);
       }
 
-      const mnemonic = await getMnemonic();
-      if (!mnemonic) {
-        return 0;
-      }
-      wallet = ethers.Wallet.fromPhrase(mnemonic);
-    }
+      try {
+        let newNotesCount = 0;
 
-    try {
-      let newNotesCount = 0;
+        // Fetch new payloads from indexer and store them with decryptAttempted: false
+        const indexerPayloads = await fetchIndexerNotes(50, 0);
+        const unattemptedPayloadsBefore = await getUnattemptedPayloads();
+        const existingPayloadIds = new Set(
+          unattemptedPayloadsBefore.map((p) => p.id),
+        );
 
-      const indexerPayloads = await fetchIndexerNotes(50, 0);
-      const existingPayloads = await getAllPayloads();
-      const existingPayloadIds = new Set(existingPayloads.map((p) => p.id));
-
-      // Find new payloads that don't exist in IndexedDB
-      const newPayloads: Payload[] = [];
-      if (indexerPayloads) {
-        for (const indexerNote of indexerPayloads) {
-          if (!existingPayloadIds.has(indexerNote.id)) {
-            newPayloads.push({
-              id: indexerNote.id,
-              encryptedNote: indexerNote.encryptedNote,
-            });
+        // Store new payloads from indexer
+        if (indexerPayloads) {
+          for (const indexerNote of indexerPayloads) {
+            if (!existingPayloadIds.has(indexerNote.id)) {
+              await addPayload({
+                id: indexerNote.id,
+                encryptedNote: indexerNote.encryptedNote,
+                decryptAttempted: false,
+              });
+            }
           }
         }
-      }
 
-      await Promise.all([...newPayloads.map((payload) => addPayload(payload))]);
+        // Get all unattempted payloads (including newly added ones)
+        const unattemptedPayloads = await getUnattemptedPayloads();
 
-      const chain = SUPPORTED_NETWORKS[defaultNetwork];
+        const chain = SUPPORTED_NETWORKS[defaultNetwork];
+        const leafs = await getAllTreeLeaves();
+        const nullifiers = await fetchIndexerNullifiers(50, 0);
 
-      const leafs = await getAllTreeLeaves();
-      const nullifiers = await fetchIndexerNullifiers(50, 0);
+        console.log("nullifiers: ", nullifiers);
+        console.log("leafs", leafs);
 
-      console.log("nullifiers: ", nullifiers);
-      console.log("leafs", leafs);
+        for (const payload of unattemptedPayloads) {
+          try {
+            const decrypted = await NoteDecryption.decryptEncryptedNote(
+              payload.encryptedNote,
+              wallet.privateKey,
+            );
 
-      for (const payload of indexerPayloads) {
-        if (existingPayloadIds.has(payload.id)) {
-          console.log("existing in loop");
-          continue;
-        }
+            // Decryption succeeded - check if note already exists
+            const existingNote = await findNoteByFields(
+              decrypted.asset_id,
+              decrypted.asset_amount,
+              decrypted.secret,
+            );
 
-        try {
-          const decrypted = await NoteDecryption.decryptEncryptedNote(
-            payload.encryptedNote,
-            wallet.privateKey,
-          );
+            if (existingNote) {
+              // Note already exists, mark payload as attempted
+              await updatePayload({ ...payload, decryptAttempted: true });
+              continue;
+            }
 
-          const parsedNote = {
-            assetId: decrypted.asset_id,
-            assetAmount: decrypted.asset_amount,
-            secret: decrypted.secret,
-            owner: decrypted.owner,
-          };
-          const noteHash = getNoteHash(parsedNote);
+            // Note doesn't exist - create it
+            const parsedNote = {
+              assetId: decrypted.asset_id,
+              assetAmount: decrypted.asset_amount,
+              secret: decrypted.secret,
+              owner: decrypted.owner,
+            };
+            const noteHash = getNoteHash(parsedNote);
 
-          const leafs = await getAllTreeLeaves();
+            const [leaf] = leafs.filter(
+              (item) => BigInt(item.leafValue) === BigInt(noteHash),
+            );
 
-          const [leaf] = leafs.filter(
-            (item) => BigInt(item.leafValue) === BigInt(noteHash),
-          );
+            const nullifier = getNullifier({
+              leaf_index: leaf?.leafIndex,
+              owner: decrypted.owner,
+              secret: decrypted.secret,
+              asset_id: decrypted.asset_id,
+              asset_amount: decrypted.asset_amount,
+              owner_secret: "",
+              path: [],
+              path_indices: [],
+            });
 
-          const nullifier = getNullifier({
-            leaf_index: leaf?.leafIndex,
-            owner: decrypted.owner,
-            secret: decrypted.secret,
-            asset_id: decrypted.asset_id,
-            asset_amount: decrypted.asset_amount,
-            owner_secret: "",
-            path: [],
-            path_indices: [],
-          });
+            // Add the note to the database with note_payload_id
+            await addNote({
+              id: payload.id,
+              assetId: decrypted.asset_id,
+              assetAmount: decrypted.asset_amount,
+              nullifier: payload.id,
+              secret: decrypted.secret,
+              entity_id: decrypted.owner,
+              isUsed: nullifiers.some(
+                (item) => BigInt(item.nullifier) === BigInt(nullifier),
+              ),
+              note_payload_id: payload.id,
+            });
 
-          // Add the note to the database
-          await addNote({
-            id: payload.id,
-            assetId: decrypted.asset_id,
-            assetAmount: decrypted.asset_amount,
-            nullifier: payload.id,
-            secret: decrypted.secret,
-            entity_id: decrypted.owner,
-            isUsed: nullifiers.some(
-              (item) => BigInt(item.nullifier) === BigInt(nullifier),
-            ),
-          });
+            // Mark payload as attempted
+            await updatePayload({ ...payload, decryptAttempted: true });
 
-          // Create a "Transfer" transaction record for the received note
-          const asset =
-            defaultNetworkAssetByAddress[BigInt(decrypted.asset_id).toString()];
+            // Create a "Transfer" transaction record for the received note
+            const asset =
+              defaultNetworkAssetByAddress[
+                BigInt(decrypted.asset_id).toString()
+              ];
 
-          if (asset && chain) {
-            const txId = crypto.randomUUID();
-            // TODO this should look different in the transfer UI
-            await addTransaction({
-              id: txId,
-              chainId: defaultNetwork,
-              type: "Transfer",
-              status: "confirmed",
-              createdAt: Date.now(),
-              confirmedAt: Date.now(),
-              timestamp: Date.now(),
-              to: chain.CommBankDotEth,
-              asset: {
-                address: asset.address,
-                symbol: asset.symbol,
-                decimals: asset.decimals,
-                amount: decrypted.asset_amount,
-                formattedAmount: formatUnits(
-                  BigInt(decrypted.asset_amount),
-                  asset.decimals,
-                ),
-              },
-              sender: {
-                isSelf: false,
-              },
-              recipient: {
-                privateAddress: decrypted.owner,
-                isSelf: true,
-              },
-              inputNotes: [],
-              outputNotes: [
-                {
-                  commitment: payload.id,
-                  isInput: false,
-                  isChange: false,
+            if (asset && chain) {
+              const txId = crypto.randomUUID();
+              // TODO this should look different in the transfer UI
+              await addTransaction({
+                id: txId,
+                chainId: defaultNetwork,
+                type: "Transfer",
+                status: "confirmed",
+                createdAt: Date.now(),
+                confirmedAt: Date.now(),
+                timestamp: Date.now(),
+                to: chain.CommBankDotEth,
+                asset: {
+                  address: asset.address,
+                  symbol: asset.symbol,
+                  decimals: asset.decimals,
+                  amount: decrypted.asset_amount,
+                  formattedAmount: formatUnits(
+                    BigInt(decrypted.asset_amount),
+                    asset.decimals,
+                  ),
                 },
-              ],
-            });
+                sender: {
+                  isSelf: false,
+                },
+                recipient: {
+                  privateAddress: decrypted.owner,
+                  isSelf: true,
+                },
+                inputNotes: [],
+                outputNotes: [
+                  {
+                    commitment: payload.id,
+                    isInput: false,
+                    isChange: false,
+                  },
+                ],
+              });
+            }
+
+            newNotesCount++;
+            console.log("Decrypted and stored note:", payload.id);
+          } catch (_e) {
+            // Decryption failed - mark payload as attempted
+            await updatePayload({ ...payload, decryptAttempted: true });
+            continue;
           }
-
-          newNotesCount++;
-          console.log("Decrypted and stored note:", payload.id);
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_e) {
-          // Silently ignore decryption failures - note wasn't meant for this user
-          continue;
         }
-      }
 
-      return newNotesCount;
-    } catch (error) {
-      console.error("Failed to sync encrypted payloads:", error);
-      throw error;
-    }
-  }, [isSignedIn, getMnemonic]);
+        return newNotesCount;
+      } catch (error) {
+        console.error("Failed to sync encrypted payloads:", error);
+        throw error;
+      }
+    },
+    [isSignedIn, getMnemonic],
+  );
 
   const signOut = () => {
     // Stop transaction monitor
