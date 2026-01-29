@@ -4,6 +4,8 @@
 
 ## Components
 
+> **Warning:** All code in this repo has not been audited and should be before use in production.
+
 - `client/`: the commbank.eth web app deployed to `https://commbank.eth.limo`
 - `contracts/`: the EVM smart contracts required to facilitate Private Unstoppable Money
 - `circuits/`: Private Unstoppable Money Zero Knowledge circuits
