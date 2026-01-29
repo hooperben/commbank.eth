@@ -76,10 +76,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
       _erc20 == address(uint160(uint256(_publicInputs[1]))),
       "ERC20 address mismatch"
     );
-    require(
-      _amount == uint64(uint256(_publicInputs[2])),
-      "Address amount incorrect"
-    );
+    require(_amount == uint256(_publicInputs[2]), "Address amount incorrect");
 
     // insert note
     _insert(uint256(_publicInputs[0]));
@@ -110,7 +107,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
       "Address mismatch"
     );
     // check that msg.value matches amount in proof
-    require(msg.value == uint64(uint256(_publicInputs[2])), "Amount incorrect");
+    require(msg.value == uint256(_publicInputs[2]), "Amount incorrect");
 
     // insert note
     _insert(uint256(_publicInputs[0]));
