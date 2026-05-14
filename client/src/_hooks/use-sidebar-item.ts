@@ -1,5 +1,5 @@
 import { useAuth } from "@/_providers/auth-provider";
-import { Home, Users, Settings } from "lucide-react";
+import { Home, Users, Settings, ArrowDownUp } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Menu items
@@ -20,11 +20,18 @@ const MENU_BAR_ITEMS = [
     order: 1,
   },
   {
+    href: "/ebabayaga/",
+    icon: ArrowDownUp,
+    label: "On/Offramp",
+    requireAuth: true,
+    order: 2,
+  },
+  {
     href: "/settings/",
     icon: Settings,
     label: "Settings",
     requireAuth: true,
-    order: 2,
+    order: 3,
   },
 ];
 

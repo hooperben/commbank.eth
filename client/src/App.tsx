@@ -1,6 +1,7 @@
 import { AppLayout } from "@/_components/layout";
 import { InAppBrowserWarning } from "@/_components/status/in-app-browser-warning";
 import { AboutPage } from "@/pages/about";
+import EbabayagaPage from "@/pages/ebabayaga";
 import AccountPage from "@/pages/account";
 import AccountsPage from "@/pages/accounts";
 import AppStatePage from "@/pages/app-state";
@@ -20,6 +21,7 @@ import { ProtectedRoute } from "./_providers/protected-route";
 import { QueryClientProvider } from "./_providers/query-client";
 import { ThemeProvider } from "./_providers/theme-provider";
 import "./App.css";
+import { AboutPrivateUnstoppableMoney } from "./pages/private-unstoppable-money";
 
 function App() {
   return (
@@ -96,9 +98,21 @@ function App() {
                   }
                 />
                 <Route path="/about" element={<AboutPage />} />
+                <Route
+                  path="/about/private-unstoppable-money"
+                  element={<AboutPrivateUnstoppableMoney />}
+                />
                 <Route path="/share" element={<SharePage />} />
                 <Route path="/status" element={<StatusPage />} />
 
+                <Route
+                  path="/ebabayaga"
+                  element={
+                    <ProtectedRoute>
+                      <EbabayagaPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/state"
                   element={

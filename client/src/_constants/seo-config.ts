@@ -198,6 +198,24 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
       "Ethereum development",
     ],
   },
+  ebabayaga: {
+    header: "On/Offramp",
+    title: "commbank.eth | On/Offramp",
+    description:
+      "Buy and sell crypto with fiat using Peer (ZKP2P) - no middlemen, no extra verification.",
+    path: "/ebabayaga",
+    ogImage: OG_IMAGE,
+    ogImageAlt: OG_IMAGE_ALT,
+    keywords: [
+      "onramp",
+      "offramp",
+      "fiat",
+      "peer",
+      "zkp2p",
+      "buy crypto",
+      "sell crypto",
+    ],
+  },
 };
 
 export function getPageUrl(path: string): string {
