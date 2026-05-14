@@ -1,7 +1,6 @@
 use poseidon::poseidon2;
-use pum_lib::{self, compute_merkle_root, compute_nullifier, reconstruct_leaf};
+use pum_lib::{self, compute_merkle_root, compute_nullifier, HEIGHT, reconstruct_leaf};
 
-global HEIGHT: u32 = 12;
 global NOTE_COUNT: u32 = 3;
 
 struct InputNote {

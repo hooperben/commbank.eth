@@ -1,8 +1,7 @@
 use poseidon::poseidon2::{self, Poseidon2Hasher};
-use pum_lib::{self, compute_merkle_root, compute_nullifier, reconstruct_leaf};
+use pum_lib::{self, compute_merkle_root, compute_nullifier, HEIGHT, reconstruct_leaf};
 use std::{collections::map::HashMap, hash::BuildHasherDefault};
 
-global HEIGHT: u32 = 12;
 global NOTE_COUNT: u32 = 3;
 
 struct InputNote {

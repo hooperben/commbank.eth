@@ -1,7 +1,10 @@
 use poseidon;
 use poseidon::poseidon2;
 
-global HEIGHT: u32 = 12;
+// Single source of truth for tree height across all circuits.
+// Bumping this value automatically resizes the path/path_indices arrays
+// in every circuit that imports HEIGHT from this module.
+pub global HEIGHT: u32 = 12;
 
 pub fn calculate_leaf(asset_id: Field, asset_amount: Field, owner: Field, secret: Field) -> Field {
     let leaf_hash =

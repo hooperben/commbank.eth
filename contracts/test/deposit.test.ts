@@ -74,7 +74,7 @@ describe("Testing deposit functionality", () => {
     // check our merkle state matches
     await tree.insert(proof.publicInputs[0], 0);
 
-    const contractRoot = await commbankDotEth.roots(1);
+    const contractRoot = await commbankDotEth.currentRoot();
 
     // our contract root should match our tree in memory
     expect(contractRoot).eq((await tree.getRoot()).toString());

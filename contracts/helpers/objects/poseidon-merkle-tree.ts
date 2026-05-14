@@ -1,4 +1,5 @@
 import { PoseidonMerkleTree } from "@/helpers/poseidon-merkle-tree";
+import { TREE_HEIGHT } from "@/helpers/tree-config";
 import { keccak256, toUtf8Bytes } from "ethers";
 import * as path from "path";
 
@@ -6,8 +7,8 @@ const ZERO_VALUE =
   BigInt(keccak256(toUtf8Bytes("TANGERINE"))) %
   BigInt("0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001");
 
-const LEVELS = 12;
-const TREE_CACHE_PATH = path.join("./cache/full-tree.json");
+const LEVELS = TREE_HEIGHT;
+const TREE_CACHE_PATH = path.join(`./cache/full-tree-h${LEVELS}.json`);
 
 export const getMerkleTree = async () => {
   // Try to load existing tree first
