@@ -20,21 +20,19 @@ if a user can successfully sign up/in using passkey - they have an `authToken` i
 
 for private transfers, the user has 2 public fields:
 
-- signing key: used for note passing (encryption and decryption)
-- owning key: used for proving of note ownership
+- poseidon key: used for proving of note ownership (poseidon hash commitment)
+- envelope key: used for note passing (encryption and decryption)
 
-These are 2 separate fields as proving ownership in zero knowledge is much more efficient using a different hash encryption pattern rather than encrypting and decrypting in zero knowledge.
-
-The owning key is given by:
+The poseidon key is given by:
 
 ```ts
-const owningKey = poseidon2(wallet.privateKey);
+const privateAddress = poseidon2([wallet.privateKey]);
 ```
 
-note: if you pass a wallet.privateKey > the field size for poseidon, poseidon2 should (TODO confirm) take the modulo for you
-
-The signing key is given by:
+and the envelope key is given by:
 
 ```ts
 const signingKey = wallet.publicKey;
 ```
+
+The `privateAddress`/poseidon key is used in ZK circuits to prove knowledge of the pre-image of the output `privateAddress`. If that makes sense, hopefully this whole thing is correct.
