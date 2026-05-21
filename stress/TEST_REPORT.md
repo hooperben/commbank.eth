@@ -308,28 +308,241 @@ tail -f /tmp/stress-run-long.log | jq -c \
   'select(.msg == "rollover sealed" or .level == "error")'
 ```
 
+---
+
+# Run 4 — v3 harness, 10 owners, mixed workload with adversarial injections
+
+Goal: 10,000 successful real operations with a 25 / 50 / 25 deposit /
+transfer / withdraw mix, while deliberately injecting **invalid proofs**
+and **double-spend attempts** at a configurable rate to verify the
+contract rejects them. Also: 10 distinct owner identities ("private
+addresses" in the protocol's sense) instead of a single shared one.
+
+## What changed in v3
+
+- **Owner pool** (`stress/src/owners.ts`) — 10 deterministic
+  `(ownerSecret, owner = poseidon2(ownerSecret))` identities seeded from
+  a fixed base, so each worker owns its own notes and double-spend
+  attempts go through that worker's owning key. Same TEST-ONLY warning
+  applies as for the shared owner in `proof-pool.ts`.
+- **Per-owner deposit proofs on demand** (`stress/src/proof-pool.ts`) —
+  the v2 pre-generated FIFO was tied to a single shared owner and
+  worked best when deposits were 100% of the workload. With per-worker
+  owners and deposits only 25% of v3, on-demand generation is simpler
+  and faster overall.
+- **`SpentNoteStore`** (`stress/src/spent-store.ts`) — every note that
+  gets successfully spent is pushed here. The worker can later pop a
+  random one and try to spend it AGAIN. Contract should reject on
+  nullifier check.
+- **Invalid-proof corruption** (`stress/src/worker.ts:corruptProof`) —
+  flips one middle-of-proof byte before submission. Verifier should
+  reject with its custom error.
+- **`expectReject` flag on relay jobs** — the relayer pool knows when a
+  revert is expected, logs it as `info` ("rejected (expected)") and
+  resolves the worker's promise normally. If a tagged job *succeeds*,
+  it logs a `CRITICAL_*_ACCEPTED tx that should revert` error — that
+  would mean the contract accepted a deliberately bad input.
+- **Shared `JsonRpcProvider`** + **`NonceManager` on every wallet** —
+  v3's first attempt at "shared provider only" hit a nonce-cache
+  collision when multiple wallets bounce off one provider in quick
+  succession. Putting `NonceManager` back fixed it (and, crucially,
+  did NOT recreate the v2 worker-0 lockout, because the underlying
+  ECONNRESET storm is gone).
+- **Global op counter + 10K stop target** — workers self-terminate
+  when the shared counter reaches `STOP_AT`. Injected failures do
+  NOT count toward the target (they're tests of the chain, not
+  productive work).
+
+## Run 4 headline numbers
+
+| Metric                                 | Value                |
+|----------------------------------------|----------------------|
+| Wall-clock duration                    | **95.0 min**         |
+| Real successful ops                    | **10,006 / 10,000** (overshoot of 6 from non-atomic stop check, harmless) |
+| Mix actual                             | 27% / 49% / 24%      |
+| Mix target                             | 25% / 50% / 25%      |
+| Throughput sustained                   | 1.76 ops/sec (1.34 leaves/sec) |
+| **Rollovers sealed**                   | **3 ✅**             |
+| Leaves on chain                        | 7,607                |
+| **Expected rejections (chain rejected)** | **317**             |
+| → `deposit/invalid_proof`              | 45                   |
+| → `transfer` (invalid_proof + double_spend) | 180             |
+| → `withdraw` (invalid_proof + double_spend) | 92              |
+| **Critical: chain ACCEPTED a tx tagged expectReject** | **0** ✅ |
+| Unexpected errors (in 10,006 ops)      | 9 (0.09%)            |
+| Distinct owners assigned               | 10                   |
+| Max spent-note pool size observed      | 755                  |
+
+The headline finding: **the chain rejected every single deliberately-bad
+proof or double-spend attempt** — 317 / 317 across both injection types
+and all three contract entry-points. Zero false-accepts.
+
+## Latency by operation
+
+| Operation  | Successes | p50      | p99      |
+|------------|-----------|----------|----------|
+| Deposit    | 2,695     | 2,671 ms | 5,624 ms |
+| Transfer   | 4,912     | 5,548 ms | 9,853 ms |
+| Withdraw   | 2,399     | 5,162 ms | 9,337 ms |
+
+Transfer and withdraw latencies are higher than Run 3 because v3 generates
+deposit proofs on-demand (no pre-gen), so worker iterations include more
+proof work between spends.
+
+## Per-worker contribution (the v2 worker-0 bug is gone)
+
+All 10 workers within ~5% of the mean:
+
+| Worker | Real ops |
+|--------|----------|
+| 0      | 998      |
+| 1      | 1,030    |
+| 2      | 987      |
+| 3      | 987      |
+| 4      | 1,021    |
+| 5      | 992      |
+| 6      | 986      |
+| 7      | 996      |
+| 8      | 1,014    |
+| 9      | 995      |
+
+Contrast with v2 Run 3 where worker-0 contributed zero ops because a
+single early ECONNRESET broke its `NonceManager`. The shared provider +
+re-added NonceManager combination in v3 is robust.
+
+## Per-relayer load (5 relayers)
+
+Perfectly balanced thanks to the single-FIFO + one-resolver-per-waiter
+queue:
+
+| Relayer | Jobs handled (normal txs only; expected-reject jobs not counted here) |
+|---------|----------------------------------------------------------------------|
+| 0       | 1,460 |
+| 1       | 1,456 |
+| 2       | 1,462 |
+| 3       | 1,466 |
+| 4       | 1,467 |
+
+Relayer queue wait: p50 **500 ms**, p99 **2.9 s**, max **5.6 s** —
+slightly higher than v2 because the v3 mix is heavier on relayed ops
+(transfer + withdraw = 73% vs Run 3's ~30%).
+
+## Rollover cadence
+
+| # | Sealed at       | Final root (last 8) | Interval from prev |
+|---|-----------------|---------------------|---------------------|
+| 1 | 09:28:13        | `…74080849`         | n/a (epoch 0 fill)  |
+| 2 | 09:53:48        | `…99928590`         | 25m 35s             |
+| 3 | 10:19:53        | `…16687716`         | 26m 06s             |
+
+Rollovers are ~26 min apart (vs ~11 min in Run 3) because Run 3 was
+deposit-heavier (70% leaf-adding ops) and Run 4's mix puts withdrawals
+at 25% (those add no leaf, just consume a nullifier slot). Both intervals
+within 2% of each other — fully consistent.
+
+## Per-epoch composition
+
+| Epoch | Deposits | Transfers | Leaves added |
+|-------|----------|-----------|--------------|
+| 0     | 764      | 1,284     | 2,048        |
+| 1     | 715      | 1,333     | 2,048        |
+| 2     | 712      | 1,336     | 2,048        |
+| 3     | 504      | 959       | 1,463 (partial — run stopped at op #10,006 mid-epoch) |
+
+Transfer fraction creeps up slightly each epoch as the workers accumulate
+more notes and the action picker spends more often. Otherwise stable.
+
+## Event table — Run 4 additions
+
+| # | Probe                                                                                                  | Expected behaviour                                                                                                            | Actually observed                                                                                                                                          | Anomaly? | Resolution / Implication                                                                                              |
+|---|--------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|------------------------------------------------------------------------------------------------------------------------|
+| 20 | 10 distinct owner identities across the workload                                                       | Each worker holds notes under a unique `owner` field; transfers and withdrawals use that owner's key, no cross-owner spends   | 10 / 10 owners assigned, each worker logged its own owner in its `started` message. No "cross-owner" spend attempt was ever generated (the worker only ever picks from its own NoteStore). | None ✅ | The protocol's owner-binding via `poseidon2(owner_secret)` works correctly across distinct identities. |
+| 21 | Invalid-proof injection: corrupt one byte mid-proof, submit anyway                                     | Verifier reverts; the contract NEVER accepts a malformed proof regardless of which entry-point                                | **317 invalid-proof or double-spend revert events logged, zero CRITICAL_ACCEPTED.** Verifier custom errors surfaced as `"could not coalesce error"` for some, decoded reasons for others — both forms confirmed by the relayer/worker as proper reverts. | None ✅ | Strong negative result: the contract correctly rejects bad proofs. Confidence in the verifier wiring. |
+| 22 | Double-spend injection: replay a previously-spent note with a freshly-generated proof                  | Verifier accepts (proof is valid), then contract reverts at `require(nullifierUsed[...] == false, "Nullifier already spent")` | Spent-note pool grew to **755 notes** over the run; double-spend attempts fired ~2% of spend iterations; **zero double-spends succeeded**. All double-spend attempts surfaced revert paths through the relayer's `expectReject` channel. | None ✅ | The nullifier-uniqueness invariant holds under sustained load. |
+| 23 | Workers contribute roughly evenly (the v2 worker-0 stuck bug)                                          | All 10 workers within ~10% of the mean                                                                                        | 986–1,030 ops per worker (within ~2% of mean 1,000.6). v2 bug not reproduced.                                                                              | None ✅ | Fixed by shared provider + `NonceManager` per-wallet + dropped per-worker provider creation. |
+| 24 | Mix matches target across the run, not just at startup                                                 | Final mix close to `P_TRANSFER` / `P_WITHDRAW` settings                                                                       | 27% / 49% / 24% vs target 25 / 50 / 25 — within 2 percentage points. Slight deposit bias is from the unavoidable warm-up where workers start with no spendable notes. | None ✅ | Action picker works as designed. |
+| 25 | Three full epoch rollovers under the new mix                                                           | Each rollover fires exactly when `nextIndex` reaches `MAX_LEAF_INDEX`; new epoch's first leaf at index 0                      | All three sealed cleanly. Intervals of 25m 35s and 26m 06s are within 2% of each other — same `MAX_LEAF_INDEX` is filling at a consistent rate. | None ✅ | Re-confirms Run 3's rollover correctness under a different workload. |
+| 26 | Relayer pool: 5 relayers handle 73% of all on-chain work                                               | Round-robin balance, no relayer starves                                                                                       | 1,456 / 1,460 / 1,462 / 1,466 / 1,467 jobs respectively — within 1% of each other. p50 queue wait = 500 ms; p99 = 2.9 s.                                   | None ✅ | The single-FIFO scheduler scales with relayer count. |
+| 27 | Shared `JsonRpcProvider` instead of one per actor (the v2 ECONNRESET storm)                            | Many fewer transient TCP errors                                                                                               | v2 saw **3,234 transient errors over 33 min**; v3 saw **9 in 95 min**. Roughly 99.5% reduction. The 9 remaining errors are the `TreeState.getPath` snapshot race (carried over from v2, retry-loop mitigated). | Mitigated harness wrinkle | The remaining race is rare enough not to affect headline correctness. Real fix is a read lock on `PoseidonMerkleTree.hashMap` during snapshot reads. |
+| 28 | NonceManager + shared provider: does the v3-first-attempt nonce-cache bug stay fixed?                  | Workers and relayers never hit `Nonce too low`                                                                                | After re-adding `NonceManager` on every wallet: 0 nonce errors across the 95-min run.                                                                      | Resolved | The v3-first-attempt approach (drop NonceManager + share provider) had a subtle race; re-adding `NonceManager` while keeping the shared provider is the correct combination. |
+| 29 | Spent-note pool grows monotonically; double-spend attempts have plenty of material                     | Pool peaks somewhere proportional to (transfers + withdrawals)                                                                | Peak observed pool size: **755 notes**. By contrast, total spends were 4,912 + 2,399 = 7,311. Many notes were spent more than once (only counts in pool once), explaining the ratio. | None ✅ | Pool stays bounded; no memory blow-up. |
+| 30 | Invariant: `leafValue` emitted in `LeafInserted` matches the noteHash the proof was built against, for both deposit and transfer outputs | 100% match                                                                                                                    | 7,607 / 7,607 ✅                                                                                                                                            | None ✅ | — |
+| 31 | Invariant: every `currentRoot()` read after a successful insert is in `knownRoots`                     | 100% true (contract guarantees this)                                                                                          | 2,695 / 2,695 deposit checks ✅                                                                                                                              | None ✅ | — |
+
+## Run-4 caveats
+
+1. **The 9 unexpected errors are all the same harness wrinkle.** They
+   come from 7 different workers (worker-0, 1, 3, 5, 6, 7, 8 all had at
+   least one), all flavoured `transfer/normal iteration failed` (7) or
+   `withdraw/normal iteration failed` (1) or `transfer/double_spend
+   iteration failed` (1). Each was the TreeState snapshot race that
+   slipped past the 5-attempt retry loop. Real fix is a proper read
+   lock around `PoseidonMerkleTree` access during path reads.
+2. **`expectReject` doesn't yet differentiate verifier-revert from
+   nullifier-revert in the log.** Both double-spend and invalid_proof
+   attempts on transfer/withdraw surface as `transfer rejected
+   (expected)`. The log records `expectedReject: "invalid_proof"` vs
+   `"double_spend"` so it's recoverable by `jq`, just not split in the
+   summary table.
+3. **Stress harness's local TreeState is NOT the production indexer.**
+   Same caveat as Run 3 — the harness validates the *design* of the
+   epoch-aware tree builder, not the envio indexer implementation.
+4. **Single chain, no reorgs.** Hardhat is too well-behaved.
+5. **`Math.random()`** is used for action / test-mode selection. The
+   distribution is consistent over 10K trials but not seeded — different
+   runs will have slightly different mix percentages.
+
+## How to reproduce Run 4
+
+```bash
+# 1. Compile contracts and circuits (one-time after any change)
+cd contracts && npx hardhat compile && cd ..
+
+# 2. Start hardhat node (detached)
+cd contracts && nohup npx hardhat node --hostname 127.0.0.1 --port 18545 \
+  > /tmp/hardhat-node.log 2>&1 &
+cd ..
+
+# 3. Deploy
+cd stress
+RPC_URL=http://127.0.0.1:18545 DEPLOYMENT_PATH=/tmp/stress-deployment.json \
+WORKER_COUNT=10 pnpm run harness:deploy
+
+# 4. Long run (~95 min for 10K ops at default settings)
+RPC_URL=http://127.0.0.1:18545 DEPLOYMENT_PATH=/tmp/stress-deployment.json \
+WORKER_COUNT=10 RELAYER_COUNT=5 STOP_AT=10000 \
+P_TRANSFER=0.5 P_WITHDRAW=0.25 \
+P_INVALID_PROOF=0.02 P_DOUBLE_SPEND=0.02 \
+pnpm run harness:run
+
+# 5. Watch rollovers + rejections live
+tail -f /tmp/stress-run-v3.log | jq -c \
+  'select(.msg == "rollover sealed" or
+          (.msg | tostring | contains("rejected (expected)")) or
+          (.msg | tostring | contains("ACCEPTED")) or
+          .level == "error")'
+```
+
 ## Future probes worth adding
 
 In rough priority order:
 
-1. **Single shared `JsonRpcProvider`** across workers / relayers / tree
-   listener. Eliminates the ECONNRESET storm; lets v3 actually surface
-   real concurrency bugs instead of harness ones.
-2. **NonceManager + provider recovery** in the worker — make a single
-   transient failure recoverable so a worker-0–style lockout can't
-   happen again.
+1. **Real read-lock on `PoseidonMerkleTree.hashMap`** during snapshot
+   reads, replacing the retry-loop mitigation in `TreeState.getPath`.
+   This is the single remaining source of unexpected errors.
+2. **Split `expectReject` log lines by reason in the summary** so the
+   report can show "X / Y invalid-proof attempts rejected" and "X / Y
+   double-spend attempts rejected" separately, instead of merged.
 3. **Wire the indexer into docker-compose.stress.yml** and add a probe
    that queries the indexer's GraphQL after every N inserts, asserting
    its view of `(epoch, leafIndex)` matches the chain's `nextIndex`.
-   Run-3 only validated the *harness's* tree builder, not the indexer.
-4. **Cross-epoch withdraw explicitly logged.** Today we know cross-epoch
-   spends happened (the FIFO note store guarantees it as the run goes
-   on) but the log doesn't distinguish them. Adding `input_epoch` to
-   `transfer ok` / `withdraw ok` would let the report show "X% of spends
-   were against a frozen-epoch final root".
+4. **Cross-epoch withdraw explicitly logged** so the report can quote a
+   "% of spends against frozen-epoch final roots" figure directly.
 5. **Concurrency stress.** Workers currently wait for receipts before
    submitting the next tx. A mode that queues N in-flight per worker
    would actually race `nextIndex` assignment.
-6. **Build-time `TREE_HEIGHT` override** so a stress-only image rolls
-   over in seconds. Out of scope per ADR-0001, but useful for targeted
-   rollover regression tests in CI.
+6. **Seed `Math.random()`** for fully deterministic action selection
+   across runs (would make CI smoke-test assertions exact rather than
+   range-based).
+7. **Build-time `TREE_HEIGHT` override** so a stress-only image rolls
+   over in seconds. Useful for targeted rollover regression tests in CI.

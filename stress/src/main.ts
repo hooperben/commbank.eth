@@ -1,40 +1,46 @@
-// Stress harness entry point.
+// v3 stress harness entry point.
 //
 // Topology:
-//   * One JsonRpcProvider talks to hardhat-node
-//   * TreeState owns the per-epoch merkle trees, polls events
-//   * RelayerPool exposes a job queue for transfer/withdraw txs
-//   * N workers (default 10) loop forever, mixing deposit/transfer/withdraw
-//   * Each worker has its own NoteStore + Invariants
+//   * one shared JsonRpcProvider (Node's HTTP agent now does keep-alive
+//     for us across all callers — fixes the v2 ECONNRESET storm)
+//   * TreeState polls events, maintains per-epoch trees
+//   * RelayerPool: N relayers handle transfer/withdraw submissions
+//   * N workers, each with its own assigned Owner identity, share a
+//     global Counter; stop when counter reaches STOP_AT
 //
-// SIGINT/SIGTERM stops the listeners and exits.
+// Workload mix:
+//   P_TRANSFER, P_WITHDRAW set via env (default 0.50 / 0.25 → deposit = 25%)
+//   P_INVALID_PROOF: rate of corrupted-proof injection (default 0.02 = 1-in-50)
+//   P_DOUBLE_SPEND:  rate of replay-of-already-spent-note (default 0.02)
 
 import { Contract, JsonRpcProvider } from "ethers";
 import { readFile } from "node:fs/promises";
 
 import { relayerCount, workerCount, workerWallet } from "./accounts.js";
 import { artifacts } from "./artifacts.js";
+import { Counter } from "./counter.js";
 import { info, error } from "./log.js";
 import { NoteStore } from "./note-store.js";
-import {
-  ProofPool,
-  SHARED_OWNER,
-  SHARED_OWNER_SECRET,
-} from "./proof-pool.js";
+import { ownerCount, ownerPool } from "./owners.js";
 import { RelayerPool } from "./relayer-pool.js";
+import { SpentNoteStore } from "./spent-store.js";
 import { TreeState } from "./tree-state.js";
 import { makeInvariants, runWorker } from "./worker.js";
 
 const DEPLOYMENT_PATH = process.env.DEPLOYMENT_PATH || "/shared/deployment.json";
-const POOL_SIZE = Number(process.env.POOL_SIZE ?? 64);
-const P_TRANSFER = Number(process.env.P_TRANSFER ?? 0.3);
-const P_WITHDRAW = Number(process.env.P_WITHDRAW ?? 0.1);
+const P_TRANSFER = Number(process.env.P_TRANSFER ?? 0.5);
+const P_WITHDRAW = Number(process.env.P_WITHDRAW ?? 0.25);
+const P_INVALID_PROOF = Number(process.env.P_INVALID_PROOF ?? 0.02);
+const P_DOUBLE_SPEND = Number(process.env.P_DOUBLE_SPEND ?? 0.02);
+const STOP_AT = Number(process.env.STOP_AT ?? 10_000);
 
-// Hardhat node occasionally drops a socket mid-RPC under sustained load
-// (ECONNRESET surfaced from TCP.onStreamRead with no userland frames).
-// Without this guard, a single dropped socket kills the whole harness.
-// We just log and keep running — the worker that lost the call will surface
-// the failure via its own try/catch on the next iteration.
+type Manifest = {
+  rpcUrl: string;
+  chainId: number;
+  commbankDotEth: string;
+  workers: { index: number; address: string }[];
+};
+
 process.on("uncaughtException", (e: any) => {
   error("main", "uncaughtException", {
     err: e?.message ?? String(e),
@@ -48,13 +54,6 @@ process.on("unhandledRejection", (reason: any) => {
   });
 });
 
-type Manifest = {
-  rpcUrl: string;
-  chainId: number;
-  commbankDotEth: string;
-  workers: { index: number; address: string }[];
-};
-
 const main = async () => {
   const manifestRaw = await readFile(DEPLOYMENT_PATH, "utf8");
   const manifest = JSON.parse(manifestRaw) as Manifest;
@@ -65,18 +64,30 @@ const main = async () => {
   });
 
   const rpcUrl = process.env.RPC_URL || manifest.rpcUrl;
+  // Single shared provider. Crucially, this means a single HTTP agent in
+  // Node will pool TCP connections to the hardhat node across all callers,
+  // instead of each actor opening its own short-lived sockets.
   const provider = new JsonRpcProvider(rpcUrl);
   const { abi: cbAbi } = await artifacts.commbankDotEth();
   const cb = new Contract(manifest.commbankDotEth, cbAbi, provider);
 
-  // Tree listener — must be started before workers begin spending, so the
-  // first transfer/withdraw has trees populated.
+  const N = Math.min(workerCount(), manifest.workers.length);
+  const R = relayerCount();
+  const owners = ownerPool(Math.max(ownerCount(), N));
+  info("main", "topology", {
+    workers: N,
+    relayers: R,
+    owners: owners.length,
+    stopAt: STOP_AT,
+    pTransfer: P_TRANSFER,
+    pWithdraw: P_WITHDRAW,
+    pInvalidProof: P_INVALID_PROOF,
+    pDoubleSpend: P_DOUBLE_SPEND,
+  });
+
   const tree = new TreeState(provider, cb);
   await tree.start();
 
-  // Relayer pool.
-  const N = Math.min(workerCount(), manifest.workers.length);
-  const R = relayerCount();
   const relayers = new RelayerPool(
     provider,
     manifest.commbankDotEth,
@@ -86,43 +97,38 @@ const main = async () => {
   );
   await relayers.start();
 
-  // Deposit proof pool.
-  const pool = new ProofPool(POOL_SIZE);
-  await pool.init();
-
-  info("main", "spawning workers", {
-    workers: N,
-    relayers: R,
-    pTransfer: P_TRANSFER,
-    pWithdraw: P_WITHDRAW,
-  });
+  const counter = new Counter();
 
   const stops: Promise<void>[] = [];
   for (let i = 0; i < N; i++) {
     const w = workerWallet(i);
+    const owner = owners[i % owners.length];
     stops.push(
       runWorker({
         id: i,
-        rpcUrl,
+        provider,
         privateKey: w.privateKey,
         cbAddress: manifest.commbankDotEth,
         cbAbi,
-        depositPool: pool,
         relayers,
         tree,
         notes: new NoteStore(),
+        spentNotes: new SpentNoteStore(),
         invariants: makeInvariants(),
-        owner: SHARED_OWNER,
-        ownerSecret: SHARED_OWNER_SECRET,
+        owner,
         pTransfer: P_TRANSFER,
         pWithdraw: P_WITHDRAW,
+        pInvalidProof: P_INVALID_PROOF,
+        pDoubleSpend: P_DOUBLE_SPEND,
+        counter,
+        stopAt: STOP_AT,
+        depositSeq: { next: 0 },
       }),
     );
   }
 
   const shutdown = (signal: string) => {
-    info("main", "shutdown signal", { signal });
-    pool.stop();
+    info("main", "shutdown signal", { signal, progress: counter.value() });
     tree.stop();
     relayers.stop();
     setTimeout(() => process.exit(0), 2000);
@@ -131,6 +137,12 @@ const main = async () => {
   process.on("SIGTERM", () => shutdown("SIGTERM"));
 
   await Promise.all(stops);
+
+  // Natural completion: counter reached STOP_AT
+  info("main", "all workers stopped", { progress: counter.value() });
+  tree.stop();
+  relayers.stop();
+  setTimeout(() => process.exit(0), 1000);
 };
 
 main().catch((e) => {
