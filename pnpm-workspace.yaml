@@ -5,3 +5,4 @@ packages:
   - "contracts"
   - "shared"
   - "relayer"
+  - "stress"

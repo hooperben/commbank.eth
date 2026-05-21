@@ -1,0 +1,22 @@
+{
+  "name": "stress",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "harness:deploy": "tsx src/deploy.ts",
+    "harness:run": "tsx src/main.ts",
+    "harness:wait-rpc": "tsx src/wait-rpc.ts"
+  },
+  "dependencies": {
+    "@zkpassport/poseidon2": "^0.6.2",
+    "contracts": "workspace:*",
+    "ethers": "^6.15.0",
+    "shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4.20.5",
+    "typescript": "~5.8.3"
+  }
+}
