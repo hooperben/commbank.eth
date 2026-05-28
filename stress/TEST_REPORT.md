@@ -843,3 +843,167 @@ pnpm run harness:run
 # 7. Inspect balance probes
 jq -c 'select(.msg | test("balance_"))' /tmp/stress-run-6.log
 ```
+
+---
+
+# Run 7 — long stress, 3 rollovers, balance probe at scale
+
+Same circuits and harness as Run 6, scaled up to `STOP_AT=10000` (matching
+Run 4's target) so the in-circuit balance check would face hundreds of
+attempts across multiple epoch boundaries, and so the rollover code path
+itself would be exercised again under the new circuits.
+
+## Run 7 headline numbers
+
+| Metric                                          | Value             |
+|-------------------------------------------------|-------------------|
+| Wall-clock duration                             | **16 min 20 s**   |
+| Real successful ops                             | **10,008 / 10,000** (overshoot of 8 from non-atomic stop) |
+| Mix actual (deposit / transfer / withdraw)      | 29% / 47% / 24%   |
+| Mix target                                      | 25% / 50% / 25%   |
+| Sustained throughput                            | 10.21 ops/sec     |
+| **Rollovers sealed**                            | **3 ✅**          |
+| Leaves on chain                                 | 7,574             |
+| **Balance-violation attempts (in-circuit)**     | **199**           |
+| → `mint_same` (Pass A)                          | 89                |
+| → `mint_fresh` (Pass B)                         | 110               |
+| **Witness satisfied for any balance attempt?**  | **No — 0 / 199** ✅ |
+| Constraint-rejection latency p50               | 3 ms              |
+| Constraint-rejection latency p99               | 11 ms             |
+| Other expected rejections                       | 328               |
+| → `deposit/invalid_proof`                       | 56                |
+| → `transfer/invalid_proof`                      | 86                |
+| → `transfer/double_spend`                       | 81                |
+| → `withdraw/invalid_proof`                      | 47                |
+| → `withdraw/double_spend`                       | 58                |
+| **Critical: chain ACCEPTED a tx tagged expectReject** | **0** ✅    |
+| **Critical: prover satisfied an imbalanced witness?** | **0** ✅    |
+| Unexpected errors                               | 3 (0.03%) — TreeState snapshot race |
+| Host process exited cleanly                     | Yes ✅            |
+
+The headline finding: **the new `assert_balanced` rejected 199 / 199
+balance-violating witnesses across 3 epoch boundaries**. Pass A and Pass
+B both fire consistently at scale; no proof was ever generated for an
+imbalanced witness; the constraint-rejection latency is dominated by
+witness-execution overhead (~3 ms median), not proof generation
+(~250 ms median for honest transfers).
+
+## Rollover cadence
+
+| # | Sealed at      | Final root (last 8) | Interval from prev |
+|---|----------------|---------------------|---------------------|
+| 1 | 06:45:44.653Z  | `…70285176`         | n/a (epoch 0 fill)  |
+| 2 | 06:50:05.697Z  | `…38882544`         | 4m 21s              |
+| 3 | 06:54:37.473Z  | `…87422262`         | 4m 31s              |
+
+Intervals tight at ~4.3 min (Run 4's were ~26 min because the CI runner
+was much slower; the leaf-arrival cadence is consistent — same
+~2048 leaves per ~4 min). Throughput showed no measurable disturbance
+at any rollover boundary.
+
+## Per-epoch composition
+
+| Epoch | Deposits + Transfers (= leaves) | Status              |
+|-------|--------------------------------|---------------------|
+| 0     | 2,048                          | sealed              |
+| 1     | 2,048                          | sealed              |
+| 2     | 2,048                          | sealed              |
+| 3     | 1,430                          | partial — STOP_AT hit |
+
+Total leaves on chain: **7,574** (= 2859 deposits + 4715 transfers,
+withdraws don't add leaves). Distribution exactly matches the
+`MAX_LEAF_INDEX = 2048` rollover trigger.
+
+## Per-worker contribution
+
+| Worker | Real ops |
+|--------|----------|
+| 0      | 1,032    |
+| 1      |   961    |
+| 2      | 1,001    |
+| 3      | 1,007    |
+| 4      |   977    |
+| 5      | 1,023    |
+| 6      | 1,018    |
+| 7      |   973    |
+| 8      | 1,003    |
+| 9      | 1,013    |
+
+Within ±4% of mean (~1,001). No worker-0 lockout, balanced production.
+
+## Per-relayer load (5 relayers, transfer + withdraw + injected revert jobs)
+
+| Relayer | Jobs handled |
+|---------|--------------|
+| 0       | 1,485        |
+| 1       | 1,486        |
+| 2       | 1,485        |
+| 3       | 1,485        |
+| 4       | 1,485        |
+
+Within 1 job of perfectly balanced — the single-FIFO + one-resolver-per-waiter
+scheduler holds under sustained 10K-op load.
+
+## Latency by operation
+
+| Operation  | Successes | p50    | p99      | min      | max      |
+|------------|-----------|--------|----------|----------|----------|
+| Deposit    |     2,859 | 172 ms |   436 ms | 106 ms   |   791 ms |
+| Transfer   |     4,715 | 920 ms | 1,329 ms | 371 ms   | 2,177 ms |
+| Withdraw   |     2,434 | 899 ms | 1,331 ms | 287 ms   | 1,721 ms |
+| Balance-violation rejection | 199 |  3 ms |    11 ms |   2 ms   |    12 ms |
+
+Notable: the balance-rejection latency (3 ms p50, 12 ms max) is two
+orders of magnitude faster than honest proof generation. That gap is
+the proof that rejection happens at constraint solving — `noir.execute`
+throws before the bb backend is even called.
+
+## Event table — Run 7 additions
+
+| #  | Probe                                                                                  | Expected behaviour                                                                                          | Actually observed                                                                                                                            | Anomaly? | Resolution / Implication                                                              |
+|----|----------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|----------|---------------------------------------------------------------------------------------|
+| 41 | Pass A trap at scale (89 attempts across 3 epochs)                                      | Every attempt throws "Cannot satisfy constraint"                                                            | 89 / 89 ✅                                                                                                                                    | None ✅ | The `for i in 0..NOTE_COUNT` outer iteration in `assert_balanced` fires consistently under load, not just on a single witness. |
+| 42 | Pass B trap at scale (110 attempts across 3 epochs)                                     | Every attempt throws "Cannot satisfy constraint"                                                            | 110 / 110 ✅                                                                                                                                  | None ✅ | The mint-hole closure is reliable under load. The two-pass design holds.              |
+| 43 | Three full epoch rollovers under new circuits                                           | Same behaviour as Run 4 (rollover at `nextIndex == MAX_LEAF_INDEX`, next leaf at `(epoch+1, 0)`)             | All three rollovers fired cleanly. Final roots entered `knownRoots`. Per-epoch leaf counts hit exactly 2,048 / 2,048 / 2,048 then partial 1,430. | None ✅ | Confirms the balance-check refactor did not regress the rollover path.                |
+| 44 | Throughput continuity across rollover                                                   | No backpressure, no pause                                                                                   | 10.21 ops/sec sustained across the entire 16-minute run, including all three rollover boundaries. The tx that triggered each rollover landed its leaf at the new epoch's index 0 in the same call. | None ✅ | Re-confirms Run 4's finding under the new circuits.                                   |
+| 45 | Mixed workload across multiple epochs                                                   | Cross-epoch spends, frozen-epoch path reads, etc.                                                            | 4,715 transfers + 2,434 withdraws across 3 sealed epochs + 1 active epoch. Notes deposited in earlier epochs were routinely spent in later ones (FIFO `NoteStore`). No "frozen epoch but no final root" errors. | None ✅ | The epoch-aware path resolution (`TreeState.getPath`) plays well with the new circuits' merkle membership check (unchanged from Run 4). |
+| 46 | bb.js teardown under longer run                                                         | Process exits within ~1 s of `harness done`                                                                  | Process exited cleanly. Final log line `harness done`; node process gone immediately after. No forced `setTimeout(process.exit)`.            | None ✅ | The `destroyAllBb()` (via the centralized `bb-api.ts` `destroyBbApi()` singleton) is wired correctly. |
+| 47 | Invariant: emitted `LeafInserted.leafValue` matches the noteHash the proof was built against | 100% match across deposits + transfers                                                                       | 7,574 / 7,574 ✅                                                                                                                              | None ✅ | —                                                                                     |
+
+## Run-7 caveats
+
+1. **TreeState snapshot race still present.** 3 / 7,149 spend operations
+   failed the path/root snapshot retry. Carried forward from Run 3-6 —
+   not a circuit issue. Real fix is a read-lock on
+   `PoseidonMerkleTree.hashMap`.
+2. **Balance probe doesn't cover withdraw / transfer_external.** Probe
+   only attacks the `transfer` witness. The symmetric probe against
+   `withdraw` (mutate `exit_amounts[i]` to exceed input amount) is the
+   one outstanding negative-test gap. The `transfer_external` circuit's
+   `assert_balanced` is byte-identical to `transfer`'s — so this run
+   gives us strong indirect confidence in `transfer_external` too —
+   but a direct probe would close the loop.
+3. **Mix slightly deposit-heavy vs target.** Final 29% / 47% / 24% vs
+   target 25% / 50% / 25%. Warm-up bias (workers can only deposit until
+   they have spendable notes), unchanged from Run 4.
+
+## How to reproduce Run 7
+
+```bash
+# 1-5. Same as Run 5/6.
+
+# 6. Long run (~16 min for 10K ops at default settings)
+RPC_URL=http://127.0.0.1:18545 DEPLOYMENT_PATH=/tmp/stress-deployment.json \
+WORKER_COUNT=10 RELAYER_COUNT=5 STOP_AT=10000 \
+P_TRANSFER=0.5 P_WITHDRAW=0.25 \
+P_INVALID_PROOF=0.02 P_DOUBLE_SPEND=0.02 \
+P_BALANCE_VIOLATE=0.04 \
+pnpm run harness:run
+
+# 7. Watch rollovers + balance probes live
+tail -f /tmp/stress-run-7.log | jq -c \
+  'select(.msg == "rollover sealed" or
+          (.msg | test("balance_")) or
+          (.msg | contains("ACCEPTED")) or
+          .level == "error")'
+```
