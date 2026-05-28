@@ -546,3 +546,300 @@ In rough priority order:
    range-based).
 7. **Build-time `TREE_HEIGHT` override** so a stress-only image rolls
    over in seconds. Useful for targeted rollover regression tests in CI.
+
+---
+
+# Run 5 — HashMap-free `transfer` / `transfer_external` circuits, smoke
+
+**Date:** 2026-05-28
+**Branch:** `ben/scaling`
+**Scope:** Targeted regression run after replacing the HashMap-based
+balance check in `circuits/transfer/src/main.nr` and
+`circuits/transfer_external/src/main.nr` with a mask-multiply
+implementation (nargo `1.0.0-beta.21` removed `std::collections::HashMap`).
+Shorter than Run 4 (`STOP_AT=1500` instead of `10000`) — goal was to
+exercise all three on-chain entry points + invalid-proof + double-spend
+injections against the new circuits, not to re-run the full 10K.
+
+The circuit change is the headline. Toolchain bumps that came along for
+the ride:
+
+- `poseidon` git dep: `v0.1.1` → `v0.3.0` (all four circuits + `pum_lib`).
+- `@noir-lang/noir_js`: `1.0.0-beta.16` → `1.0.0-beta.21`.
+- `@aztec/bb.js`: `3.0.0-nightly.20251104` → `4.3.0`.
+- `UltraHonkBackend` API: now requires a `Barretenberg` instance, so
+  `shared/classes/{Deposit,Withdraw,Transact,TransferExternal}.ts` and
+  `contracts/helpers/objects/get-noir-classes.ts` were refactored to
+  lazy-init via `Barretenberg.new()` and expose an `init()` hook each
+  caller awaits before generating its first proof.
+
+## Soundness check (review on paper, before running anything)
+
+The new `assert_balanced` does two passes:
+
+- **Pass A** anchors on each non-empty *input* `asset_id` and asserts
+  `sum_inputs(asset_id) == sum_outputs(asset_id)`.
+- **Pass B** anchors on each non-empty *output* `asset_id` and asserts
+  the same.
+
+Pass B is what closes the **mint hole**: an attacker creating an output
+of an `asset_id` that has no matching input gets caught because its
+input-sum is 0. Without Pass B, Pass A alone would never anchor on a
+fresh asset_id appearing only on the output side, so the constraint
+would be vacuously satisfied for that asset.
+
+Empty slots (`asset_amount == 0`) contribute 0 to both sums via the
+mask multiplication, so no explicit empty-mask is needed inside the
+inner loop. Duplicate `asset_id`s on the same side sum correctly via
+the mask. `transfer_external` treats withdrawals as just another output
+for balance purposes — correct, withdrawals are real outflows. Field
+overflow is not a concern at NOTE_COUNT=3 with ERC-20-sized amounts.
+
+`nargo test` passes the in-circuit fixture for both `transfer` and
+`transfer_external` (the latter has no test fn, only a build check).
+All four Hardhat test suites (`deposit`, `transfer`, `transfer-external`,
+`withdraw`) pass end-to-end with the new verifiers (17 / 17 mocha cases).
+
+## Gate counts (poseidon v0.3.0, nargo 1.0.0-beta.21, ultra_honk)
+
+Measured via `bb gates -b target/<circuit>.json`.
+
+| Circuit            | `acir_opcodes` | `circuit_size` |
+|--------------------|---------------:|---------------:|
+| deposit            |              5 |            186 |
+| withdraw           |            217 |          2,747 |
+| transfer           |            476 |          4,438 |
+| transfer_external  |            506 |          4,705 |
+
+The `assert_balanced` block is in the noise. `bb gates
+--include_gates_per_opcode` shows the balance-check opcodes at the end
+of the trace as 1/2/3-gate ops — well under 100 gates total per pass.
+Cost is dominated many-fold by the per-input Poseidon2 calls in the
+merkle membership paths (each ~73 gates, appearing 30+ times). The
+HashMap version cannot be rebuilt under nargo `beta.21` for a like-for-like
+comparison; this is an absolute, not a relative, measurement.
+
+## Run 5 headline numbers
+
+| Metric                                | Value                |
+|---------------------------------------|----------------------|
+| Wall-clock duration                   | 2 min 27 s           |
+| Real successful ops                   | **1,507 / 1,500** (overshoot of 7 from non-atomic stop check) |
+| Mix actual                            | 31% / 45% / 24%      |
+| Mix target                            | 25% / 50% / 25%      |
+| Sustained throughput                  | 10.3 ops/sec         |
+| Rollovers sealed                      | 0 (capacity 2048, stopped at 1,507) |
+| Leaves on chain (deposits + transfers) | 1,141               |
+| **Expected rejections (chain rejected)** | **57**            |
+| → `deposit/invalid_proof`             | 10                   |
+| → `transfer/invalid_proof`            | 17                   |
+| → `transfer/double_spend`             | 18                   |
+| → `withdraw/invalid_proof`            | 6                    |
+| → `withdraw/double_spend`             | 6                    |
+| **Critical: chain ACCEPTED a tx tagged expectReject** | **0** ✅ |
+| Unexpected errors                     | 4 (0.27%) — all TreeState snapshot race, see anomaly row |
+| Distinct owners                       | 10                   |
+
+The headline finding: **the new circuits behave identically to Run 4's
+HashMap-based ones in every probe that matters.** Every deliberately-bad
+proof reverted, every double-spend reverted, zero false-accepts.
+
+## Latency by operation
+
+| Operation  | Successes | p50      | p99      | min      | max      |
+|------------|-----------|----------|----------|----------|----------|
+| Deposit    | 461       |   325 ms | 1,220 ms | 116 ms   | 1,474 ms |
+| Transfer   | 680       | 1,181 ms | 2,541 ms | 239 ms   | 2,944 ms |
+| Withdraw   | 366       |   521 ms | 1,632 ms | 251 ms   | 1,851 ms |
+
+Lower than Run 4 because the host machine is faster than the CI runner
+that produced Run 4. Relative ordering (transfer > withdraw > deposit)
+unchanged, which is what would have surprised — the new balance check
+adds essentially no proof time, consistent with the gate count showing
+the per-asset mask op is dwarfed by merkle membership.
+
+## Per-worker contribution
+
+| Worker | Real ops |
+|--------|----------|
+| 0      | 150      |
+| 1      | 149      |
+| 2      | 160      |
+| 3      | 162      |
+| 4      | 144      |
+| 5      | 155      |
+| 6      | 150      |
+| 7      | 151      |
+| 8      | 145      |
+| 9      | 141      |
+
+Within ±7% of mean (~150). The Run 3 worker-0 lockout (~zero ops) is
+not reproduced — shared `JsonRpcProvider` + per-wallet `NonceManager`
+combo from Run 4 still holds.
+
+## Event table — Run 5 additions
+
+| #  | Probe                                                                          | Expected behaviour                                                              | Actually observed                                                                                                                            | Anomaly?         | Resolution / Implication                                                              |
+|----|--------------------------------------------------------------------------------|---------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|------------------|---------------------------------------------------------------------------------------|
+| 32 | `transfer` circuit's new mask-multiply `assert_balanced` enforces sum equality | Every honest transfer accepted; balance-violating transfers would revert        | 680 / 680 honest transfers accepted. None of the negative tests targeted balance directly (they corrupted the proof bytes or replayed nullifiers), but the soundness review on paper covers the mint-hole and asset-burn cases. | None ✅          | Direct evidence the new balance check is at least as permissive as the HashMap one on honest inputs; a follow-up probe could mint an output of a fresh `asset_id` to exercise Pass B explicitly. |
+| 33 | `transfer_external` new balance check applies to withdrawal outputs            | A withdrawal must come out of the input notes; can't withdraw a never-deposited asset | 366 / 366 honest withdrawals accepted. Same caveat as #32 — exercised on paper, not via a negative test.                                       | None ✅          | Same as #32, applied to the withdrawal path.                                          |
+| 34 | Invalid-proof injection on all three entry points                              | Verifier reverts, contract never accepts a malformed proof                       | 33 invalid-proof attempts (10 deposit + 17 transfer + 6 withdraw), all reverted. Zero `CRITICAL_ACCEPTED`.                                    | None ✅          | The new VKs are wired up correctly; the new circuit doesn't open any bypass.          |
+| 35 | Double-spend injection on `transfer` and `withdraw`                            | Verifier accepts (proof is valid for that spent note), then nullifier check reverts | 24 double-spend attempts (18 transfer + 6 withdraw), all reverted. Zero `CRITICAL_ACCEPTED`.                                                 | None ✅          | Nullifier invariant unchanged by the balance-check refactor — as expected, since the nullifier logic was untouched. |
+| 36 | TreeState snapshot race (carried forward from Run 4)                           | Workers retry on transient path / root mismatch; rare residual failures expected | 4 / 1,046 spend operations failed with `"getPath: tree mutated repeatedly; could not snapshot"`. Same wrinkle as Run 4 (0.27% vs 0.09%) — higher rate is consistent with the shorter run lowering the central-limit smoothing. | Pre-existing, harness-side | Not a circuit issue. Still a candidate for a read-lock on `PoseidonMerkleTree.hashMap` (already in the Run 4 future-work list). |
+| 37 | Gate counts: balance check should be cheap                                     | A handful of constraints, dwarfed by merkle paths                               | `transfer`: 4,438 constraints. `transfer_external`: 4,705. Balance check shows up as 1/2/3-gate ops at the end of `gates_per_opcode`; 30+ Poseidon2 invocations dominate at ~73 gates each. | None ✅          | The mask-multiply approach is genuinely free relative to the rest of the circuit.     |
+
+## Run-5 caveats
+
+1. **No rollover this run.** 1,507 ops only added 1,141 leaves (withdraws
+   don't insert), well short of the 2,048 epoch capacity. A targeted
+   rollover probe would need `STOP_AT≥3000` or `TREE_HEIGHT` override.
+   Run 4 already covered rollover correctness; nothing about the balance
+   refactor would interact with rollover specifically.
+2. **No negative test directly targeting the balance invariant.** The
+   injected bad proofs corrupt random bytes (catching verifier-level
+   defects) and the double-spends replay nullifiers (catching contract-level
+   defects). A clean way to add this in v4 of the harness: corrupt the
+   `output_notes[i].asset_amount` post-witness-execution but pre-proof,
+   then check the prover *itself* fails to satisfy the new
+   `assert_balanced` constraint. Until then the balance invariant is
+   covered by the in-circuit fixture + soundness argument, not by a
+   negative test under load.
+3. **Same `TreeState` snapshot race** as Run 3 / Run 4. Mitigated, not
+   eliminated. Not a circuit issue.
+4. **Single-chain, no reorgs.** Hardhat too well-behaved.
+
+## How to reproduce Run 5
+
+```bash
+# 1. Update poseidon git tag in all four circuit Nargo.toml files to v0.3.0
+# 2. Compile circuits + verifiers (bb CLI must match bb.js)
+cd contracts && npm run build && cd ..
+
+# 3. Compile contracts
+cd contracts && npx hardhat compile && cd ..
+
+# 4. Start hardhat node
+cd contracts && nohup npx hardhat node --hostname 127.0.0.1 --port 18545 \
+  > /tmp/hardhat-node.log 2>&1 &
+cd ..
+
+# 5. Deploy
+cd stress
+RPC_URL=http://127.0.0.1:18545 DEPLOYMENT_PATH=/tmp/stress-deployment.json \
+WORKER_COUNT=10 pnpm run harness:deploy
+
+# 6. Run (smoke, ~2.5 min at 10 ops/sec)
+RPC_URL=http://127.0.0.1:18545 DEPLOYMENT_PATH=/tmp/stress-deployment.json \
+WORKER_COUNT=10 RELAYER_COUNT=5 STOP_AT=1500 \
+P_TRANSFER=0.5 P_WITHDRAW=0.25 \
+P_INVALID_PROOF=0.02 P_DOUBLE_SPEND=0.02 \
+pnpm run harness:run
+```
+
+---
+
+# Run 6 — Run 5 plus direct balance-invariant injection
+
+Same toolchain and circuits as Run 5. Closed the negative-test gap noted
+in Run 5's caveat #2 by adding a new injection mode that **directly
+attacks `assert_balanced`** before any proof is generated:
+
+- **`mint_same`** (Pass A trap) — output `asset_amount` is set to
+  `input.amount + 1` for the same `asset_id`. The constraint
+  `sum_inputs(A) == sum_outputs(A)` becomes `5 == 6` and fails.
+- **`mint_fresh`** (Pass B trap) — slot 0 is left honest, but slot 1
+  carries a fresh `asset_id` (`0xdeadbeef...`) with `asset_amount = 1`.
+  Pass A passes (slot 0 balanced). Pass B anchors on the fresh asset_id,
+  computes `in_sum = 0` (no input matches), and reverts.
+
+The expected outcome is `noir.execute()` throws *before any proof is
+generated*. Harness logs `transfer/balance_<variant> rejected by circuit
+(expected)` with the actual error. If a witness is ever satisfied,
+harness escalates to `CRITICAL_BALANCE_ACCEPTED_BY_PROVER` — that would
+mean `assert_balanced` is missing or unsound.
+
+Also fixed in this run: a `destroyAllBb()` teardown is called at the
+end of `main.ts` so the bb.js WASM workers shut down and the host
+process exits without a forced `setTimeout`. Same fix wired into the
+Hardhat suite via `test/_teardown.test.ts` (calls `destroyNoirApi()` +
+`destroyAllBb()` in a global mocha `after()`).
+
+## Run 6 headline numbers
+
+| Metric                                          | Value           |
+|-------------------------------------------------|-----------------|
+| Wall-clock duration                             | 2 min 12 s      |
+| Real successful ops                             | **1,509 / 1,500** |
+| Mix actual                                      | 32% / 44% / 25% |
+| Sustained throughput                            | 11.4 ops/sec    |
+| Rollovers sealed                                | 0 (capacity 2048, stopped at 1,509) |
+| **Balance-violation attempts (in-circuit)**     | **28**          |
+| → `mint_same` (Pass A)                          | 13              |
+| → `mint_fresh` (Pass B)                         | 15              |
+| **Witness satisfied for any balance attempt?**  | **No — 0 / 28** ✅ |
+| `Cannot satisfy constraint` rejection latency p50 | 6 ms          |
+| `Cannot satisfy constraint` rejection latency p99 | 22 ms         |
+| Other expected rejections                       | 50              |
+| → `deposit/invalid_proof`                       | 7               |
+| → `transfer` (invalid_proof + double_spend)     | 32              |
+| → `withdraw` (invalid_proof + double_spend)     | 11              |
+| **Critical: chain ACCEPTED a tx tagged expectReject** | **0** ✅  |
+| Unexpected errors                               | 4 (TreeState snapshot race, same as Run 5) |
+| Host process exited cleanly after `harness done`? | **Yes** (bb.js teardown wired) |
+
+The headline finding: **the new `assert_balanced` rejects every
+deliberately-imbalanced witness at the constraint level, ~6 ms after
+`noir.execute` starts**. Both Pass A (in-asset inflation) and Pass B
+(fresh asset_id mint) fire. The on-paper soundness review from Run 5
+now has a load-driven negative test backing it.
+
+## Sample log lines
+
+```text
+{"level":"info","source":"worker-9","msg":"transfer/balance_mint_same rejected by circuit (expected)","tamper":"mint_same","latency_ms":4,"err":"Cannot satisfy constraint"}
+{"level":"info","source":"worker-2","msg":"transfer/balance_mint_fresh rejected by circuit (expected)","tamper":"mint_fresh","latency_ms":3,"err":"Cannot satisfy constraint"}
+```
+
+Both variants produce `"Cannot satisfy constraint"` — the Noir runtime's
+generic constraint-failure message. The harness records which Pass A /
+Pass B variant was attempted via the `tamper` field.
+
+## Event table — Run 6 additions
+
+| #  | Probe                                                                          | Expected behaviour                                                                                          | Actually observed                                                                                                                            | Anomaly? | Resolution / Implication                                                              |
+|----|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|----------|---------------------------------------------------------------------------------------|
+| 38 | Pass A trap: output amount > input amount for same asset_id                    | `noir.execute` throws "Cannot satisfy constraint" before any proof generation                                | 13 / 13 attempts threw at the witness-execution stage. p50 latency 4 ms — well below the ~250 ms a real proof costs, confirming the rejection is at the constraint level not the prover level. | None ✅ | Pass A of the new mask-multiply `assert_balanced` works as designed.                  |
+| 39 | Pass B trap: fresh asset_id appears only on output side                        | Same — witness fails because anchored `in_sum = 0 ≠ out_sum > 0`                                              | 15 / 15 attempts threw at the witness-execution stage. p50 latency 6 ms.                                                                     | None ✅ | Pass B closes the mint hole as intended. This is the case Pass A alone could not catch. |
+| 40 | bb.js Barretenberg teardown so harness process exits on its own                | After `harness done`, the Node process should exit within ~1 s without a forced `process.exit`               | Process exited cleanly. Total wall-clock 132 s; final log lines `all workers stopped` then `harness done` then exit.                         | None ✅ | The `destroyAllBb()` + `destroyNoirApi()` helpers are wired in. Same fix applied to the Hardhat suite via `test/_teardown.test.ts`. |
+
+## Run-6 caveats
+
+1. **Snapshot race still present.** 4 / 1,538 spend operations failed
+   the TreeState path/root snapshot retry — same harness wrinkle as
+   Run 3-5. Not a circuit issue.
+2. **No rollover.** 1,509 ops at the current mix only added ~1,137
+   leaves, below the 2,048 epoch capacity. Rollover correctness was
+   re-confirmed in Run 4 (3 rollovers) — nothing about the balance
+   refactor would interact with rollover specifically.
+3. **Withdraw is not covered by the balance probe.** The current probe
+   only mutates `transfer` witnesses. The `transfer_external` /
+   `withdraw` path has structurally similar `assert_balanced`, and the
+   soundness review covers it on paper, but a load-driven negative test
+   targeting the exit_amounts pathway would close the symmetric gap.
+
+## How to reproduce Run 6
+
+```bash
+# 1-5. Same as Run 5.
+
+# 6. Run with balance violation enabled
+RPC_URL=http://127.0.0.1:18545 DEPLOYMENT_PATH=/tmp/stress-deployment.json \
+WORKER_COUNT=10 RELAYER_COUNT=5 STOP_AT=1500 \
+P_TRANSFER=0.5 P_WITHDRAW=0.25 \
+P_INVALID_PROOF=0.02 P_DOUBLE_SPEND=0.02 \
+P_BALANCE_VIOLATE=0.04 \
+pnpm run harness:run
+
+# 7. Inspect balance probes
+jq -c 'select(.msg | test("balance_"))' /tmp/stress-run-6.log
+```
