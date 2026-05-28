@@ -43,7 +43,7 @@ export const getTestingAPI = async () => {
     withdrawBackend,
     transferExternalNoir,
     transferExternalBackend,
-  } = getNoirClasses();
+  } = await getNoirClasses();
 
   const tree = await getMerkleTree();
 

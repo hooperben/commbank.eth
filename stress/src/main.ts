@@ -25,6 +25,7 @@ import { ownerCount, ownerPool } from "./owners.js";
 import { RelayerPool } from "./relayer-pool.js";
 import { SpentNoteStore } from "./spent-store.js";
 import { TreeState } from "./tree-state.js";
+import { destroyAllBb } from "../../shared/classes/bb-teardown.js";
 import { makeInvariants, runWorker } from "./worker.js";
 
 const DEPLOYMENT_PATH = process.env.DEPLOYMENT_PATH || "/shared/deployment.json";
@@ -32,6 +33,7 @@ const P_TRANSFER = Number(process.env.P_TRANSFER ?? 0.5);
 const P_WITHDRAW = Number(process.env.P_WITHDRAW ?? 0.25);
 const P_INVALID_PROOF = Number(process.env.P_INVALID_PROOF ?? 0.02);
 const P_DOUBLE_SPEND = Number(process.env.P_DOUBLE_SPEND ?? 0.02);
+const P_BALANCE_VIOLATE = Number(process.env.P_BALANCE_VIOLATE ?? 0.04);
 const STOP_AT = Number(process.env.STOP_AT ?? 10_000);
 
 type Manifest = {
@@ -83,6 +85,7 @@ const main = async () => {
     pWithdraw: P_WITHDRAW,
     pInvalidProof: P_INVALID_PROOF,
     pDoubleSpend: P_DOUBLE_SPEND,
+    pBalanceViolate: P_BALANCE_VIOLATE,
   });
 
   const tree = new TreeState(provider, cb);
@@ -120,6 +123,7 @@ const main = async () => {
         pWithdraw: P_WITHDRAW,
         pInvalidProof: P_INVALID_PROOF,
         pDoubleSpend: P_DOUBLE_SPEND,
+        pBalanceViolate: P_BALANCE_VIOLATE,
         counter,
         stopAt: STOP_AT,
         depositSeq: { next: 0 },
@@ -127,11 +131,12 @@ const main = async () => {
     );
   }
 
-  const shutdown = (signal: string) => {
+  const shutdown = async (signal: string) => {
     info("main", "shutdown signal", { signal, progress: counter.value() });
     tree.stop();
     relayers.stop();
-    setTimeout(() => process.exit(0), 2000);
+    await destroyAllBb();
+    process.exit(0);
   };
   process.on("SIGINT", () => shutdown("SIGINT"));
   process.on("SIGTERM", () => shutdown("SIGTERM"));
@@ -142,7 +147,11 @@ const main = async () => {
   info("main", "all workers stopped", { progress: counter.value() });
   tree.stop();
   relayers.stop();
-  setTimeout(() => process.exit(0), 1000);
+  // Tear down the bb.js Barretenberg WASM workers so the Node process can
+  // exit on its own without a forced setTimeout. The previous version
+  // force-exited because the bb.js worker threads kept the event loop alive.
+  await destroyAllBb();
+  info("main", "harness done", { progress: counter.value() });
 };
 
 main().catch((e) => {

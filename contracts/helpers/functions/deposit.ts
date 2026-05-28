@@ -8,6 +8,7 @@ export const getDepositDetails = async (depositNote: DepositNote) => {
   const deposit = new Deposit();
 
   await deposit.depositNoir.init();
+  await deposit.init();
 
   const noteHash = poseidon2Hash([
     BigInt(assetId),

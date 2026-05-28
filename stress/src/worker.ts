@@ -50,6 +50,12 @@ export type WorkerOpts = {
   // Injection rates
   pInvalidProof: number;
   pDoubleSpend: number;
+  // Probability of attempting an in-circuit balance violation on a
+  // transfer iteration. Half of these mutate the matching-asset output to
+  // be more than the input (Pass A trap); half mint a fresh asset_id on
+  // the second output slot (Pass B trap). Expected outcome: noir.execute
+  // throws before any proof is generated.
+  pBalanceViolate: number;
   // Global stop signal
   counter: Counter;
   stopAt: number;
@@ -68,7 +74,12 @@ export const makeInvariants = (): Invariants => ({
 });
 
 type Action = "deposit" | "transfer" | "withdraw";
-type TestMode = "normal" | "invalid_proof" | "double_spend";
+type TestMode =
+  | "normal"
+  | "invalid_proof"
+  | "double_spend"
+  | "balance_mint_same"
+  | "balance_mint_fresh";
 
 const pickAction = (
   notesAvailable: number,
@@ -87,6 +98,7 @@ const pickTestMode = (
   spentNotesAvailable: number,
   pInvalidProof: number,
   pDoubleSpend: number,
+  pBalanceViolate: number,
 ): TestMode => {
   // Roll for double-spend first (only applicable to transfer/withdraw, and
   // only if we have a previously-spent note to replay).
@@ -96,6 +108,11 @@ const pickTestMode = (
     Math.random() < pDoubleSpend
   ) {
     return "double_spend";
+  }
+  // Balance violation only applies to transfers (we mutate output amounts;
+  // withdraw has a different surface).
+  if (action === "transfer" && Math.random() < pBalanceViolate) {
+    return Math.random() < 0.5 ? "balance_mint_same" : "balance_mint_fresh";
   }
   if (Math.random() < pInvalidProof) return "invalid_proof";
   return "normal";
@@ -161,6 +178,7 @@ export const runWorker = async (opts: WorkerOpts) => {
       opts.spentNotes.size(),
       opts.pInvalidProof,
       opts.pDoubleSpend,
+      opts.pBalanceViolate,
     );
 
     try {
@@ -298,6 +316,40 @@ const doTransfer = async (
 
   const newSecret = randomFieldSecret();
   const startedAt = Date.now();
+
+  // Balance-violation probes never produce a valid proof — `noir.execute`
+  // throws before we even reach `generateProof`. We catch that throw and
+  // log it as the expected outcome. If it ever succeeds, escalate to
+  // CRITICAL because that means the new in-circuit balance check is
+  // missing or unsound.
+  if (
+    testMode === "balance_mint_same" ||
+    testMode === "balance_mint_fresh"
+  ) {
+    const tamper =
+      testMode === "balance_mint_same" ? "mint_same" : "mint_fresh";
+    try {
+      await generateTransferProof(note, newSecret, path, tamper);
+      // Reachable only if assert_balanced did not fire — that's a bug.
+      error(source, "CRITICAL_BALANCE_ACCEPTED_BY_PROVER", {
+        tamper,
+        note_amount: note.amount.toString(),
+        asset_id: note.assetId.toString(),
+      });
+    } catch (e: any) {
+      info(
+        source,
+        `transfer/balance_${tamper} rejected by circuit (expected)`,
+        {
+          tamper,
+          latency_ms: Date.now() - startedAt,
+          err: (e?.message ?? String(e)).slice(0, 200),
+        },
+      );
+    }
+    return;
+  }
+
   const result = await generateTransferProof(note, newSecret, path);
   const proofMs = Date.now() - startedAt;
 

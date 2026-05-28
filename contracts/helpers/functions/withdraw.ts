@@ -11,7 +11,7 @@ export const getWithdrawDetails = async (
   exitAddresses: string[],
   exitAddressHashes: string[],
 ) => {
-  const { withdrawNoir, withdrawBackend } = getNoirClasses();
+  const { withdrawNoir, withdrawBackend } = await getNoirClasses();
 
   const root = await tree.getRoot();
 

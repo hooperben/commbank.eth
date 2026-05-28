@@ -46,6 +46,7 @@ export const getDeposit = async (): Promise<Deposit> => {
     depositReady = (async () => {
       const d = new Deposit();
       await d.depositNoir.init();
+      await d.init();
       info("proof-pool", "deposit noir initialised");
       depositSingleton = d;
       return d;

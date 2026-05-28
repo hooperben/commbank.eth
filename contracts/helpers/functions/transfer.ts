@@ -13,7 +13,7 @@ export const getTransferDetails = async (
   outputNotes: OutputNote[],
   outputHashes: bigint[],
 ) => {
-  const { transferNoir, transferBackend } = getNoirClasses();
+  const { transferNoir, transferBackend } = await getNoirClasses();
 
   const root = await tree.getRoot();
 
@@ -115,7 +115,7 @@ export const getTransferExternalDetails = async (
   exitAddresses: (bigint | string)[],
   exitAddressHashes: (bigint | string)[],
 ) => {
-  const { transferExternalNoir, transferExternalBackend } = getNoirClasses();
+  const { transferExternalNoir, transferExternalBackend } = await getNoirClasses();
 
   const root = await tree.getRoot();
 
