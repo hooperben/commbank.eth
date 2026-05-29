@@ -4,7 +4,8 @@ contracts:
   - name: commbankdoteth
     handler: src/EventHandlers.ts
     events:
-      - event: LeafInserted(uint256 indexed leafIndex, bytes32 indexed leafValue)
+      - event: LeafInserted(uint256 indexed epoch, uint256 indexed leafIndex, bytes32 leafValue)
+      - event: EpochRolledOver(uint256 indexed oldEpoch, uint256 finalRoot)
       - event: NotePayload(bytes encryptedNote)
       - event: NullifierUsed(bytes32 indexed nullifier)
       - event: RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)

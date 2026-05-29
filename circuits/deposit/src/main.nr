@@ -7,6 +7,13 @@ fn main(
     owner: Field,
     secret: Field,
 ) {
+    // Bound asset_amount at 128 bits at the boundary where notes enter
+    // the tree. Establishing the invariant here means every leaf the
+    // contract ever holds has a provably bounded amount, which the
+    // transfer / transfer_external circuits rely on to keep their
+    // balance-conservation sums below the BN254 modulus.
+    asset_amount.assert_max_bit_size::<128>();
+
     let reconstructed_leaf = pum_lib::calculate_leaf(asset_id, asset_amount, owner, secret);
 
     assert(reconstructed_leaf == hash);

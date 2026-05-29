@@ -1,7 +1,6 @@
 use poseidon::poseidon2;
-use pum_lib::{self, compute_merkle_root, compute_nullifier, reconstruct_leaf};
+use pum_lib::{self, compute_merkle_root, compute_nullifier, HEIGHT, reconstruct_leaf};
 
-global HEIGHT: u32 = 12;
 global NOTE_COUNT: u32 = 3;
 
 struct InputNote {
@@ -24,6 +23,14 @@ fn main(
     exit_addresses: pub [Field; NOTE_COUNT],
     exit_address_hashes: pub [Field; NOTE_COUNT],
 ) {
+    // Defense-in-depth bound on every input asset_amount. Withdraw does
+    // not sum across notes today, but matching the invariant established
+    // at deposit keeps every circuit honest about the value range it
+    // operates on.
+    for i in 0..NOTE_COUNT {
+        input_notes[i].asset_amount.assert_max_bit_size::<128>();
+    }
+
     for i in 0..NOTE_COUNT - 1 {
         if input_notes[i].asset_amount != 0 {
             let owner_pub_key = poseidon2::Poseidon2::hash([input_notes[i].owner_secret], 1);

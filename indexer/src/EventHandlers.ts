@@ -3,6 +3,7 @@
  */
 import {
   Commbankdoteth,
+  Commbankdoteth_EpochRolledOver,
   Commbankdoteth_LeafInserted,
   Commbankdoteth_NotePayload,
   Commbankdoteth_NullifierUsed,
@@ -14,11 +15,22 @@ import {
 Commbankdoteth.LeafInserted.handler(async ({ event, context }) => {
   const entity: Commbankdoteth_LeafInserted = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+    epoch: event.params.epoch,
     leafIndex: event.params.leafIndex,
     leafValue: event.params.leafValue,
   };
 
   context.Commbankdoteth_LeafInserted.set(entity);
+});
+
+Commbankdoteth.EpochRolledOver.handler(async ({ event, context }) => {
+  const entity: Commbankdoteth_EpochRolledOver = {
+    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+    oldEpoch: event.params.oldEpoch,
+    finalRoot: event.params.finalRoot.toString(),
+  };
+
+  context.Commbankdoteth_EpochRolledOver.set(entity);
 });
 
 Commbankdoteth.NotePayload.handler(async ({ event, context }) => {

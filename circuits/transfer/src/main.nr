@@ -1,8 +1,29 @@
-use poseidon::poseidon2::{self, Poseidon2Hasher};
-use pum_lib::{self, compute_merkle_root, compute_nullifier, reconstruct_leaf};
-use std::{collections::map::HashMap, hash::BuildHasherDefault};
+use poseidon::poseidon2;
+use pum_lib::{compute_merkle_root, compute_nullifier, HEIGHT, reconstruct_leaf};
 
-global HEIGHT: u32 = 12;
+// Internal-transfer circuit. Hash helpers (leaf reconstruction,
+// merkle root, nullifier) and the tree height live in `pum_lib` so
+// every circuit -- deposit, transfer, transfer_external, withdraw --
+// stays in lockstep on tree layout and nullifier domain separator.
+// The balance-conservation logic stays local to this file: only
+// transfer and transfer_external need it, and it pairs tightly with
+// the per-note verification in main().
+//
+// Protocol shape: each transfer spends up to NOTE_COUNT existing
+// notes (input_notes) and creates up to NOTE_COUNT new notes
+// (output_notes). Slots not used by the user are filled with empty
+// notes whose `asset_amount == 0`. The circuit proves:
+//
+//   1. Each non-empty input is owned by the prover and exists in the
+//      tree at `root`. Its nullifier is consistent with its content.
+//   2. Each non-empty output's commitment matches the public
+//      `output_hashes[i]`.
+//   3. For every asset_id present on either side, the input and
+//      output amounts balance. Multi-asset is supported -- a single
+//      transfer can move multiple distinct asset_ids -- with the
+//      mint hole closed by anchoring the balance check from both
+//      the input and output sides.
+
 global NOTE_COUNT: u32 = 3;
 
 struct InputNote {
@@ -30,19 +51,26 @@ fn main(
     nullifiers: pub [Field; NOTE_COUNT],
     output_hashes: pub [Field; NOTE_COUNT],
 ) {
-    let mut inputs_map: HashMap<Field, Field, NOTE_COUNT, BuildHasherDefault<Poseidon2Hasher>> =
-        HashMap::default();
-    let mut outputs_map: HashMap<Field, Field, NOTE_COUNT, BuildHasherDefault<Poseidon2Hasher>> =
-        HashMap::default();
+    // Range-bound every asset_amount before any arithmetic. With
+    // NOTE_COUNT = 3, capping each amount at 128 bits keeps the sums in
+    // assert_balanced strictly under 2^130, well below the BN254 modulus
+    // (~2^254), so Field addition cannot wrap. Without this, an attacker
+    // could pick output amounts that sum to 0 mod p and mint value from
+    // nothing.
+    for i in 0..NOTE_COUNT {
+        input_notes[i].asset_amount.assert_max_bit_size::<128>();
+        output_notes[i].asset_amount.assert_max_bit_size::<128>();
+    }
 
-    for i in 0..NOTE_COUNT - 1 {
-        // if note is not empty
+    // Pass 1: per-note verification.
+    // Inputs: owner derivation + nullifier + merkle membership.
+    // Outputs: commitment matches the public output_hashes slot.
+    // Empty notes (asset_amount == 0) are skipped on both sides.
+    for i in 0..NOTE_COUNT {
         if input_notes[i].asset_amount != 0 {
-            // check owner is correct
             let owner_pub_key = poseidon2::Poseidon2::hash([input_notes[i].owner_secret], 1);
             assert(owner_pub_key == input_notes[i].owner);
 
-            // check nullifier is correct
             let reconstructed_nullifier = compute_nullifier(
                 input_notes[i].leaf_index,
                 input_notes[i].owner,
@@ -52,54 +80,91 @@ fn main(
             );
             assert(reconstructed_nullifier == nullifiers[i]);
 
-            // check merkle membership
             let reconstructed_leaf = reconstruct_leaf(
                 input_notes[i].asset_id,
                 input_notes[i].asset_amount,
                 input_notes[i].owner,
                 input_notes[i].secret,
             );
-            let reconstructed_merkle_root = compute_merkle_root(
+            let reconstructed_root = compute_merkle_root(
                 reconstructed_leaf,
                 input_notes[i].path,
                 input_notes[i].path_indices,
             );
-            assert(reconstructed_merkle_root == root);
-
-            let current_asset_amount = inputs_map.get(input_notes[i].asset_id).unwrap_or(0);
-            inputs_map.insert(
-                input_notes[i].asset_id,
-                current_asset_amount + input_notes[i].asset_amount,
-            );
+            assert(reconstructed_root == root);
         }
 
         if output_notes[i].asset_amount != 0 {
-            let output_leaf_note = reconstruct_leaf(
+            let output_leaf = reconstruct_leaf(
                 output_notes[i].asset_id,
                 output_notes[i].asset_amount,
                 output_notes[i].owner,
                 output_notes[i].secret,
             );
-            assert(output_leaf_note == output_hashes[i]);
-
-            let current_asset_amount = outputs_map.get(output_notes[i].asset_id).unwrap_or(0);
-            outputs_map.insert(
-                output_notes[i].asset_id,
-                current_asset_amount + output_notes[i].asset_amount,
-            )
+            assert(output_leaf == output_hashes[i]);
         }
     }
 
-    // check input and output asset keys are equal
-    assert(inputs_map.len() == outputs_map.len());
+    // Pass 2: balance invariant.
+    assert_balanced(input_notes, output_notes);
+}
 
-    for i in 0..NOTE_COUNT - 1 {
-        assert(
-            inputs_map.get(input_notes[i].asset_id).unwrap_or(0)
-                == outputs_map.get(input_notes[i].asset_id).unwrap_or(0),
-        );
+// Constrained per-asset balance check.
+//
+// For every value-bearing position on either side, anchor on its
+// asset_id, sum all input contributions matching that anchor, sum
+// all output contributions matching it, and assert equal. Running
+// from both the input side AND the output side closes the mint hole:
+// an asset_id present only on the output side gets anchored in
+// Pass B and its zero input sum fails the assert.
+//
+// Empty notes contribute 0 to either sum (their asset_amount is 0),
+// so no explicit empty mask is needed inside the inner loop -- their
+// slot drops out arithmetically.
+//
+// Cost at NOTE_COUNT = 3: up to 6 outer iterations x 3 inner = 18
+// mask-multiply ops per side, well under 100 constraints
+fn assert_balanced(input_notes: [InputNote; NOTE_COUNT], output_notes: [OutputNote; NOTE_COUNT]) {
+    // Pass A: anchor on each non-empty input asset_id.
+    for i in 0..NOTE_COUNT {
+        if input_notes[i].asset_amount != 0 {
+            let anchor = input_notes[i].asset_id;
+            let mut in_sum: Field = 0;
+            let mut out_sum: Field = 0;
+            for j in 0..NOTE_COUNT {
+                // bool -> Field (0 or 1) gates each slot's contribution.
+                let in_match: Field = (input_notes[j].asset_id == anchor) as Field;
+                let out_match: Field = (output_notes[j].asset_id == anchor) as Field;
+                in_sum += input_notes[j].asset_amount * in_match;
+                out_sum += output_notes[j].asset_amount * out_match;
+            }
+            assert(in_sum == out_sum);
+        }
+    }
+
+    // Pass B: anchor on each non-empty output asset_id. Catches
+    // assets that appear only on the output side (mint attempts).
+    for i in 0..NOTE_COUNT {
+        if output_notes[i].asset_amount != 0 {
+            let anchor = output_notes[i].asset_id;
+            let mut in_sum: Field = 0;
+            let mut out_sum: Field = 0;
+            for j in 0..NOTE_COUNT {
+                let in_match: Field = (input_notes[j].asset_id == anchor) as Field;
+                let out_match: Field = (output_notes[j].asset_id == anchor) as Field;
+                in_sum += input_notes[j].asset_amount * in_match;
+                out_sum += output_notes[j].asset_amount * out_match;
+            }
+            assert(in_sum == out_sum);
+        }
     }
 }
+
+// ----- Test fixture --------------------------------------------------
+// Same witness values as the existing `transfer` circuit's test so
+// the migration is provably semantics-preserving on honest inputs.
+// 1 USDC input (amount 5) splits into 2 USDC outputs (amounts 3 + 2)
+// to a different owner. Slot 2 is empty on both sides.
 
 #[test]
 fn test_main() {
@@ -108,15 +173,11 @@ fn test_main() {
     let asset_amount = 5;
     let owner = 10812186542955647827474372651967207045861174805371180171801345448553285386806;
     let owner_secret =
-        10036677144260647934022413515521823129584317400947571241312859176539726523915; // TODO
+        10036677144260647934022413515521823129584317400947571241312859176539726523915;
     let secret = 2389312107716289199307843900794656424062350252250388738019021107824217896920;
 
     let nullifier = 3889730504789135603011318287331683111639714777739573239289638917879152395137;
-
     let leaf_index = 0;
-
-    // this is the empty tree after the hash 9194668555912557146241026266248928483973497222045579120388006164958747201268
-    // is inserted at index 0
     let leaf = 15877031116292595040191017675338240539290338653409019794000313907399651592164;
 
     let path = [
@@ -134,9 +195,9 @@ fn test_main() {
     ];
     let path_indices = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 
-    let recon_merkle_root: Field = compute_merkle_root(leaf, path, path_indices);
-
-    assert(recon_merkle_root == root, "Roots don't match");
+    // Sanity: the witness path actually proves membership of `leaf`.
+    let recon: Field = compute_merkle_root(leaf, path, path_indices);
+    assert(recon == root, "Roots don't match");
 
     let input_note: InputNote = InputNote {
         asset_id,
@@ -148,9 +209,6 @@ fn test_main() {
         path,
         path_indices,
     };
-    let nullifiers = [nullifier, 0, 0];
-    let empty_output_note: OutputNote =
-        OutputNote { owner: 0, secret: 0, asset_id: 0, asset_amount: 0 };
     let empty_input_note: InputNote = InputNote {
         asset_id: 0,
         asset_amount: 0,
@@ -161,8 +219,8 @@ fn test_main() {
         path: [0; HEIGHT - 1],
         path_indices: [0; HEIGHT - 1],
     };
-
-    let input_notes = [input_note, empty_input_note, empty_input_note];
+    let empty_output_note: OutputNote =
+        OutputNote { owner: 0, secret: 0, asset_id: 0, asset_amount: 0 };
 
     let alice_output_note: OutputNote = OutputNote {
         owner: 10812186542955647827474372651967207045861174805371180171801345448553285386806,
@@ -181,9 +239,67 @@ fn test_main() {
     };
     let bob_output_hash =
         4033300113401483633011546954450009404136112133461230452107665732116532508739;
-    let output_notes = [alice_output_note, bob_output_note, empty_output_note];
 
+    let input_notes = [input_note, empty_input_note, empty_input_note];
+    let nullifiers = [nullifier, 0, 0];
+    let output_notes = [alice_output_note, bob_output_note, empty_output_note];
     let output_hashes = [alice_output_hash, bob_output_hash, 0];
 
     main(root, input_notes, output_notes, nullifiers, output_hashes);
+}
+
+// Regression test for the BN254 field-overflow exploit. Pre-fix, an
+// attacker could build two output notes whose amounts sum to 0 mod p
+// (e.g. N and p - N) and satisfy `assert_balanced` against zero inputs,
+// minting value out of nothing. The 128-bit range check on every
+// `asset_amount` now blocks this: `p - 5_000_000_000` is ~254 bits, so
+// `assert_max_bit_size::<128>()` fails and no witness can be constructed.
+#[test(should_fail)]
+fn test_field_overflow_exploit_rejected() {
+    let asset_id: Field = 1096978651789611665652906124278561787240579697095;
+    let stolen_amount: Field = 5_000_000_000;
+    let owner_attacker: Field =
+        10812186542955647827474372651967207045861174805371180171801345448553285386806;
+    let secret_attacker: Field =
+        2389312107716289199307843900794656424062350252250388738019021107824217896920;
+
+    // sink_amount = -stolen_amount mod p, the high-bit-count value the
+    // range check is designed to reject.
+    let sink_amount: Field = 0 - stolen_amount;
+
+    let real_leaf = reconstruct_leaf(asset_id, stolen_amount, owner_attacker, secret_attacker);
+    let sink_leaf = reconstruct_leaf(asset_id, sink_amount, owner_attacker, secret_attacker);
+
+    let empty_in: InputNote = InputNote {
+        asset_id: 0,
+        asset_amount: 0,
+        owner: 0,
+        owner_secret: 0,
+        secret: 0,
+        leaf_index: 0,
+        path: [0; HEIGHT - 1],
+        path_indices: [0; HEIGHT - 1],
+    };
+    let real_out: OutputNote = OutputNote {
+        owner: owner_attacker,
+        secret: secret_attacker,
+        asset_id,
+        asset_amount: stolen_amount,
+    };
+    let sink_out: OutputNote = OutputNote {
+        owner: owner_attacker,
+        secret: secret_attacker,
+        asset_id,
+        asset_amount: sink_amount,
+    };
+    let empty_out: OutputNote =
+        OutputNote { owner: 0, secret: 0, asset_id: 0, asset_amount: 0 };
+
+    main(
+        0,
+        [empty_in, empty_in, empty_in],
+        [real_out, sink_out, empty_out],
+        [0, 0, 0],
+        [real_leaf, sink_leaf, 0],
+    );
 }

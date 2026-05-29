@@ -40,7 +40,7 @@ contract CommBankDotEth is PoseidonMerkleTree, AccessControl {
     address _transactVerifier,
     address _withdrawalVerifier,
     address _transferExternalVerifier
-  ) PoseidonMerkleTree(12) {
+  ) PoseidonMerkleTree() {
     depositVerifier = _noteVerifier;
     transferVerifier = _transactVerifier;
     withdrawVerifier = _withdrawalVerifier;

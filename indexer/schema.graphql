@@ -1,7 +1,14 @@
 type Commbankdoteth_LeafInserted {
   id: ID!
+  epoch: BigInt!
   leafIndex: BigInt!
   leafValue: String!
+}
+
+type Commbankdoteth_EpochRolledOver {
+  id: ID!
+  oldEpoch: BigInt!
+  finalRoot: String!
 }
 
 type Commbankdoteth_NotePayload {

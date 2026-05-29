@@ -1,0 +1,69 @@
+# Stress harness stack. Run from the repo root:
+#
+#   # Prerequisites (run once after any contract/circuit change):
+#   cd contracts && npx hardhat compile && cd ..
+#   # then:
+#   docker compose -f docker-compose.stress.yml up --build
+#
+# Three services share one image:
+#   hardhat-node  — JSON-RPC node, port 8545
+#   deployer      — one-shot: deploys contracts, writes /shared/deployment.json
+#   stress        — 10 workers running depositNative loops, JSON to stdout
+#
+# View just the harness logs:
+#   docker compose -f docker-compose.stress.yml logs -f stress
+# Errors only:
+#   docker compose -f docker-compose.stress.yml logs -f stress | jq 'select(.level=="error")'
+
+services:
+  hardhat-node:
+    build:
+      context: .
+      dockerfile: stress/Dockerfile
+    image: commbank-stress:latest
+    working_dir: /app/contracts
+    command:
+      - npx
+      - hardhat
+      - node
+      - --hostname
+      - 0.0.0.0
+    ports:
+      - "8545:8545"
+
+  deployer:
+    image: commbank-stress:latest
+    depends_on:
+      - hardhat-node
+    working_dir: /app/stress
+    environment:
+      RPC_URL: http://hardhat-node:8545
+      DEPLOYMENT_PATH: /shared/deployment.json
+      WORKER_COUNT: "10"
+    volumes:
+      - shared:/shared
+    command:
+      - sh
+      - -c
+      - "pnpm run harness:wait-rpc && pnpm run harness:deploy"
+
+  stress:
+    image: commbank-stress:latest
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    working_dir: /app/stress
+    environment:
+      RPC_URL: http://hardhat-node:8545
+      DEPLOYMENT_PATH: /shared/deployment.json
+      WORKER_COUNT: "10"
+      POOL_SIZE: "64"
+    volumes:
+      - shared:/shared
+    command:
+      - pnpm
+      - run
+      - harness:run
+
+volumes:
+  shared:
