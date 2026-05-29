@@ -79,7 +79,8 @@ type TestMode =
   | "invalid_proof"
   | "double_spend"
   | "balance_mint_same"
-  | "balance_mint_fresh";
+  | "balance_mint_fresh"
+  | "balance_field_overflow";
 
 const pickAction = (
   notesAvailable: number,
@@ -110,9 +111,13 @@ const pickTestMode = (
     return "double_spend";
   }
   // Balance violation only applies to transfers (we mutate output amounts;
-  // withdraw has a different surface).
+  // withdraw has a different surface). Three flavours, picked uniformly:
+  // mint_same (Pass A), mint_fresh (Pass B), field_overflow (range bound).
   if (action === "transfer" && Math.random() < pBalanceViolate) {
-    return Math.random() < 0.5 ? "balance_mint_same" : "balance_mint_fresh";
+    const r = Math.random();
+    if (r < 1 / 3) return "balance_mint_same";
+    if (r < 2 / 3) return "balance_mint_fresh";
+    return "balance_field_overflow";
   }
   if (Math.random() < pInvalidProof) return "invalid_proof";
   return "normal";
@@ -320,17 +325,23 @@ const doTransfer = async (
   // Balance-violation probes never produce a valid proof — `noir.execute`
   // throws before we even reach `generateProof`. We catch that throw and
   // log it as the expected outcome. If it ever succeeds, escalate to
-  // CRITICAL because that means the new in-circuit balance check is
-  // missing or unsound.
+  // CRITICAL because that means either the in-circuit balance check or
+  // the range bound on asset_amount is missing or unsound.
   if (
     testMode === "balance_mint_same" ||
-    testMode === "balance_mint_fresh"
+    testMode === "balance_mint_fresh" ||
+    testMode === "balance_field_overflow"
   ) {
     const tamper =
-      testMode === "balance_mint_same" ? "mint_same" : "mint_fresh";
+      testMode === "balance_mint_same"
+        ? "mint_same"
+        : testMode === "balance_mint_fresh"
+          ? "mint_fresh"
+          : "field_overflow";
     try {
       await generateTransferProof(note, newSecret, path, tamper);
-      // Reachable only if assert_balanced did not fire — that's a bug.
+      // Reachable only if the relevant in-circuit check did not fire —
+      // that's a bug.
       error(source, "CRITICAL_BALANCE_ACCEPTED_BY_PROVER", {
         tamper,
         note_amount: note.amount.toString(),

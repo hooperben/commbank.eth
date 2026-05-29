@@ -51,6 +51,17 @@ fn main(
     nullifiers: pub [Field; NOTE_COUNT],
     output_hashes: pub [Field; NOTE_COUNT],
 ) {
+    // Range-bound every asset_amount before any arithmetic. With
+    // NOTE_COUNT = 3, capping each amount at 128 bits keeps the sums in
+    // assert_balanced strictly under 2^130, well below the BN254 modulus
+    // (~2^254), so Field addition cannot wrap. Without this, an attacker
+    // could pick output amounts that sum to 0 mod p and mint value from
+    // nothing.
+    for i in 0..NOTE_COUNT {
+        input_notes[i].asset_amount.assert_max_bit_size::<128>();
+        output_notes[i].asset_amount.assert_max_bit_size::<128>();
+    }
+
     // Pass 1: per-note verification.
     // Inputs: owner derivation + nullifier + merkle membership.
     // Outputs: commitment matches the public output_hashes slot.
@@ -235,4 +246,60 @@ fn test_main() {
     let output_hashes = [alice_output_hash, bob_output_hash, 0];
 
     main(root, input_notes, output_notes, nullifiers, output_hashes);
+}
+
+// Regression test for the BN254 field-overflow exploit. Pre-fix, an
+// attacker could build two output notes whose amounts sum to 0 mod p
+// (e.g. N and p - N) and satisfy `assert_balanced` against zero inputs,
+// minting value out of nothing. The 128-bit range check on every
+// `asset_amount` now blocks this: `p - 5_000_000_000` is ~254 bits, so
+// `assert_max_bit_size::<128>()` fails and no witness can be constructed.
+#[test(should_fail)]
+fn test_field_overflow_exploit_rejected() {
+    let asset_id: Field = 1096978651789611665652906124278561787240579697095;
+    let stolen_amount: Field = 5_000_000_000;
+    let owner_attacker: Field =
+        10812186542955647827474372651967207045861174805371180171801345448553285386806;
+    let secret_attacker: Field =
+        2389312107716289199307843900794656424062350252250388738019021107824217896920;
+
+    // sink_amount = -stolen_amount mod p, the high-bit-count value the
+    // range check is designed to reject.
+    let sink_amount: Field = 0 - stolen_amount;
+
+    let real_leaf = reconstruct_leaf(asset_id, stolen_amount, owner_attacker, secret_attacker);
+    let sink_leaf = reconstruct_leaf(asset_id, sink_amount, owner_attacker, secret_attacker);
+
+    let empty_in: InputNote = InputNote {
+        asset_id: 0,
+        asset_amount: 0,
+        owner: 0,
+        owner_secret: 0,
+        secret: 0,
+        leaf_index: 0,
+        path: [0; HEIGHT - 1],
+        path_indices: [0; HEIGHT - 1],
+    };
+    let real_out: OutputNote = OutputNote {
+        owner: owner_attacker,
+        secret: secret_attacker,
+        asset_id,
+        asset_amount: stolen_amount,
+    };
+    let sink_out: OutputNote = OutputNote {
+        owner: owner_attacker,
+        secret: secret_attacker,
+        asset_id,
+        asset_amount: sink_amount,
+    };
+    let empty_out: OutputNote =
+        OutputNote { owner: 0, secret: 0, asset_id: 0, asset_amount: 0 };
+
+    main(
+        0,
+        [empty_in, empty_in, empty_in],
+        [real_out, sink_out, empty_out],
+        [0, 0, 0],
+        [real_leaf, sink_leaf, 0],
+    );
 }

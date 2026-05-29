@@ -78,7 +78,7 @@ export type TransferProofResult = {
 };
 
 // In-circuit balance violation. Mutates the witness inputs to deliberately
-// break `assert_balanced` so the new mask-multiply check in
+// break `assert_balanced` so the mask-multiply check in
 // circuits/transfer/src/main.nr has something concrete to reject.
 //   - "mint_same":  output asset_amount > input asset_amount for the same
 //                   asset_id. Triggers Pass A (anchored on input asset_id,
@@ -86,12 +86,23 @@ export type TransferProofResult = {
 //   - "mint_fresh": second output slot carries a fresh asset_id never on
 //                   the input side, with positive amount. Triggers Pass B
 //                   (anchored on output asset_id, in_sum == 0 < out_sum).
-// The expected outcome is `noir.execute()` throws "Cannot satisfy constraint"
-// before any proof is generated. Worker logs balance_violation rejected by
-// circuit (expected). If a proof ever generates, the harness escalates to
-// CRITICAL_BALANCE_ACCEPTED — that would mean assert_balanced is missing
-// or incomplete.
-export type BalanceTamper = "mint_same" | "mint_fresh";
+//   - "field_overflow": exploits unchecked Field arithmetic — output_1
+//                   carries an attacker-chosen mint, output_2 is a sink
+//                   whose amount is `(input + p - output_1) mod p`, so the
+//                   raw addition wraps back to `input`. The 128-bit
+//                   range-bound on every asset_amount blocks this: the
+//                   sink's bit length is ~254 bits, so
+//                   assert_max_bit_size::<128>() fails before any
+//                   constraint involving the value is even checked.
+// Expected outcome for all three: `noir.execute()` throws before any
+// proof is generated. Worker logs balance_violation rejected by circuit
+// (expected). If a proof ever generates, the harness escalates to
+// CRITICAL_BALANCE_ACCEPTED — that would mean either assert_balanced is
+// missing/incomplete OR the range bound is missing.
+export type BalanceTamper = "mint_same" | "mint_fresh" | "field_overflow";
+
+const FIELD_PRIME_BIGINT =
+  21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 
 export type WithdrawProofResult = {
   proof: { proof: Uint8Array; publicInputs: string[] };
@@ -138,8 +149,16 @@ export const generateTransferProof = async (
   // For mint_same we inflate the output by 1 unit; for mint_fresh we leave
   // slot 0 honest (so the input/output balance for the real asset_id is
   // still equal) and add slot 1 as a never-deposited asset_id with amount.
+  // For field_overflow we mint an attacker-chosen amount on slot 0 and
+  // park the wraparound delta on slot 1; the per-amount range check kicks
+  // in before any constraint involving the sum is evaluated.
+  const MINT_OUT_OF_NOTHING = 5_000_000_000n; // 5,000 USDC at 6dp
   const tamperedOutputAmount =
-    tamper === "mint_same" ? note.amount + 1n : note.amount;
+    tamper === "mint_same"
+      ? note.amount + 1n
+      : tamper === "field_overflow"
+        ? MINT_OUT_OF_NOTHING
+        : note.amount;
 
   const outputNoteHash = computeNoteHash(
     note.assetId,
@@ -176,6 +195,26 @@ export const generateTransferProof = async (
   const FRESH_ASSET_ID =
     0xdeadbeefcafebabe1234567890abcdef00112233n.toString();
   const freshAmount = 1n;
+  // For field_overflow, slot 1 is the wraparound sink. Its amount is
+  // `(note + p - mint) mod p`, which has bit length ~254, so the
+  // 128-bit range check rejects it during witness execution. Without
+  // the range check, raw Field addition would wrap to `note.amount`,
+  // matching the input sum and minting MINT_OUT_OF_NOTHING out of
+  // nothing.
+  const overflowSinkAmount =
+    tamper === "field_overflow"
+      ? (note.amount + FIELD_PRIME_BIGINT - MINT_OUT_OF_NOTHING) %
+        FIELD_PRIME_BIGINT
+      : 0n;
+  const overflowSinkHash =
+    tamper === "field_overflow"
+      ? computeNoteHash(
+          note.assetId,
+          overflowSinkAmount,
+          note.owner,
+          newSecret + 1n,
+        )
+      : 0n;
   const freshOutputNoteHash =
     tamper === "mint_fresh"
       ? computeNoteHash(
@@ -184,7 +223,9 @@ export const generateTransferProof = async (
           note.owner,
           newSecret + 1n,
         )
-      : 0n;
+      : tamper === "field_overflow"
+        ? overflowSinkHash
+        : 0n;
   const secondOutput: OutputNoteFields =
     tamper === "mint_fresh"
       ? {
@@ -194,7 +235,15 @@ export const generateTransferProof = async (
           asset_amount: freshAmount.toString(),
           external_address: "0",
         }
-      : emptyOutput();
+      : tamper === "field_overflow"
+        ? {
+            owner: note.owner.toString(),
+            secret: (newSecret + 1n).toString(),
+            asset_id: note.assetId.toString(),
+            asset_amount: overflowSinkAmount.toString(),
+            external_address: "0",
+          }
+        : emptyOutput();
 
   const { witness } = await transact.transactNoir.execute({
     root: treePath.root.toString(),
