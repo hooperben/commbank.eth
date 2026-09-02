@@ -456,8 +456,9 @@ copy.** The durable copy must live somewhere that survives with the passkey.
 | **C. On-chain / IPFS encrypted backup** — `keccak(credentialId) → ciphertext` | ✅ | Same as B | Trustless, censorship-resistant, fits "the bank you don't have to trust". Ciphertext is permanently public and can never be un-published; ~100 bytes on Base/Arbitrum costs cents. |
 
 B and C are the same protocol with a different bulletin board; A is a bonus
-replica on Apple. Recommended: **A where supported + (B or C) always**,
-with origin storage as a cache.
+replica on Apple. **Decision: B (server) is rejected — the goal is a
+decentralised front end with no backend/database.** Adopted: A where
+supported + C (on-chain) everywhere, origin storage as a cache. See §9.
 
 Why the server/chain copy is safe: the ciphertext is
 `AES-256-GCM(HKDF(PRF(passkey, salt)), entropy)`. Nobody — including us —
@@ -509,3 +510,113 @@ home and it moves with the passkey. Its problem is coverage, not concept.
 The PRF-wrapped ciphertext replicated to (passkey blob | server | chain)
 delivers the same "nothing to lose when the site is evicted" property on
 every platform.
+
+---
+
+## 9. Decided direction: decentralised durability (no backend)
+
+Constraint: **no centralised server or database.** The front end must be
+self-sufficient. Durability therefore comes from two decentralised homes for
+the v3 ciphertext, plus a cache:
+
+| Tier | Where | Who gets it | Survives eviction |
+|---|---|---|---|
+| 1 | `largeBlob` inside the commbank.eth passkey | any stack reporting `largeBlob.supported === true` (Apple platform passkeys, CTAP2.1 keys) | ✅ |
+| 2 | On-chain event: `SHA-256(credentialId) → ciphertext`, emitted with the **first deposit** | everyone, once they have deposited | ✅ |
+| 3 | localStorage / IndexedDB cache | everyone | ❌ (cache only) |
+
+The user's **durability class** = which tiers are confirmed written. The
+"export your phrase" prompt is loud only while a user has tier 3 alone.
+
+### 9.1 Branch on capability, not on OS
+
+Never sniff iOS/Android. The facts we need are returned by WebAuthn itself:
+
+- registration: `create().getClientExtensionResults().largeBlob.supported`
+- sign-in: presence of `largeBlob.blob` in the assertion
+
+This covers the awkward cases for free: Mac Safari (blob ✅), Mac Chrome
+with an iCloud passkey (probably ❌ — verify), iPhone whose passkeys are in
+Google Password Manager (❌), YubiKey on any desktop browser (✅).
+
+### 9.2 Sign-in must come before sign-up (overwrite hazard)
+
+With evicted local state the app cannot tell a returning user from a new
+one, and `excludeCredentials` is empty. Today `user.id` is the constant
+`"commbank.eth"`. iCloud Keychain and Google Password Manager treat a
+`create()` with the same `rp.id` + `user.id` as **replacing** the existing
+passkey — on iOS that would destroy the only copy of the seed.
+
+Fixes (both):
+
+1. One "Continue with passkey" button that always runs `get()` first
+   (discoverable credential, no `allowCredentials`, with `prf.eval` +
+   `largeBlob.read`). "Create a new account" is offered only after the
+   picker is cancelled/empty, behind an explicit warning.
+2. Random 16-byte `user.id` per account, with a distinguishing
+   `user.name`/`displayName` (e.g. `commbank.eth · 0x1234…`, or the creation
+   date) so a second registration *adds* a passkey rather than replacing
+   one.
+
+### 9.3 Same ciphertext everywhere (blob holds v3 ciphertext, not raw entropy)
+
+`prf.eval` and `largeBlob.read` can be requested in the **same** assertion,
+so unlocking from the blob is still one gesture. Storing the v3 ciphertext
+in the blob gives one storage-agnostic format across all tiers, and a blob
+leaked provider-side is useless without the PRF. (XSS exposure is unchanged
+either way — both values arrive in the same assertion result.)
+
+Spike item: confirm Safari honours both extensions in one `get()`. If not,
+raw entropy in the blob is the acceptable iOS-only fallback.
+
+### 9.4 On-chain backup piggybacked on the first deposit
+
+The v3 ciphertext (~100 bytes) can only be opened by a user-verified
+assertion on the user's own hardware, so it is safe to publish. Emit it as
+log data from the first deposit:
+
+```solidity
+event WalletBackup(bytes32 indexed credentialIdHash, bytes ciphertext);
+// called inside deposit(...) when `backup.length > 0`
+```
+
+- Cost: log data is 8 gas/byte → < 2k gas on top of a deposit on an L2.
+- No funds needed before there is anything to lose: a user with zero
+  balance loses nothing if their cache is evicted — they can just create a
+  fresh account. Durability starts exactly when value does.
+- Recovery on a wiped device: `get()` → `rawId` + PRF output →
+  `eth_getLogs` filtered by `SHA-256(rawId)` topic (any public RPC; no
+  commbank.eth infrastructure) → decrypt → re-cache.
+- **Privacy:** emit **once**, on the first deposit only, so the topic never
+  links multiple deposits. Re-emit only when the KEK changes (passkey
+  upgrade, §4.2), which is rare and can be sent as a standalone tx.
+- Multi-chain: emit on whichever chain the first deposit happens on;
+  recovery queries all supported chains (Ethereum, Arbitrum, Base).
+
+### 9.5 Resulting sign-in / sign-up flow
+
+```
+[Continue with passkey]
+  └─ get({ prf.eval, largeBlob.read })           ← 1 gesture
+       ├─ blob present      → decrypt → cache → signed in      (tier 1)
+       ├─ local cache present → decrypt → signed in           (tier 3)
+       ├─ else eth_getLogs(SHA-256(rawId)) on each chain
+       │      └─ found      → decrypt → cache → signed in     (tier 2)
+       └─ nothing anywhere  → "Import your phrase" / "Create new account"
+[Create new account]  (only reachable from the branch above)
+  └─ create({ prf:{}, largeBlob:{support:"preferred"}, user.id = random })
+  └─ get({ prf.eval })  → wrap entropy → cache (tier 3)
+  └─ if supported: get({ largeBlob.write }) until written === true (tier 1)
+  └─ show durability status; loud export prompt iff tier 3 only
+[First deposit]
+  └─ include ciphertext → WalletBackup event (tier 2) → downgrade prompt
+```
+
+### 9.6 Android-specific mitigations (cheap, do all of them)
+
+- Call `navigator.storage.persist()` after registration; Chrome grants it
+  automatically for installed PWAs / engaged sites, which removes the
+  disk-pressure eviction case.
+- Encourage "Add to Home Screen" (PWA install) — also exempts iOS Safari
+  from the 7-day ITP purge for users whose passkeys aren't blob-capable.
+- Keep the export prompt loud until tier 2 is confirmed.
