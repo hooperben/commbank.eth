@@ -243,10 +243,11 @@ mnemonic (imported or generated)                 ← unchanged UX
   └─ entropy = bip39.mnemonicToEntropy(...)      (16–32 bytes)
 KEK = HKDF-SHA256(PRF(salt="commbank.eth/v1/kek"), info="mnemonic-wrap")
 ciphertext = AES-256-GCM(KEK, entropy || version)
-stored:
-  1. localStorage / IndexedDB                    (fast path, all platforms)
+stored (see §8 — origin storage alone is NOT durable):
+  1. localStorage / IndexedDB                    (cache only; evicted after 7 days on iOS Safari)
   2. passkey largeBlob (if supported=true)       (survives site-data clears; syncs on Apple)
-  3. (future) server backup keyed by credentialId (disaster recovery TODO in AUTH.md)
+  3. off-origin encrypted backup keyed by credentialId — REQUIRED for a returning user
+     (server, or on-chain/IPFS; server only ever sees PRF-wrapped ciphertext)
 ```
 
 Unlock: one `get()` with `prf.eval` + `largeBlob.read` — note **PRF and
@@ -422,3 +423,89 @@ the exclusions.
 - Praveen Perera: Universal Bitcoin wallet backup with passkeys + PRF — https://praveenperera.com/blog/passkey-prf-bitcoin-wallet-backup/
 - Spark research: Passkeys for Bitcoin wallets — https://www.spark.money/research/bitcoin-passkey-wallet-authentication
 - FIDO CTAP 2.1 spec (largeBlobs, hmac-secret) — https://fidoalliance.org/specs/fido-v2.1-rd-20210309/fido-client-to-authenticator-protocol-v2.1-rd-20210309.html
+
+---
+
+## 8. Durability: the "comes back a month later" problem
+
+**Scenario:** user signs up on mobile, leaves, returns after a month.
+Will they be able to sign in?
+
+**With PRF + local ciphertext only: no.** The passkey survives (it lives in
+iCloud Keychain / Google Password Manager and even follows them to a new
+phone), but the ciphertext it unlocks is gone:
+
+| Platform | What happens to localStorage / IndexedDB |
+|---|---|
+| iOS / iPadOS Safari (and every iOS browser, all use WebKit) | ITP deletes **all script-writable storage after 7 days without user interaction**. Home-screen-installed web apps are exempt; ordinary tabs are not. |
+| Android Chrome | No time-based eviction, but storage is "best-effort" and purged under disk pressure unless `navigator.storage.persist()` is granted (Chrome grants it for installed PWAs / highly engaged sites). |
+| Any | "Clear browsing data", browser reinstall, new device. |
+
+`navigator.storage.persist()` and PWA install reduce the risk (worth doing)
+but don't eliminate it; Safari largely ignores `persist()`.
+
+So the design principle is: **origin storage is a cache, never the only
+copy.** The durable copy must live somewhere that survives with the passkey.
+
+### 8.1 Where the durable copy can live
+
+| Location | Survives eviction | Coverage | Trust |
+|---|---|---|---|
+| **A. Inside the passkey (`largeBlob`)** | ✅ (syncs with the credential) | Apple + CTAP2.1 keys only (§2.3) | None beyond the credential provider |
+| **B. Server-side encrypted backup** — PRF-wrapped ciphertext keyed by credential ID | ✅ | Everywhere PRF works: Android, Windows, Apple, 1Password/Bitwarden | Server sees ciphertext only; KEK exists only inside a user-verified assertion on the user's hardware. Availability depends on us. |
+| **C. On-chain / IPFS encrypted backup** — `keccak(credentialId) → ciphertext` | ✅ | Same as B | Trustless, censorship-resistant, fits "the bank you don't have to trust". Ciphertext is permanently public and can never be un-published; ~100 bytes on Base/Arbitrum costs cents. |
+
+B and C are the same protocol with a different bulletin board; A is a bonus
+replica on Apple. Recommended: **A where supported + (B or C) always**,
+with origin storage as a cache.
+
+Why the server/chain copy is safe: the ciphertext is
+`AES-256-GCM(HKDF(PRF(passkey, salt)), entropy)`. Nobody — including us —
+can produce the KEK without the passkey *and* a user-verification gesture.
+An attacker who scrapes every backup we hold gets nothing usable. This is
+the same model Bitwarden/Dashlane use for passkey-unlocked vaults.
+
+Lookup key: the assertion itself returns `credential.rawId`, so no local
+state is needed to find the backup. Credential IDs are 16+ random bytes
+(unguessable), but to avoid a public "does this credential exist" oracle,
+store under `SHA-256(credentialId)` and, for the server variant, gate the
+fetch with the assertion signature (verify the WebAuthn assertion against
+the public key we recorded at registration — `PasskeyCredentialInfo`
+already captures it).
+
+### 8.2 Returning-user flow (no words required)
+
+1. Page loads with empty origin storage → "Sign in with passkey".
+2. One `get()` with **no** `allowCredentials` (discoverable credential — OS
+   shows the passkey picker; already how `authenticatePasskey()` works),
+   plus `prf.eval` and `largeBlob.read`.
+3. If `largeBlob.blob` present → decrypt with the PRF-derived KEK. Done.
+4. Else → fetch ciphertext by `SHA-256(rawId)` from server/chain → decrypt.
+5. Re-populate local cache; opportunistically request
+   `navigator.storage.persist()`.
+6. Only if no backup exists anywhere (registration's backup upload failed,
+   or the passkey itself is gone — new phone with no keychain sync) →
+   mnemonic import. Nothing can fix "passkey gone + no words".
+
+### 8.3 Registration-time guarantees
+
+The month-later flow only works if the backup actually landed at sign-up:
+
+- Treat the backup write as part of registration: don't show "you're all
+  set" until (largeBlob `written === true`) **or** (server/chain write
+  acknowledged). Retry in the background on every unlock until at least one
+  durable copy is confirmed; surface a "Backup: ✓ passkey / ✓ cloud" status
+  in the account UI.
+- Re-run the backup whenever the wallet changes (import/restore) or the
+  passkey is upgraded (§4.2) — the KEK changes with the credential.
+- Keep "export mnemonic" prominent regardless; it is the only recovery from
+  passkey loss.
+
+### 8.4 What this means for the original question
+
+"Store the blob in the passkey as the secret source" is the *right instinct*
+for durability — it is the only option where the secret has exactly one
+home and it moves with the passkey. Its problem is coverage, not concept.
+The PRF-wrapped ciphertext replicated to (passkey blob | server | chain)
+delivers the same "nothing to lose when the site is evicted" property on
+every platform.
