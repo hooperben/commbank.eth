@@ -267,19 +267,109 @@ mnemonic-export requirement front and center; optionally fall back to a
 password-derived KEK — but **do not** silently fall back to the current
 authenticatorData scheme.
 
-### 4.2 Migration for existing users
+### 4.2 Migration plan for existing users (v2 → v3)
 
-Existing ciphertexts are decryptable with the (public) authenticatorData
-key, so migration is easy and should be forced:
+Three facts drive the design:
 
-1. On unlock, if stored payload `version <= 2`: decrypt with legacy scheme.
-2. Re-run the registration steps 2–3 above against the *existing* credential
-   (needs one extra gesture once) and write `version: 3` payload.
-3. Delete the legacy ciphertext.
-4. If the existing credential reports `prf.enabled === false` (older
-   security-key credentials can't retrofit hmac-secret), prompt to re-create
-   the passkey (iCloud/GPM credentials retrofit PRF fine; hardware keys may
-   need a new credential).
+- **F1.** The legacy KEK is computable offline from public information
+  (§1.1). Normally that's the vulnerability; during migration it's a gift —
+  we can decrypt the old ciphertext *without any legacy-shaped assertion*,
+  so migration costs the user nothing extra.
+- **F2.** PRF can be evaluated on *existing* credentials for the synced
+  providers (iCloud Keychain, Google Password Manager retrofit
+  hmac-secret); many older hardware-key credentials cannot (hmac-secret had
+  to be requested at creation).
+- **F3.** `largeBlob` support is declared at **credential creation**. An
+  existing credential created without `largeBlob: {support}` cannot accept a
+  blob write. So the PRF re-encryption is transparent, but "blob inside the
+  passkey" requires a *passkey re-registration* ("upgrade your passkey"
+  flow) for existing users.
+
+One subtlety rules out the obvious shortcut: you might hope to do legacy
+decrypt + PRF eval from a single assertion (its `authenticatorData` feeds
+the old KDF, its `prf.results` feeds the new one). But requesting an
+authenticator extension can set the ED flag / append extension data in
+`authenticatorData`, which changes the bytes the legacy KDF consumes.
+Don't depend on assertion-shape stability at all — use F1 instead.
+
+**Payloads.** Keep the legacy item under its current key
+(`encryptedMnemonic`, `version <= 2`). Write the new item under a new key,
+e.g. `cb_vault_v3`:
+
+```jsonc
+{
+  "version": 3,
+  "kdf": "prf-hkdf-sha256",
+  "hkdfSalt": "<random 32B, base64>",   // per-install, not secret
+  "prfInput": "commbank.eth/v1/kek",     // fixed context string
+  "iv": "<12B>",
+  "ct": "<AES-256-GCM(entropy)>",        // BIP-39 entropy, not the string
+  "credentialId": "<base64url>",
+  "createdAt": 1234567890
+}
+```
+
+**Migration on next unlock** (runs when `cb_vault_v3` is absent and a
+legacy payload exists):
+
+1. *One assertion, one gesture:* `navigator.credentials.get()` with
+   `extensions: { prf: { eval: { first: utf8("commbank.eth/v1/kek") } } }`.
+   Keep `clientExtensionResults().prf?.results?.first`.
+2. *Legacy decrypt, offline:* reconstruct candidate `authenticatorData`
+   preimages — `SHA-256(rpId) || flags || signCount` for `flags ∈ {0x05,
+   0x1D, 0x45, 0x5D, …}` (UP|UV with/without BE/BS/ED) and `signCount ∈
+   {0…k}` — run each through the legacy PBKDF2 and attempt AES-GCM
+   decryption; the GCM tag identifies the right candidate. Milliseconds of
+   work, and it also *rescues* users the old scheme stranded via flag/count
+   drift across devices. Fallback if no candidate decrypts: one extra plain
+   assertion (no extensions) and use its raw `authenticatorData` exactly as
+   today.
+3. *Re-encrypt:* `entropy = bip39.mnemonicToEntropy(mnemonic)`;
+   `KEK = HKDF-SHA256(prfOutput, salt = hkdfSalt, info =
+   "commbank.eth/mnemonic-wrap/v3")`; AES-256-GCM encrypt; write
+   `cb_vault_v3`.
+4. *Verify then destroy:* round-trip decrypt `cb_vault_v3` with a freshly
+   derived KEK and compare entropy; only then delete `encryptedMnemonic`
+   (and the old `passkeyCredentialIds`-era keys). Never delete before the
+   verify passes — a failed write must leave the legacy path intact.
+5. *PRF unavailable* (`results` absent — typical for old hardware-key
+   credentials, F2): do **not** silently stay on v2 forever. Keep unlock
+   working, but show a persistent "secure your account" prompt: confirm the
+   user has their mnemonic exported, then run the passkey-upgrade flow
+   below.
+
+**Passkey-upgrade flow** (needed for blob storage, F3 — and for
+PRF-incapable credentials):
+
+1. `create()` a new credential with `prf: {}` and
+   `largeBlob: {support: "preferred"}` (gesture 1); record new
+   `credentialId`, `largeBlob.supported`, `prf.enabled`.
+2. `get()` with `prf.eval` scoped to the new credential → derive new KEK →
+   re-wrap the entropy → replace `cb_vault_v3` (gesture 2).
+3. If `supported`: `get()` with `largeBlob: {write: ct}` and
+   `allowCredentials: [newCredId]`, check `written === true` (gesture 3 —
+   deferrable: retry in the background on subsequent unlocks until written).
+4. Tell the user the old commbank.eth passkey is defunct and can be removed
+   in their OS/password-manager settings (sites can't delete credentials;
+   `excludeCredentials` with the old ID prevents accidental re-use).
+
+**Multi-device notes.** A synced credential yields the *same* PRF output on
+every device, but `cb_vault_v3` is per-browser-profile — each device simply
+runs the same lazy migration on its next unlock (step 2 works offline
+anywhere). After a passkey upgrade, other devices still holding only the old
+credential ID must detect the mismatch (assertion returns a different
+`credentialId` than stored) and refresh local state from the blob or from a
+fresh PRF unwrap.
+
+**Rollout order.**
+
+1. Ship v3 write-path for *new* registrations (+ largeBlob mirror).
+2. Ship lazy v2→v3 migration on unlock.
+3. Ship the passkey-upgrade prompt for PRF-incapable credentials and for
+   users who want blob-in-passkey durability.
+4. When telemetry shows v2 unlocks ≈ 0, delete the legacy KDF from the
+   unlock path (the offline reconstruction can live on in a standalone
+   recovery page — it works without a passkey by construction).
 
 ---
 
